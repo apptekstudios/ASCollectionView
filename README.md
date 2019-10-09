@@ -11,6 +11,8 @@
     <a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>
     ·
     <a href="https://github.com/apptekstudios/ASCollectionView/issues">Request Feature</a>
+    
+    ![Example 1](/readmeAssets/demo1.PNG) ![Example 2](/readmeAssets/demo2.PNG)
   </p>
 </p>
 
