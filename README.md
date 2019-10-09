@@ -11,10 +11,10 @@
     <a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>
     ·
     <a href="https://github.com/apptekstudios/ASCollectionView/issues">Request Feature</a>
-    
-    ![Example 1](/readmeAssets/demo1.PNG) ![Example 2](/readmeAssets/demo2.PNG)
   </p>
 </p>
+
+<img src="/readmeAssets/demo2.PNG" width="200"><img src="/readmeAssets/demo1.PNG" width="400">
 
 ## Table of Contents
 * [Getting Started](#getting-started)
