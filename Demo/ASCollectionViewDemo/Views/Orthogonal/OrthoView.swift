@@ -14,31 +14,110 @@ struct OrthoView: View
 	{
 		ASCollectionViewLayout<Int>(scrollDirection: .vertical, interSectionSpacing: 20)
 		{ sectionID -> ASCollectionViewLayoutSection in
-			let insets = NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10)
 			switch sectionID
 			{
 			case 0:
+				/*
 				var layout = ASCollectionViewLayoutOrthogonalGrid()
 				layout.gridSize = 1
 				layout.itemInsets = insets
 				layout.itemDimension = .fractionalWidth(0.9)
 				layout.orthogonalScrollingBehavior = .groupPagingCentered
 				layout.sectionDimension = .absolute(300)
-				return layout
+				return layout*/
+				return ASCollectionViewLayoutCustomCompositionalSection { (environment, scrollDirection) -> NSCollectionLayoutSection in
+					let columnsToFit = floor(environment.container.effectiveContentSize.width / 320)
+					let item = NSCollectionLayoutItem(
+						layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+														   heightDimension: .fractionalHeight(1.0)))
+					
+					let itemsGroup = NSCollectionLayoutGroup.horizontal(
+						layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.9 / columnsToFit),
+														   heightDimension: .absolute(280)),
+						subitems: [item])
+					itemsGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
+					
+					let section = NSCollectionLayoutSection(group: itemsGroup)
+					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
+					section.orthogonalScrollingBehavior = .groupPaging
+					return section
+				}
 			case 1:
-				var layout = ASCollectionViewLayoutOrthogonalGrid()
+				/*var layout = ASCollectionViewLayoutOrthogonalGrid()
 				layout.gridSize = 2
 				layout.itemInsets = insets
 				layout.orthogonalScrollingBehavior = .groupPagingCentered
 				layout.sectionDimension = .absolute(200)
-				return layout
+				return layout*/
+				return ASCollectionViewLayoutCustomCompositionalSection { (environment, scrollDirection) -> NSCollectionLayoutSection in
+					let columnsToFit = floor(environment.container.effectiveContentSize.width / 320)
+					let item = NSCollectionLayoutItem(
+						layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+														   heightDimension: .fractionalHeight(1.0)))
+					
+					let itemsGroup = NSCollectionLayoutGroup.vertical(
+						layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+														   heightDimension: .fractionalHeight(1.0)),
+						subitem: item, count: 2)
+					itemsGroup.interItemSpacing = .fixed(10)
+					
+					let nestedGroup = NSCollectionLayoutGroup.horizontal(
+						layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.9 / columnsToFit),
+														   heightDimension: .absolute(180)),
+						subitems: [itemsGroup])
+					nestedGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
+					
+					let header = NSCollectionLayoutBoundarySupplementaryItem(
+						layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+														   heightDimension: .estimated(34)),
+						elementKind: UICollectionView.elementKindSectionHeader,
+						alignment: .top)
+					header.contentInsets = nestedGroup.contentInsets
+					
+					let section = NSCollectionLayoutSection(group: nestedGroup)
+					section.boundarySupplementaryItems = [header]
+					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
+					section.orthogonalScrollingBehavior = .groupPaging
+					return section
+				}
 			default:
-				var layout = ASCollectionViewLayoutOrthogonalGrid()
+				/*var layout = ASCollectionViewLayoutOrthogonalGrid()
 				layout.gridSize = 3
 				layout.itemInsets = insets
 				layout.orthogonalScrollingBehavior = .groupPagingCentered
 				layout.sectionDimension = .absolute(250)
-				return layout
+				return layout*/
+				return ASCollectionViewLayoutCustomCompositionalSection { (environment, scrollDirection) -> NSCollectionLayoutSection in
+					let columnsToFit = floor(environment.container.effectiveContentSize.width / 320)
+					let item = NSCollectionLayoutItem(
+						layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+														   heightDimension: .fractionalHeight(1.0)))
+					
+					let itemsGroup = NSCollectionLayoutGroup.vertical(
+						layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+														   heightDimension: .fractionalHeight(1.0)),
+						subitem: item, count: 3)
+					itemsGroup.interItemSpacing = .fixed(10)
+					
+					let nestedGroup = NSCollectionLayoutGroup.horizontal(
+						layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.9 / columnsToFit),
+														   heightDimension: .absolute(240)),
+						subitems: [itemsGroup])
+					nestedGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
+					
+					let header = NSCollectionLayoutBoundarySupplementaryItem(
+						layoutSize: NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
+														   heightDimension: .estimated(34)),
+						elementKind: UICollectionView.elementKindSectionHeader,
+						alignment: .top)
+					header.contentInsets = nestedGroup.contentInsets
+					
+					let section = NSCollectionLayoutSection(group: nestedGroup)
+					section.boundarySupplementaryItems = [header]
+					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
+					section.orthogonalScrollingBehavior = .groupPaging
+					return section
+				}
 			}
 		}
 	}
@@ -56,7 +135,7 @@ struct OrthoView: View
 			{
 				Text("See all")
 			}
-		}.padding([.top, .bottom])
+		}
 	}
 
 	var sections: [ASCollectionViewSection<Int>]

@@ -6,7 +6,7 @@ import UIKit
 
 struct GridView: View
 {
-	@State var data: [[Post]] = (0...20).map(DataSource.postsForSection(_:))
+	@State var data: [[Post]] = [DataSource.postsForSection(1, number: 1000)]
 
 	var layout: ASCollectionViewLayout<Int>
 	{

@@ -6,7 +6,7 @@ import UIKit
 
 struct FeedView: View
 {
-	@State var data: [[Post]] = (0...2).map(DataSource.postsForSection(_:))
+	@State var data: [[Post]] = (0...3).map { DataSource.postsForSection($0) }
 
 	var sections: [ASCollectionViewSection<Int>]
 	{
@@ -104,9 +104,9 @@ struct FeedView: View
 
 struct DataSource
 {
-	static func postsForSection(_ number: Int) -> [Post]
+	static func postsForSection(_ sectionID: Int, number: Int = 12) -> [Post]
 	{
-		(0...5).map
+		(0..<number).map
 		{ b -> Post in
 			let aspect: CGFloat = [1.0, 1.5, 0.75].randomElement() ?? 1
 			return Post.randomPost(number * 10_000 + b, aspectRatio: aspect)
@@ -115,7 +115,7 @@ struct DataSource
 
 	static func appsForSection(_ number: Int) -> [App]
 	{
-		(0...5).map
+		(0...17).map
 		{ b -> App in
 			App.randomApp(number * 10_000 + b)
 		}
