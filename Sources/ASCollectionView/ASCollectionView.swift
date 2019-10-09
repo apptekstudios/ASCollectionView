@@ -5,13 +5,13 @@ import SwiftUI
 
 extension ASCollectionView where SectionID == Int
 {
-	@inlinable public init<Data, DataID: Hashable, Content: View>(data: [Data], id idKeyPath: KeyPath<Data, DataID>, estimatedItemSize: CGSize? = nil, onCellEvent: ASCollectionViewSectionDataSource<Data, DataID, Content>.OnCellEvent? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data) -> Content))
+	@inlinable public init<Data, DataID: Hashable, Content: View>(data: [Data], id idKeyPath: KeyPath<Data, DataID>, estimatedItemSize: CGSize? = nil, onCellEvent: ASSectionDataSource<Data, DataID, Content>.OnCellEvent? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data) -> Content))
 	{
 		self.layout = layout
 		sections = [Section(id: 0, data: data, dataID: idKeyPath, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, contentBuilder: content)]
 	}
 
-	@inlinable public init<Data, Content: View>(data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: ASCollectionViewSectionDataSource<Data, Data.ID, Content>.OnCellEvent? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data) -> Content)) where Data: Identifiable
+	@inlinable public init<Data, Content: View>(data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: ASSectionDataSource<Data, Data.ID, Content>.OnCellEvent? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data) -> Content)) where Data: Identifiable
 	{
 		self.layout = layout
 		sections = [Section(id: 0, data: data, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, contentBuilder: content)]

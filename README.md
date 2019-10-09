@@ -14,6 +14,8 @@
   </p>
 </p>
 
+<img src="/readmeAssets/demo2.PNG" width="200"><img src="/readmeAssets/demo1.PNG" width="400">
+
 ## Table of Contents
 * [Getting Started](#getting-started)
 * [Usage](#usage)
