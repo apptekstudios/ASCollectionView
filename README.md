@@ -6,10 +6,11 @@
 
 # ASCollectionView
   <p align="left">
-    A SwiftUI port of UICollectionView
-    <a href="https://github.com/apptekstudios/repo/issues">Report Bug</a>
+    A SwiftUI port of UICollectionView & UITableView
+    <br/>
+    <a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>
     ·
-    <a href="https://github.com/apptekstudios/repo/issues">Request Feature</a>
+    <a href="https://github.com/apptekstudios/ASCollectionView/issues">Request Feature</a>
   </p>
 </p>
 
@@ -22,13 +23,24 @@
 
 ## Getting Started
 ASCollectionView is a swift package.
-To add ASCollectionView to your SwiftUI project: INSTRUCTIONS COMING SOON
+ * It can be imported into an app project using Xcode’s new Swift Packages option, which is located within the File menu.
+ * When asked, use this repository's url: https://github.com/apptekstudios/ASCollectionView
 
 ## Usage
 USAGE EXAMPLES COMING SOON
 
+
+### Layout
+ * There is inbuilt support for the new UICollectionViewCompositionalLayout.
+   * You can define layout on a per-section basis, including the use of a switch statement if desired.
+   * There are some useful structs (starting with ASCollectionViewLayout...) that allow for easy definition of list and grid-based layouts (including orthogonal grids).
+
+### Other tips
+ * See the demo project for more in-depth usage examples.
+ * Please note that you should only use @State for transient visible state in collection view cells. Anything you want to persist long-term should be stored in your model.
+
 ## Todo
-See the [open issues](https://github.com/apptekstudios/repo/issues) for a list of proposed features (and known issues).
+See the [open issues](https://github.com/apptekstudios/ASCollectionView/issues) for a list of proposed features (and known issues).
 
 ## License
 Distributed under the MIT License. See `LICENSE` for more information.
