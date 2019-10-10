@@ -84,7 +84,8 @@ struct TestView: View {
    * There are some useful structs (starting with ASCollectionViewLayout...) that allow for easy definition of list and grid-based layouts (including orthogonal grids).
 
 ### Other tips
- * See the demo project for more in-depth usage examples.
+ * You can use an enum as your SectionID (rather than just an Int), this lets you easily determine the layout of each section.
+ * See the [demo project](/Demo/) for more in-depth usage examples.
  * Please note that you should only use @State for transient visible state in collection view cells. Anything you want to persist long-term should be stored in your model.
 
 ## Todo
