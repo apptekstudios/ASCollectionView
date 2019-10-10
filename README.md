@@ -5,15 +5,15 @@
 [![MIT License][license-shield]][license-url]
 
 # ASCollectionView
-  <p align="left">
-    A SwiftUI port of UICollectionView & UITableView
-    <br/>
-    <a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/apptekstudios/ASCollectionView/issues">Request Feature</a>
-  </p>
-</p>
+A SwiftUI implementation of UICollectionView & UITableView. Here's some of its useful features:
+ * supports **preloading** and **onAppear/onDisappear**.
+ * supports **removing separators** (for tableview).
+ * supports **autosizing** of cells
+ * supports the new **UICollectionViewCompositionalLayout**, and **any other UICollectionViewLayout**
 
+<a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>  ·  <a href="https://github.com/apptekstudios/ASCollectionView/issues">Request Feature</a>
+
+### Screenshots from demo app
 <img src="/readmeAssets/demo2.PNG" width="200"><img src="/readmeAssets/demo1.PNG" width="400">
 
 ## Table of Contents
@@ -29,8 +29,54 @@ ASCollectionView is a swift package.
  * When asked, use this repository's url: https://github.com/apptekstudios/ASCollectionView
 
 ## Usage
-USAGE EXAMPLES COMING SOON
-
+Below is an example of how to include a collection view with two sections (each with their own data source). For an extended example with a custom compositional layout [see here](/readmeAssets/SampleUsage.swift). Or for more in-depth examples download the [demo project](/Demo/) included in this repo.
+```
+import ASCollectionView
+struct TestView: View {
+	@State var dataExampleA = (0 ..< 21).map { $0 }
+	@State var dataExampleB = (0 ..< 15).map { "ITEM \($0)" }
+	
+	typealias SectionID = Int
+	
+	var layout: ASCollectionViewLayout<SectionID> {
+		ASCollectionViewLayout { sectionID -> ASCollectionViewLayoutSection in
+			switch sectionID {
+			case 0:
+				return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 100), itemSpacing: 5, lineSpacing: 5, itemSize: .absolute(50))
+			default:
+				return ASCollectionViewLayoutFlow(itemSpacing: 10, lineSpacing: 10)
+			}
+		}
+	}
+	
+	var body: some View
+	{
+		ASCollectionView(layout: self.layout) {
+			ASCollectionViewSection(id: 0,
+						data: dataExampleA,
+						dataID: \.self) { item in
+				Color.blue
+				.overlay(
+					Text("\(item)")
+				)
+			}
+			ASCollectionViewSection(id: 1,
+						header:
+							HStack {
+							   Text("Section Header")
+							   Spacer()
+							}.background(Color.yellow),
+						data: dataExampleB,
+						dataID: \.self) { item in
+				Text(item)
+				   .fixedSize()
+				   .padding()
+				   .background(Color.green)
+			}
+		}
+	}
+}
+```
 
 ### Layout
  * There is inbuilt support for the new UICollectionViewCompositionalLayout.
@@ -38,7 +84,8 @@ USAGE EXAMPLES COMING SOON
    * There are some useful structs (starting with ASCollectionViewLayout...) that allow for easy definition of list and grid-based layouts (including orthogonal grids).
 
 ### Other tips
- * See the demo project for more in-depth usage examples.
+ * You can use an enum as your SectionID (rather than just an Int), this lets you easily determine the layout of each section.
+ * See the [demo project](/Demo/) for more in-depth usage examples.
  * Please note that you should only use @State for transient visible state in collection view cells. Anything you want to persist long-term should be stored in your model.
 
 ## Todo
