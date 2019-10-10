@@ -3,39 +3,51 @@
 import Foundation
 import SwiftUI
 
-struct EnvironmentKeyScrollIndicatorsEnabled: EnvironmentKey
+
+struct EnvironmentKeyInvalidateCellLayout: EnvironmentKey
+{
+	static let defaultValue: (() -> Void) = {}
+}
+
+struct EnvironmentKeyASScrollIndicatorsEnabled: EnvironmentKey
 {
 	static let defaultValue: Bool = true
 }
 
-struct EnvironmentKeyTableViewSeparatorsEnabled: EnvironmentKey
+struct EnvironmentKeyASTableViewSeparatorsEnabled: EnvironmentKey
 {
 	static let defaultValue: Bool = true
 }
 
-struct EnvironmentKeyTableViewOnReachedBottom: EnvironmentKey
+struct EnvironmentKeyASTableViewOnReachedBottom: EnvironmentKey
 {
 	static let defaultValue: (() -> Void) = {}
 }
 
 public extension EnvironmentValues
 {
+	var invalidateCellLayout: () -> Void
+	{
+		get { return self[EnvironmentKeyInvalidateCellLayout.self] }
+		set { self[EnvironmentKeyInvalidateCellLayout.self] = newValue }
+	}
+	
 	var scrollIndicatorsEnabled: Bool
 	{
-		get { return self[EnvironmentKeyScrollIndicatorsEnabled.self] }
-		set { self[EnvironmentKeyScrollIndicatorsEnabled.self] = newValue }
+		get { return self[EnvironmentKeyASScrollIndicatorsEnabled.self] }
+		set { self[EnvironmentKeyASScrollIndicatorsEnabled.self] = newValue }
 	}
 
 	var tableViewSeparatorsEnabled: Bool
 	{
-		get { return self[EnvironmentKeyTableViewSeparatorsEnabled.self] }
-		set { self[EnvironmentKeyTableViewSeparatorsEnabled.self] = newValue }
+		get { return self[EnvironmentKeyASTableViewSeparatorsEnabled.self] }
+		set { self[EnvironmentKeyASTableViewSeparatorsEnabled.self] = newValue }
 	}
 
 	var tableViewOnReachedBottom: () -> Void
 	{
-		get { return self[EnvironmentKeyTableViewOnReachedBottom.self] }
-		set { self[EnvironmentKeyTableViewOnReachedBottom.self] = newValue }
+		get { return self[EnvironmentKeyASTableViewOnReachedBottom.self] }
+		set { self[EnvironmentKeyASTableViewOnReachedBottom.self] = newValue }
 	}
 }
 
