@@ -134,8 +134,15 @@ public struct ASCollectionViewLayoutList: ASCollectionViewLayoutSection
 
 public struct ASCollectionViewLayoutFlow: ASCollectionViewLayoutSection
 {
-	var itemSpacing: CGFloat = 5
-	var lineSpacing: CGFloat = 5
+	var itemSpacing: CGFloat
+	var lineSpacing: CGFloat
+	
+	public init(itemSpacing: CGFloat = 5,
+				lineSpacing: CGFloat = 5)
+	{
+		self.itemSpacing = itemSpacing
+		self.lineSpacing = lineSpacing
+	}
 
 	public func makeLayout(in layoutEnvironment: NSCollectionLayoutEnvironment, primaryScrollDirection: UICollectionView.ScrollDirection) -> NSCollectionLayoutSection
 	{
@@ -182,12 +189,23 @@ public struct ASCollectionViewLayoutFlow: ASCollectionViewLayoutSection
 
 public struct ASCollectionViewLayoutGrid: ASCollectionViewLayoutSection
 {
-	var layoutMode: LayoutMode = .fixedNumberOfColumns(2)
-	var itemSpacing: CGFloat = 5
-	var lineSpacing: CGFloat = 5
-	var itemSize: NSCollectionLayoutDimension = .estimated(150)
+	var layoutMode: LayoutMode
+	var itemSpacing: CGFloat
+	var lineSpacing: CGFloat
+	var itemSize: NSCollectionLayoutDimension
 
-	enum LayoutMode
+	public init(layoutMode: LayoutMode = .fixedNumberOfColumns(2),
+				itemSpacing: CGFloat = 5,
+				lineSpacing: CGFloat = 5,
+				itemSize: NSCollectionLayoutDimension = .estimated(150))
+	{
+		self.layoutMode = layoutMode
+		self.itemSpacing = itemSpacing
+		self.lineSpacing = lineSpacing
+		self.itemSize = itemSize
+	}
+	
+	public enum LayoutMode
 	{
 		case fixedNumberOfColumns(Int)
 		case adaptive(withMinItemSize: CGFloat)
@@ -256,8 +274,22 @@ public struct ASCollectionViewLayoutOrthogonalGrid: ASCollectionViewLayoutSectio
 	public var itemInsets: NSDirectionalEdgeInsets = .zero
 	public var sectionInsets: NSDirectionalEdgeInsets = .zero
 
-	public init()
-	{}
+	public init(gridSize: Int = 2,
+				itemDimension: NSCollectionLayoutDimension = .fractionalWidth(0.9),
+				sectionDimension: NSCollectionLayoutDimension = .fractionalHeight(0.8),
+				orthogonalScrollingBehavior: UICollectionLayoutSectionOrthogonalScrollingBehavior = .groupPagingCentered,
+				gridSpacing: CGFloat = 5,
+				itemInsets: NSDirectionalEdgeInsets = .zero,
+				sectionInsets: NSDirectionalEdgeInsets = .zero)
+	{
+		self.gridSize = gridSize
+		self.itemDimension = itemDimension
+		self.sectionDimension = sectionDimension
+		self.orthogonalScrollingBehavior = orthogonalScrollingBehavior
+		self.gridSpacing = gridSpacing
+		self.itemInsets = itemInsets
+		self.sectionInsets = sectionInsets
+	}
 
 	public func makeLayout(in layoutEnvironment: NSCollectionLayoutEnvironment, primaryScrollDirection: UICollectionView.ScrollDirection) -> NSCollectionLayoutSection
 	{
