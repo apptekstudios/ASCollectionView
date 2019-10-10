@@ -3,7 +3,7 @@
 import Foundation
 import SwiftUI
 
-public protocol ASSectionDataSourceProtocol
+internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
@@ -14,14 +14,31 @@ public protocol ASSectionDataSourceProtocol
 	func cancelPrefetch(_ indexPaths: [IndexPath])
 }
 
-public struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View
+public enum CellEvent<Data>
 {
-	public var data: [Data]
-	public var dataIDKeyPath: KeyPath<Data, DataID>
-	public var onCellEvent: OnCellEvent?
-	public var content: (Data) -> Content
+	/// Respond by starting necessary prefetch operations for this data to be displayed soon (eg. download images)
+	case prefetchForData(data: [Data])
 	
-	public func hostController(reusingController: UIViewController? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> UIViewController?
+	/// Called when its no longer necessary to prefetch this data
+	case cancelPrefetchForData(data: [Data])
+	
+	/// Called when an item is appearing on the screen
+	case onAppear(item: Data)
+	
+	/// Called when an item is disappearing from the screen
+	case onDisappear(item: Data)
+}
+
+public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
+
+internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View
+{
+	var data: [Data]
+	var dataIDKeyPath: KeyPath<Data, DataID>
+	var onCellEvent: OnCellEvent<Data>?
+	var content: (Data) -> Content
+	
+	func hostController(reusingController: UIViewController? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> UIViewController?
 	{
 		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
 		let view = content(item)
@@ -38,12 +55,12 @@ public struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourcePro
 		}
 	}
 	
-	public func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
+	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	{
 		data.indices.map { IndexPath(item: $0, section: sectionIndex) }
 	}
 	
-	public func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
+	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
 	{
 		data.map
 			{
@@ -51,44 +68,34 @@ public struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourcePro
 		}
 	}
 	
-	public func onAppear(_ indexPath: IndexPath)
+	func onAppear(_ indexPath: IndexPath)
 	{
 		let item = data[indexPath.item]
 		onCellEvent?(.onAppear(item: item))
 	}
 	
-	public func onDisappear(_ indexPath: IndexPath)
+	func onDisappear(_ indexPath: IndexPath)
 	{
 		let item = data[indexPath.item]
 		onCellEvent?(.onDisappear(item: item))
 	}
 	
-	public func prefetch(_ indexPaths: [IndexPath])
+	func prefetch(_ indexPaths: [IndexPath])
 	{
 		let dataToPrefetch = indexPaths.map { data[$0.item] }
 		onCellEvent?(.prefetchForData(data: dataToPrefetch))
 	}
 	
-	public func cancelPrefetch(_ indexPaths: [IndexPath])
+	func cancelPrefetch(_ indexPaths: [IndexPath])
 	{
 		let dataToCancelPrefetch = indexPaths.map { data[$0.item] }
 		onCellEvent?(.cancelPrefetchForData(data: dataToCancelPrefetch))
 	}
-	
-	public enum CellEvent
-	{
-		case prefetchForData(data: [Data])
-		case cancelPrefetchForData(data: [Data])
-		case onAppear(item: Data)
-		case onDisappear(item: Data)
-	}
-	
-	public typealias OnCellEvent = ((_ event: CellEvent) -> Void)
 }
 
 extension ASSectionDataSource where Data: Identifiable, DataID == Data.ID
 {
-	init(data: [Data], onCellEvent: OnCellEvent? = nil, content: @escaping ((Data) -> Content))
+	init(data: [Data], onCellEvent: OnCellEvent<Data>? = nil, content: @escaping ((Data) -> Content))
 	{
 		self.init(data: data, dataIDKeyPath: \.id, onCellEvent: onCellEvent, content: content)
 	}

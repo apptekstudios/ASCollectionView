@@ -5,18 +5,46 @@ import SwiftUI
 
 extension ASCollectionView where SectionID == Int
 {
-	@inlinable public init<Data, DataID: Hashable, Content: View>(data: [Data], id idKeyPath: KeyPath<Data, DataID>, estimatedItemSize: CGSize? = nil, onCellEvent: ASSectionDataSource<Data, DataID, Content>.OnCellEvent? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data) -> Content))
+	/**
+	Initializes a  collection view with a single section.
+	
+	- Parameters:
+		- data: The data to display in the collection view
+		- id: The keypath to a hashable identifier of each data item
+		- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
+		- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
+		- layout: The layout to use for the collection view
+		- content: A closure returning a SwiftUI view for the given data item
+	*/
+	@inlinable public init<Data, DataID: Hashable, Content: View>(data: [Data], id idKeyPath: KeyPath<Data, DataID>, estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data) -> Content))
 	{
 		self.layout = layout
 		sections = [Section(id: 0, data: data, dataID: idKeyPath, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, contentBuilder: content)]
 	}
-
-	@inlinable public init<Data, Content: View>(data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: ASSectionDataSource<Data, Data.ID, Content>.OnCellEvent? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data) -> Content)) where Data: Identifiable
+	
+	/**
+	Initializes a  collection view with a single section.
+	
+	- Parameters:
+		- data: The data to display in the collection view. This initialiser expects data that conforms to 'Identifiable'
+		- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
+		- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
+		- layout: The layout to use for the collection view
+		- content: A closure returning a SwiftUI view for the given data item
+	*/
+	@inlinable public init<Data, Content: View>(data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data) -> Content)) where Data: Identifiable
 	{
 		self.layout = layout
 		sections = [Section(id: 0, data: data, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, contentBuilder: content)]
 	}
-
+	
+	/**
+	Initializes a  collection view with a single section and static content.
+	
+	- Parameters:
+		- layout: The layout to use for the collection view
+		- content: A closure returning a number of SwiftUI views to display in the collection view
+	*/
 	init(layout: Layout = .default, @ViewArrayBuilder content: () -> [AnyView])
 	{
 		self.layout = layout
@@ -34,12 +62,26 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 
+	/**
+	Initializes a  collection view with the given sections
+	
+	- Parameters:
+		- layout: The layout to use for the collection view
+		- sections: An array of sections (ASSection)
+	*/
 	@inlinable public init(layout: Layout = .default, sections: [Section])
 	{
 		self.layout = layout
 		self.sections = sections
 	}
-
+	
+	/**
+	Initializes a  collection view with the given sections
+	
+	- Parameters:
+		- layout: The layout to use for the collection view
+		- sections: A closure providing sections to display in the collection view (ASSection)
+	*/
 	public init(layout: Layout = .default, @SectionArrayBuilder <SectionID> sections: () -> [Section])
 	{
 		self.layout = layout

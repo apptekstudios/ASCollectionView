@@ -3,22 +3,7 @@
 import Foundation
 import SwiftUI
 
-
-struct EnvironmentKeyInvalidateCellLayout: EnvironmentKey
-{
-	static let defaultValue: (() -> Void) = {}
-}
-
-public extension EnvironmentValues
-{
-	var invalidateCellLayout: () -> Void
-	{
-		get { return self[EnvironmentKeyInvalidateCellLayout.self] }
-		set { self[EnvironmentKeyInvalidateCellLayout.self] = newValue }
-	}
-}
-
-struct ASHostingControllerModifier: ViewModifier
+internal struct ASHostingControllerModifier: ViewModifier
 {
 	var invalidateCellLayout: (() -> Void) = {}
 	func body(content: Content) -> some View
@@ -28,14 +13,13 @@ struct ASHostingControllerModifier: ViewModifier
 	}
 }
 
-
-protocol ASHostingControllerProtocol
+internal protocol ASHostingControllerProtocol
 {
 	func applyModifier(_ modifier: ASHostingControllerModifier)
 	func sizeThatFits(in size: CGSize) -> CGSize
 }
 
-class ASHostingController<ViewType: View>: UIHostingController<ModifiedContent<ViewType, ASHostingControllerModifier>>, ASHostingControllerProtocol
+internal class ASHostingController<ViewType: View>: UIHostingController<ModifiedContent<ViewType, ASHostingControllerModifier>>, ASHostingControllerProtocol
 {
 	init(_ view: ViewType)
 	{
