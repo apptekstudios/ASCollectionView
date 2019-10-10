@@ -53,25 +53,25 @@ struct TestView: View {
 	{
 		ASCollectionView(layout: self.layout) {
 			ASCollectionViewSection(id: 0,
-									data: dataExampleA,
-									dataID: \.self) { item in
+						data: dataExampleA,
+						dataID: \.self) { item in
 				Color.blue
 				.overlay(
 					Text("\(item)")
 				)
 			}
 			ASCollectionViewSection(id: 1,
-									header:
-				HStack {
-					Text("Section Header")
-					Spacer()
-				}.background(Color.yellow),
-									data: dataExampleB,
-									dataID: \.self) { item in
-										Text(item)
-											.fixedSize()
-											.padding()
-											.background(Color.green)
+						header:
+							HStack {
+							   Text("Section Header")
+							   Spacer()
+							}.background(Color.yellow),
+						data: dataExampleB,
+						dataID: \.self) { item in
+				Text(item)
+				   .fixedSize()
+				   .padding()
+				   .background(Color.green)
 			}
 		}
 	}
