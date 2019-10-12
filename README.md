@@ -68,7 +68,7 @@ struct ExampleView: View {
                                     dataID: \.self) { item in
                                         Color.blue
                                             .overlay(
-                                                Text("Complex layout - item \(item)")
+                                                Text("Complex layout - \(item)")
                                         )
             }
             .sectionHeader {
