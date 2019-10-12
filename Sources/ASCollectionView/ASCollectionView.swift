@@ -130,6 +130,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		let cellReuseID = UUID().uuidString
 		let supplementaryReuseID = UUID().uuidString
+        let supplementaryEmptyKind = UUID().uuidString //Used to prevent crash if supplementaries defined in layout but not provided by the section
 
 		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, UIViewController>()
 
@@ -166,6 +167,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			cv.delegate = self
 			cv.register(Cell.self, forCellWithReuseIdentifier: cellReuseID)
+            cv.register(ASCollectionViewSupplementaryView.self, forSupplementaryViewOfKind: supplementaryEmptyKind, withReuseIdentifier: supplementaryReuseID) //Used to prevent crash if supplementaries defined in layout but not provided by the section
 			supplementaryKinds().forEach { kind in
 				cv.register(ASCollectionViewSupplementaryView.self, forSupplementaryViewOfKind: kind, withReuseIdentifier: supplementaryReuseID)
 			}
@@ -184,9 +186,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				return cell
 			}
 			dataSource?.supplementaryViewProvider = { (cv, kind, indexPath) -> UICollectionReusableView? in
-				guard
-					let reusableView = cv.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
-				else { return nil }
+                guard self.supplementaryKinds().contains(kind) else {
+                    let emptyView = cv.dequeueReusableSupplementaryView(ofKind: self.supplementaryEmptyKind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
+                    emptyView?.setupFor(id: indexPath.section, view: nil)
+                    return emptyView
+                }
+				guard let reusableView = cv.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
+                    else { return nil }
 				let supplementaryView = self.parent.sections[indexPath.section].supplementary(ofKind: kind)
 				reusableView.setupFor(id: indexPath.section,
 				                      view: supplementaryView)
