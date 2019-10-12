@@ -150,6 +150,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			parent.sections
 				.first(where: { $0.id.hashValue == itemID.sectionIDHash })
 		}
+		
+		func supplementaryKinds() -> Set<String> {
+			parent.sections.reduce(into: Set<String>()) { result, section in result.formUnion(section.supplementaryKinds) }
+		}
 
 		func hostingController(forItemID itemID: ASCollectionViewItemUniqueID) -> UIViewController?
 		{
@@ -161,8 +165,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func setupDataSource(forCollectionView cv: UICollectionView)
 		{
 			cv.delegate = self
-			cv.register(ASCollectionViewSupplementaryView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: supplementaryReuseID)
 			cv.register(Cell.self, forCellWithReuseIdentifier: cellReuseID)
+			supplementaryKinds().forEach { kind in
+				cv.register(ASCollectionViewSupplementaryView.self, forSupplementaryViewOfKind: kind, withReuseIdentifier: supplementaryReuseID)
+			}
+			
 			dataSource = .init(collectionView: cv)
 			{ (collectionView, indexPath, itemID) -> UICollectionViewCell? in
 				guard
@@ -180,10 +187,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				guard
 					let reusableView = cv.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
 				else { return nil }
-
-				let headerView = self.parent.sections[indexPath.section].header
+				let supplementaryView = self.parent.sections[indexPath.section].supplementary(ofKind: kind)
 				reusableView.setupFor(id: indexPath.section,
-				                      view: headerView)
+				                      view: supplementaryView)
 				return reusableView
 			}
 			populateDataSource()
@@ -214,11 +220,14 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					else { return }
 					cell.update(hostController)
 				}
-				cv.indexPathsForVisibleSupplementaryElements(ofKind: UICollectionView.elementKindSectionHeader).forEach
-				{
-					guard let header = parent.sections[$0.section].header else { return }
-					(cv.supplementaryView(forElementKind: UICollectionView.elementKindSectionHeader, at: $0) as? ASCollectionViewSupplementaryView)?
-						.updateView(header)
+				
+				supplementaryKinds().forEach { kind in
+					cv.indexPathsForVisibleSupplementaryElements(ofKind: kind).forEach
+						{
+							guard let supplementaryView = parent.sections[$0.section].supplementary(ofKind: kind) else { return }
+							(cv.supplementaryView(forElementKind: kind, at: $0) as? ASCollectionViewSupplementaryView)?
+								.updateView(supplementaryView)
+					}
 				}
 			}
 			populateDataSource()

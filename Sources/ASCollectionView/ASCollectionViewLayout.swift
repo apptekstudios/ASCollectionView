@@ -102,19 +102,19 @@ public struct ASCollectionViewLayoutList: ASCollectionViewLayoutSection
 	{
 		let itemLayoutSize: NSCollectionLayoutSize
 		let groupSize: NSCollectionLayoutSize
-		let headerSize: NSCollectionLayoutSize
+		let supplementarySize: NSCollectionLayoutSize
 
 		switch primaryScrollDirection
 		{
 		case .horizontal:
 			itemLayoutSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
 			groupSize = NSCollectionLayoutSize(widthDimension: itemSize, heightDimension: .fractionalHeight(1.0))
-			headerSize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .fractionalHeight(1.0))
+			supplementarySize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .fractionalHeight(1.0))
 		case .vertical: fallthrough
 		@unknown default:
 			itemLayoutSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
 			groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: itemSize)
-			headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
+			supplementarySize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
 		}
 
 		let item = NSCollectionLayoutItem(layoutSize: itemLayoutSize)
@@ -124,10 +124,13 @@ public struct ASCollectionViewLayoutList: ASCollectionViewLayoutSection
 		section.contentInsets = sectionInsets
 		section.interGroupSpacing = spacing
 
-		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize,
+		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
 		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
 		                                                                      alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
-		section.boundarySupplementaryItems = [headerSupplementary]
+		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
+																			  elementKind: UICollectionView.elementKindSectionFooter,
+																			  alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
+		section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
 		return section
 	}
 }
@@ -148,19 +151,19 @@ public struct ASCollectionViewLayoutFlow: ASCollectionViewLayoutSection
 	{
 		let itemSize: NSCollectionLayoutSize
 		let groupSize: NSCollectionLayoutSize
-		let headerSize: NSCollectionLayoutSize
+		let supplementarySize: NSCollectionLayoutSize
 
 		switch primaryScrollDirection
 		{
 		case .horizontal:
 			itemSize = NSCollectionLayoutSize(widthDimension: .estimated(150), heightDimension: .estimated(50))
 			groupSize = NSCollectionLayoutSize(widthDimension: .estimated(150), heightDimension: .fractionalHeight(1.0))
-			headerSize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .fractionalHeight(1.0))
+			supplementarySize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .fractionalHeight(1.0))
 		case .vertical: fallthrough
 		@unknown default:
 			itemSize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .estimated(55))
 			groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(55))
-			headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
+			supplementarySize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
 		}
 
 		let item = NSCollectionLayoutItem(layoutSize: itemSize)
@@ -179,10 +182,13 @@ public struct ASCollectionViewLayoutFlow: ASCollectionViewLayoutSection
 		let section = NSCollectionLayoutSection(group: group)
 		section.interGroupSpacing = lineSpacing
 
-		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize,
+		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
 		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
 		                                                                      alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
-		section.boundarySupplementaryItems = [headerSupplementary]
+		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
+																			  elementKind: UICollectionView.elementKindSectionFooter,
+																			  alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
+		section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
 		return section
 	}
 }
@@ -226,19 +232,19 @@ public struct ASCollectionViewLayoutGrid: ASCollectionViewLayoutSection
 
 		let itemLayoutSize: NSCollectionLayoutSize
 		let groupSize: NSCollectionLayoutSize
-		let headerSize: NSCollectionLayoutSize
+		let supplementarySize: NSCollectionLayoutSize
 
 		switch primaryScrollDirection
 		{
 		case .horizontal:
 			itemLayoutSize = NSCollectionLayoutSize(widthDimension: itemSize, heightDimension: .fractionalHeight(1.0))
 			groupSize = NSCollectionLayoutSize(widthDimension: itemSize, heightDimension: .fractionalHeight(1.0))
-			headerSize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .fractionalHeight(1.0))
+			supplementarySize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .fractionalHeight(1.0))
 		case .vertical: fallthrough
 		@unknown default:
 			itemLayoutSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: itemSize)
 			groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: itemSize)
-			headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
+			supplementarySize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
 		}
 		let item = NSCollectionLayoutItem(layoutSize: itemLayoutSize)
 
@@ -256,10 +262,13 @@ public struct ASCollectionViewLayoutGrid: ASCollectionViewLayoutSection
 		let section = NSCollectionLayoutSection(group: group)
 		section.interGroupSpacing = lineSpacing
 
-		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize,
+		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
 		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
 		                                                                      alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
-		section.boundarySupplementaryItems = [headerSupplementary]
+		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
+																			  elementKind: UICollectionView.elementKindSectionFooter,
+																			  alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
+		section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
 		return section
 	}
 }
@@ -297,15 +306,15 @@ public struct ASCollectionViewLayoutOrthogonalGrid: ASCollectionViewLayoutSectio
 
 		let itemSize: NSCollectionLayoutSize
 		let groupSize: NSCollectionLayoutSize
-		let headerSize: NSCollectionLayoutSize
+		let supplementarySize: NSCollectionLayoutSize
 
 		switch primaryScrollDirection
 		{
 		case .horizontal:
-			headerSize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .fractionalHeight(1.0))
+			supplementarySize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .fractionalHeight(1.0))
 		case .vertical: fallthrough
 		@unknown default:
-			headerSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
+			supplementarySize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
 		}
 		switch orthogonalScrollDirection
 		{
@@ -335,12 +344,16 @@ public struct ASCollectionViewLayoutOrthogonalGrid: ASCollectionViewLayoutSectio
 		section.orthogonalScrollingBehavior = orthogonalScrollingBehavior
 		section.contentInsets = sectionInsets
 
-		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: headerSize,
+		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
 		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
 		                                                                      alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
+		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
+																			  elementKind: UICollectionView.elementKindSectionFooter,
+																			  alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
 		headerSupplementary.contentInsets = itemInsets
+		footerSupplementary.contentInsets = itemInsets
 
-		section.boundarySupplementaryItems = [headerSupplementary]
+		section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
 		return section
 	}
 }
