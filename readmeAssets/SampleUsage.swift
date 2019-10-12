@@ -1,7 +1,7 @@
 import SwiftUI
 import ASCollectionView
 
-struct TestView: View {
+struct ExampleView: View {
 	@State var dataExampleA = (0 ..< 21).map { $0 }
 	@State var dataExampleB = (0 ..< 15).map { "ITEM \($0)" }
 	
@@ -12,10 +12,8 @@ struct TestView: View {
 			switch sectionID {
 			case 0:
 				return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 100), itemSpacing: 5, lineSpacing: 5, itemSize: .absolute(50))
-			case 1:
-				return self.customSectionLayout
 			default:
-				return ASCollectionViewLayoutFlow(itemSpacing: 10, lineSpacing: 10)
+				return self.customSectionLayout
 			}
 		}
 	}
@@ -32,25 +30,24 @@ struct TestView: View {
 										)
 			}
 			ASCollectionViewSection(id: 1,
-									data: dataExampleA,
+									data: dataExampleB,
 									dataID: \.self) { item in
 										Color.blue
 											.overlay(
 												Text("Complex layout - item \(item)")
 										)
 			}
-			ASCollectionViewSection(id: 2,
-									header:
+			.sectionHeader {
 				HStack {
-					Text("Section Header")
+					Text("Section header")
+						.padding()
 					Spacer()
-				}.background(Color.yellow),
-									data: dataExampleB,
-									dataID: \.self) { item in
-										Text(item)
-											.fixedSize()
-											.padding()
-											.background(Color.green)
+				}
+				.background(Color.yellow)
+			}
+			.sectionFooter {
+				Text("This is a section footer!")
+					.padding()
 			}
 		}
 	}
@@ -80,6 +77,15 @@ struct TestView: View {
 		let outerGroup = NSCollectionLayoutGroup.vertical(layoutSize: outerGroupSize, subitems: [verticalAndFeatureGroupA, rowGroup, verticalAndFeatureGroupB, rowGroup])
 		
 		let section = NSCollectionLayoutSection(group: outerGroup)
+		
+		let supplementarySize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
+		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
+																			  elementKind: UICollectionView.elementKindSectionHeader,
+																			  alignment: .top)
+		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
+																			  elementKind: UICollectionView.elementKindSectionFooter,
+																			  alignment: .bottom)
+		section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
 		return section
 	}
 }

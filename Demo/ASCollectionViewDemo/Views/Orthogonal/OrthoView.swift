@@ -143,7 +143,6 @@ struct OrthoView: View
 		data.enumerated().map
 		{ (sectionID, sectionData) -> ASCollectionViewSection<Int> in
 			ASCollectionViewSection(id: sectionID,
-			                        header: header(withTitle: sectionData.sectionTitle),
 			                        data: sectionData.apps,
 			                        onCellEvent: { event in
 			                        	switch event
@@ -199,6 +198,9 @@ struct OrthoView: View
 				{
 					AppViewCompact(app: item)
 				}
+			}
+			.sectionHeader {
+				self.header(withTitle: sectionData.sectionTitle)
 			}
 		}
 	}

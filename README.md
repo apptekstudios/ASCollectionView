@@ -32,7 +32,7 @@ ASCollectionView is a swift package.
 Below is an example of how to include a collection view with two sections (each with their own data source). For an extended example with a custom compositional layout [see here](/readmeAssets/SampleUsage.swift). Or for more in-depth examples download the [demo project](/Demo/) included in this repo.
 ```
 import ASCollectionView
-struct TestView: View {
+struct ExampleView: View {
 	@State var dataExampleA = (0 ..< 21).map { $0 }
 	@State var dataExampleB = (0 ..< 15).map { "ITEM \($0)" }
 	
@@ -42,9 +42,10 @@ struct TestView: View {
 		ASCollectionViewLayout { sectionID -> ASCollectionViewLayoutSection in
 			switch sectionID {
 			case 0:
+                // Here we use one of the predefined convenience layouts
 				return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 100), itemSpacing: 5, lineSpacing: 5, itemSize: .absolute(50))
 			default:
-				return ASCollectionViewLayoutFlow(itemSpacing: 10, lineSpacing: 10)
+				return self.customSectionLayout
 			}
 		}
 	}
@@ -53,27 +54,41 @@ struct TestView: View {
 	{
 		ASCollectionView(layout: self.layout) {
 			ASCollectionViewSection(id: 0,
-						data: dataExampleA,
-						dataID: \.self) { item in
-				Color.blue
-				.overlay(
-					Text("\(item)")
-				)
+									data: dataExampleA,
+									dataID: \.self) { item in
+										Color.blue
+											.overlay(
+												Text("\(item)")
+										)
 			}
 			ASCollectionViewSection(id: 1,
-						header:
-							HStack {
-							   Text("Section Header")
-							   Spacer()
-							}.background(Color.yellow),
-						data: dataExampleB,
-						dataID: \.self) { item in
-				Text(item)
-				   .fixedSize()
-				   .padding()
-				   .background(Color.green)
+									data: dataExampleB,
+									dataID: \.self) { item in
+										Color.blue
+											.overlay(
+												Text("Complex layout - item \(item)")
+										)
+			}
+			.sectionHeader {
+				HStack {
+					Text("Section header")
+						.padding()
+					Spacer()
+				}
+				.background(Color.yellow)
+			}
+			.sectionFooter {
+				Text("This is a section footer!")
+					.padding()
 			}
 		}
+	}
+	
+	let customSectionLayout = ASCollectionViewLayoutCustomCompositionalSection { (layoutEnvironment, _) -> NSCollectionLayoutSection in
+		...
+        Your custom compositional layout section here. For an example <a href="/readmeAssets/SampleUsage.swift">see here</a>
+        ...
+		return section
 	}
 }
 ```

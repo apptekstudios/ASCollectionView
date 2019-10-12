@@ -24,7 +24,8 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 {
 	public var id: SectionID
 
-	public var header: AnyView?
+	private var supplementaryViews: [String: AnyView] = [:]
+	
 	internal var dataSource: ASSectionDataSourceProtocol
 
 	public var itemIDs: [ASCollectionViewItemUniqueID]
@@ -63,6 +64,8 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 	}
 
 	var estimatedItemSize: CGSize?
+	
+	
 
 	/**
 	Initializes a  section with data
@@ -90,35 +93,6 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 		                                                                      content: contentBuilder)
 	}
 
-	/**
-	Initializes a  section with data
-	
-	- Parameters:
-		- id: The id for this section
-		- header: A SwiftUI view to use as the section header
-		- data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'
-		- dataID: The keypath to a hashable identifier of each data item
-		- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
-		- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
-		- contentBuilder: A closure returning a SwiftUI view for the given data item
-	*/
-	public init<Header: View, Data, DataID: Hashable, Content: View>(id: SectionID,
-	                                                                 header: Header,
-	                                                                 data: [Data],
-	                                                                 dataID dataIDKeyPath: KeyPath<Data, DataID>,
-	                                                                 estimatedItemSize: CGSize? = nil,
-	                                                                 onCellEvent: OnCellEvent<Data>? = nil,
-	                                                                 @ViewBuilder contentBuilder: @escaping ((Data) -> Content))
-	{
-		self.init(id: id,
-		          data: data,
-		          dataID: dataIDKeyPath,
-		          estimatedItemSize: estimatedItemSize,
-		          onCellEvent: onCellEvent,
-		          contentBuilder: contentBuilder)
-		self.header = AnyView(header)
-	}
-
 	public func hash(into hasher: inout Hasher)
 	{
 		hasher.combine(id)
@@ -127,6 +101,56 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 	public static func ==(lhs: ASCollectionViewSection<SectionID>, rhs: ASCollectionViewSection<SectionID>) -> Bool
 	{
 		lhs.id == rhs.id
+	}
+}
+
+// MARK: SUPPLEMENTARY VIEWS - INTERNAL
+internal extension ASCollectionViewSection {
+	mutating func setHeaderView<Content: View>(_ view: Content?) {
+		setSupplementaryView(view, ofKind: UICollectionView.elementKindSectionHeader)
+	}
+	
+	mutating func setFooterView<Content: View>(_ view: Content?) {
+		setSupplementaryView(view, ofKind: UICollectionView.elementKindSectionFooter)
+	}
+	
+	mutating func setSupplementaryView<Content: View>(_ view: Content?, ofKind kind: String) {
+		guard let view = view else {
+			supplementaryViews.removeValue(forKey: kind)
+			return
+		}
+		
+		supplementaryViews[kind] = AnyView(view)
+	}
+	
+	var supplementaryKinds: Set<String> {
+		Set(supplementaryViews.keys)
+	}
+	
+	func supplementary(ofKind kind: String) -> AnyView? {
+		supplementaryViews[kind]
+	}
+}
+
+// MARK: SUPPLEMENTARY VIEWS - PUBLIC MODIFIERS
+
+public extension ASCollectionViewSection {
+	func sectionHeader<Content: View>(content: (() -> Content?)) -> Self {
+		var section = self
+		section.setHeaderView(content())
+		return section
+	}
+	
+	func sectionFooter<Content: View>(content: (() -> Content?)) -> Self {
+		var section = self
+		section.setFooterView(content())
+		return section
+	}
+	
+	func sectionSupplementary<Content: View>(ofKind kind: String, content: (() -> Content?)) -> Self {
+		var section = self
+		section.setSupplementaryView(content(), ofKind: kind)
+		return section
 	}
 }
 
@@ -151,20 +175,6 @@ public extension ASCollectionViewSection
 			},
 		                                                                                                                         content: { $0.view })
 	}
-	
-	/**
-	Initializes a section with static content
-	
-	- Parameters:
-		- id: The id for this section
-		- header: A SwiftUI view to use as the section header
-		- content: A closure returning a number of SwiftUI views to display in the collection view
-	*/
-	init<Header: View>(id: SectionID, header: Header, @ViewArrayBuilder content: () -> [AnyView])
-	{
-		self.init(id: id, content: content)
-		self.header = AnyView(header)
-	}
 }
 
 // MARK: IDENTIFIABLE DATA SECTION
@@ -184,21 +194,5 @@ public extension ASCollectionViewSection
 	@inlinable init<Content: View, Data: Identifiable>(id: SectionID, data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, @ViewBuilder contentBuilder: @escaping ((Data) -> Content))
 	{
 		self.init(id: id, data: data, dataID: \.id, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, contentBuilder: contentBuilder)
-	}
-
-	/**
-	Initializes a  section with identifiable data
-	
-	- Parameters:
-		- id: The id for this section
-		- header: A SwiftUI view to use as the section header
-		- data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'
-		- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
-		- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
-		- contentBuilder: A closure returning a SwiftUI view for the given data item
-	*/
-	init<Content: View, Header: View, Data: Identifiable>(id: SectionID, header: Header, data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, @ViewBuilder contentBuilder: @escaping ((Data) -> Content))
-	{
-		self.init(id: id, header: AnyView(header), data: data, dataID: \.id, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, contentBuilder: contentBuilder)
 	}
 }
