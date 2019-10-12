@@ -31,65 +31,76 @@ ASCollectionView is a swift package.
 ## Usage
 Below is an example of how to include a collection view with two sections (each with their own data source). For an extended example with a custom compositional layout [see here](/readmeAssets/SampleUsage.swift). Or for more in-depth examples download the [demo project](/Demo/) included in this repo.
 ```
+//
+//  File.swift
+//  ASCollectionViewDemo
+//
+//  Created by Toby Brennan on 12/10/19.
+//  Copyright © 2019 Apptek Studios. All rights reserved.
+//
+
+import Foundation
+
 import ASCollectionView
+
 struct ExampleView: View {
-	@State var dataExampleA = (0 ..< 21).map { $0 }
-	@State var dataExampleB = (0 ..< 15).map { "ITEM \($0)" }
-	
-	typealias SectionID = Int
-	
-	var layout: ASCollectionViewLayout<SectionID> {
-		ASCollectionViewLayout { sectionID -> ASCollectionViewLayoutSection in
-			switch sectionID {
-			case 0:
+    @State var dataExampleA = (0 ..< 21).map { $0 }
+    @State var dataExampleB = (0 ..< 15).map { "ITEM \($0)" }
+    
+    typealias SectionID = Int
+    
+    var layout: ASCollectionViewLayout<SectionID> {
+        ASCollectionViewLayout { sectionID -> ASCollectionViewLayoutSection in
+            switch sectionID {
+            case 0:
                 // Here we use one of the predefined convenience layouts
-				return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 100), itemSpacing: 5, lineSpacing: 5, itemSize: .absolute(50))
-			default:
-				return self.customSectionLayout
-			}
-		}
-	}
-	
-	var body: some View
-	{
-		ASCollectionView(layout: self.layout) {
-			ASCollectionViewSection(id: 0,
-									data: dataExampleA,
-									dataID: \.self) { item in
-										Color.blue
-											.overlay(
-												Text("\(item)")
-										)
-			}
-			ASCollectionViewSection(id: 1,
-									data: dataExampleB,
-									dataID: \.self) { item in
-										Color.blue
-											.overlay(
-												Text("Complex layout - item \(item)")
-										)
-			}
-			.sectionHeader {
-				HStack {
-					Text("Section header")
-						.padding()
-					Spacer()
-				}
-				.background(Color.yellow)
-			}
-			.sectionFooter {
-				Text("This is a section footer!")
-					.padding()
-			}
-		}
-	}
-	
-	let customSectionLayout = ASCollectionViewLayoutCustomCompositionalSection { (layoutEnvironment, _) -> NSCollectionLayoutSection in
-		// ...
+                return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 100), itemSpacing: 5, lineSpacing: 5, itemSize: .absolute(50))
+            default:
+                return self.customSectionLayout
+            }
+        }
+    }
+    
+    var body: some View
+    {
+        ASCollectionView(layout: self.layout) {
+            ASCollectionViewSection(id: 0,
+                                    data: dataExampleA,
+                                    dataID: \.self) { item in
+                                        Color.blue
+                                            .overlay(
+                                                Text("\(item)")
+                                        )
+            }
+            ASCollectionViewSection(id: 1,
+                                    data: dataExampleB,
+                                    dataID: \.self) { item in
+                                        Color.blue
+                                            .overlay(
+                                                Text("Complex layout - item \(item)")
+                                        )
+            }
+            .sectionHeader {
+                HStack {
+                    Text("Section header")
+                        .padding()
+                    Spacer()
+                }
+                .background(Color.yellow)
+            }
+            .sectionFooter {
+                Text("This is a section footer!")
+                    .padding()
+            }
+        }
+    }
+    
+    let customSectionLayout = ASCollectionViewLayoutCustomCompositionalSection { (layoutEnvironment, _) -> NSCollectionLayoutSection in
+        // ...
         // Your custom compositional layout section here. For an example see this file: /readmeAssets/SampleUsage.swift
         // ...
-		return section
-	}
+        return section
+    }
 }
 ```
 
