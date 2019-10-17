@@ -267,89 +267,77 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		private var prefetchSubscription: AnyCancellable?
 		private var currentlyPrefetching: Set<IndexPath> = []
 
-		func setupPrefetching()
-		{
-			prefetchSubscription = queuePrefetch
-				.collect(.byTime(DispatchQueue.main, 0.1)) // Wanted to use .throttle(for: 0.1, scheduler: DispatchQueue(label: "TEST"), latest: true) -> THIS CRASHES?? BUG??
-				.compactMap
-			{ _ in
-				self.collectionViewController?.collectionView.indexPathsForVisibleItems
-			}
-			.receive(on: DispatchQueue.global(qos: .background))
-			.map
-			{ visibleIndexPaths -> [Int: [IndexPath]] in
-				let visibleIndexPathsBySection = Dictionary(grouping: visibleIndexPaths) { $0.section }.compactMapValues
-				{ (indexPaths) -> (section: Int, first: Int, last: Int)? in
-					guard let first = indexPaths.min(), let last = indexPaths.max() else { return nil }
-					return (section: first.section, first: first.item, last: last.item)
-				}
-				var toPrefetch: [Int: [IndexPath]] = visibleIndexPathsBySection.mapValues
-				{ item in
-					let sectionIndexPaths = self.parent.sections[item.section].getIndexPaths(withSectionIndex: item.section)
-					let nextItemsInSection = sectionIndexPaths.suffix(from: item.last).dropFirst().prefix(5)
-					let previousItemsInSection = sectionIndexPaths.prefix(upTo: item.first).suffix(5)
-					return Array(nextItemsInSection) + Array(previousItemsInSection)
-				}
-				// CHECK IF THERES AN EARLIER SECTION TO PRELOAD
-				if
-					let firstSection = toPrefetch.keys.min(), // FIND THE EARLIEST VISIBLE SECTION
-					(firstSection - 1) >= self.parent.sections.startIndex, // CHECK THERE IS A SECTION BEFORE THIS
-					let firstIndex = visibleIndexPathsBySection[firstSection]?.first, firstIndex < 5 // CHECK HOW CLOSE TO THIS SECTION WE ARE
-				{
-					let precedingSection = firstSection - 1
-					toPrefetch[precedingSection] = self.parent.sections[precedingSection].getIndexPaths(withSectionIndex: precedingSection).suffix(5)
-				}
-				// CHECK IF THERES A LATER SECTION TO PRELOAD
-				if
-					let lastSection = toPrefetch.keys.max(), // FIND THE EARLIEST VISIBLE SECTION
-					(lastSection + 1) < self.parent.sections.endIndex, // CHECK THERE IS A SECTION BEFORE THIS
-					let lastIndex = visibleIndexPathsBySection[lastSection]?.last,
-					let lastSectionEndIndex = self.parent.sections[lastSection].getIndexPaths(withSectionIndex: lastSection).last?.item,
-					(lastSectionEndIndex - lastIndex) < 5 // CHECK HOW CLOSE TO THIS SECTION WE ARE
-				{
-					let nextSection = lastSection + 1
-					toPrefetch[nextSection] = Array(self.parent.sections[nextSection].getIndexPaths(withSectionIndex: nextSection).prefix(5))
-				}
-				return toPrefetch
-			}
-			.sink
-			{ prefetch in
-				prefetch.forEach
-				{ sectionIndex, toPrefetch in
-					if !toPrefetch.isEmpty
-					{
-						self.parent.sections[sectionIndex].prefetch(toPrefetch)
-					}
-					let toCancel = Array(self.currentlyPrefetching.filter { $0.section == sectionIndex }.subtracting(toPrefetch))
-					if !toCancel.isEmpty
-					{
-						self.parent.sections[sectionIndex].cancelPrefetch(toCancel)
-					}
-				}
-
-				self.currentlyPrefetching = Set(prefetch.flatMap { $0.value })
-			}
-		}
 
 		/*
-		 //DISABLED AS PREFETCH API WAS NOT WORKING FOR COMPOSITIONAL LAYOUT
-		  public func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) {
-		  print("PREFETCH \(indexPaths)")
-		 /* let itemIDsToPrefetchBySection: [Int: [ASCollectionViewItemUniqueID]] = indexPaths.reduce(into: [:]) { (result, indexPath) in
-		         guard let itemID = dataSource?.itemIdentifier(for: indexPath) else { return }
-		         if result[indexPath.section] == nil {
-		             result[indexPath.section] = [itemID]
-		         } else {
-		             result[indexPath.section]?.append(itemID)
-		         }
-		     }
-		     itemIDsToPrefetchBySection.forEach {
-		         parent.sections[$0.key].onCellEvent($0.value)
-		     } */
-		  }
-
-		  public func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath]) {
-		  print("CANCEL PREFETCH \(indexPaths)")
-		  }*/
+		 //REPLACED WITH CUSTOM PREFETCH SOLUTION AS PREFETCH API WAS NOT WORKING FOR COMPOSITIONAL LAYOUT
+		  public func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath])
+		  public func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath])
+        */
 	}
+}
+
+extension ASCollectionView.Coordinator {
+    func setupPrefetching()
+    {
+        prefetchSubscription = queuePrefetch
+            .collect(.byTime(DispatchQueue.main, 0.1)) // Wanted to use .throttle(for: 0.1, scheduler: DispatchQueue(label: "TEST"), latest: true) -> THIS CRASHES?? BUG??
+            .compactMap
+            { _ in
+                self.collectionViewController?.collectionView.indexPathsForVisibleItems
+        }
+        .receive(on: DispatchQueue.global(qos: .background))
+        .map
+            { visibleIndexPaths -> [Int: [IndexPath]] in
+                let visibleIndexPathsBySection = Dictionary(grouping: visibleIndexPaths) { $0.section }.compactMapValues
+                { (indexPaths) -> (section: Int, first: Int, last: Int)? in
+                    guard let first = indexPaths.min(), let last = indexPaths.max() else { return nil }
+                    return (section: first.section, first: first.item, last: last.item)
+                }
+                var toPrefetch: [Int: [IndexPath]] = visibleIndexPathsBySection.mapValues
+                { item in
+                    let sectionIndexPaths = self.parent.sections[item.section].getIndexPaths(withSectionIndex: item.section)
+                    let nextItemsInSection = sectionIndexPaths.suffix(from: item.last).dropFirst().prefix(5)
+                    let previousItemsInSection = sectionIndexPaths.prefix(upTo: item.first).suffix(5)
+                    return Array(nextItemsInSection) + Array(previousItemsInSection)
+                }
+                // CHECK IF THERES AN EARLIER SECTION TO PRELOAD
+                if
+                    let firstSection = toPrefetch.keys.min(), // FIND THE EARLIEST VISIBLE SECTION
+                    (firstSection - 1) >= self.parent.sections.startIndex, // CHECK THERE IS A SECTION BEFORE THIS
+                    let firstIndex = visibleIndexPathsBySection[firstSection]?.first, firstIndex < 5 // CHECK HOW CLOSE TO THIS SECTION WE ARE
+                {
+                    let precedingSection = firstSection - 1
+                    toPrefetch[precedingSection] = self.parent.sections[precedingSection].getIndexPaths(withSectionIndex: precedingSection).suffix(5)
+                }
+                // CHECK IF THERES A LATER SECTION TO PRELOAD
+                if
+                    let lastSection = toPrefetch.keys.max(), // FIND THE EARLIEST VISIBLE SECTION
+                    (lastSection + 1) < self.parent.sections.endIndex, // CHECK THERE IS A SECTION BEFORE THIS
+                    let lastIndex = visibleIndexPathsBySection[lastSection]?.last,
+                    let lastSectionEndIndex = self.parent.sections[lastSection].getIndexPaths(withSectionIndex: lastSection).last?.item,
+                    (lastSectionEndIndex - lastIndex) < 5 // CHECK HOW CLOSE TO THIS SECTION WE ARE
+                {
+                    let nextSection = lastSection + 1
+                    toPrefetch[nextSection] = Array(self.parent.sections[nextSection].getIndexPaths(withSectionIndex: nextSection).prefix(5))
+                }
+                return toPrefetch
+        }
+        .sink
+            { prefetch in
+                prefetch.forEach
+                    { sectionIndex, toPrefetch in
+                        if !toPrefetch.isEmpty
+                        {
+                            self.parent.sections[sectionIndex].prefetch(toPrefetch)
+                        }
+                        let toCancel = Array(self.currentlyPrefetching.filter { $0.section == sectionIndex }.subtracting(toPrefetch))
+                        if !toCancel.isEmpty
+                        {
+                            self.parent.sections[sectionIndex].cancelPrefetch(toCancel)
+                        }
+                }
+                
+                self.currentlyPrefetching = Set(prefetch.flatMap { $0.value })
+        }
+    }
 }
