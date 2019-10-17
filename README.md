@@ -11,7 +11,8 @@ A SwiftUI implementation of UICollectionView & UITableView. Here's some of its u
  * supports **autosizing** of cells
  * supports the new **UICollectionViewCompositionalLayout**, and **any other UICollectionViewLayout**
 
-<a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>  ·  <a href="https://github.com/apptekstudios/ASCollectionView/issues">Request Feature</a>
+### Pull requests and suggestions welcome :)
+<a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>  ·  <a href="https://github.com/apptekstudios/ASCollectionView/issues">Suggest a feature</a>
 
 ### Screenshots from demo app
 <img src="/readmeAssets/demo2.PNG" width="200"><img src="/readmeAssets/demo1.PNG" width="400">
