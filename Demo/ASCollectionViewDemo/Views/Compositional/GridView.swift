@@ -65,6 +65,10 @@ struct GridView: View
 			{ item in
 				ASRemoteImageView(item.squareThumbURL)
 					.aspectRatio(1, contentMode: .fill)
+                    .contextMenu {
+                        Text("Test item")
+                        Text("Another item")
+                }
 			}
 		}
 	}

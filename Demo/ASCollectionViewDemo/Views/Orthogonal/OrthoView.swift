@@ -72,7 +72,8 @@ struct OrthoView: View
 														   heightDimension: .estimated(34)),
 						elementKind: UICollectionView.elementKindSectionHeader,
 						alignment: .top)
-					header.contentInsets = nestedGroup.contentInsets
+                    header.contentInsets.leading = nestedGroup.contentInsets.leading
+                    header.contentInsets.trailing = nestedGroup.contentInsets.trailing
 					
 					let section = NSCollectionLayoutSection(group: nestedGroup)
 					section.boundarySupplementaryItems = [header]
@@ -110,7 +111,8 @@ struct OrthoView: View
 														   heightDimension: .estimated(34)),
 						elementKind: UICollectionView.elementKindSectionHeader,
 						alignment: .top)
-					header.contentInsets = nestedGroup.contentInsets
+                    header.contentInsets.leading = nestedGroup.contentInsets.leading
+                    header.contentInsets.trailing = nestedGroup.contentInsets.trailing
 					
 					let section = NSCollectionLayoutSection(group: nestedGroup)
 					section.boundarySupplementaryItems = [header]
