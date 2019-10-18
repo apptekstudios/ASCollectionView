@@ -31,7 +31,8 @@ ASCollectionView is a swift package.
 
 ## Usage
 Below is an example of how to include a collection view with two sections (each with their own data source). For an extended example with a custom compositional layout [see here](/readmeAssets/SampleUsage.swift). Or for more in-depth examples download the [demo project](/Demo/) included in this repo.
-```
+
+```swift
 import SwiftUI
 import ASCollectionView
 
