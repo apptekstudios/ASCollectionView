@@ -243,6 +243,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			(cell as? Cell)?.willAppear(in: collectionViewController)
 			currentlyPrefetching.remove(indexPath)
+            guard indexPath.section < parent.sections.endIndex else { return }
 			parent.sections[indexPath.section].onAppear(indexPath)
 			queuePrefetch.send()
 		}
@@ -250,6 +251,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		public func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 		{
 			(cell as? Cell)?.didDisappear()
+            guard indexPath.section < parent.sections.endIndex else { return }
 			parent.sections[indexPath.section].onDisappear(indexPath)
 		}
 
