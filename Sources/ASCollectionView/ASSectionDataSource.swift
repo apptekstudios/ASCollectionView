@@ -70,12 +70,14 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 	
 	func onAppear(_ indexPath: IndexPath)
 	{
+        guard indexPath.item < data.endIndex else { return }
 		let item = data[indexPath.item]
 		onCellEvent?(.onAppear(item: item))
 	}
 	
 	func onDisappear(_ indexPath: IndexPath)
 	{
+        guard indexPath.item < data.endIndex else { return }
 		let item = data[indexPath.item]
 		onCellEvent?(.onDisappear(item: item))
 	}
