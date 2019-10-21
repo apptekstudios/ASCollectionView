@@ -36,21 +36,18 @@ class ASCollectionViewCell: UICollectionViewCell
 
 	func willAppear(in vc: UIViewController?)
 	{
-		if hostingController?.parent !== vc
-		{
-			hostingController?.removeFromParent()
-			hostingController.map
-			{
-				vc?.addChild($0)
-				if $0.view.superview !== contentView
-				{
-					contentView.subviews.forEach { $0.removeFromSuperview() }
-					contentView.addSubview($0.view)
-				}
-			}
-			setNeedsLayout()
-			vc.map { hostingController?.didMove(toParent: $0) }
-		}
+        hostingController?.removeFromParent()
+        contentView.subviews.forEach { $0.removeFromSuperview() }
+        
+        hostingController.map
+            {
+                vc?.addChild($0)
+                contentView.addSubview($0.view)
+                
+                setNeedsLayout()
+                
+                vc.map { hostingController?.didMove(toParent: $0) }
+        }
 	}
 
 	func didDisappear()
