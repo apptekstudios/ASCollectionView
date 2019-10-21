@@ -298,8 +298,14 @@ extension ASCollectionView.Coordinator {
                 var toPrefetch: [Int: [IndexPath]] = visibleIndexPathsBySection.mapValues
                 { item in
                     let sectionIndexPaths = self.parent.sections[item.section].getIndexPaths(withSectionIndex: item.section)
-                    let nextItemsInSection = sectionIndexPaths.suffix(from: item.last).dropFirst().prefix(5)
-                    let previousItemsInSection = sectionIndexPaths.prefix(upTo: item.first).suffix(5)
+                    let nextItemsInSection: ArraySlice<IndexPath> = {
+                        guard (item.last + 1) < sectionIndexPaths.endIndex else { return [] }
+                        return sectionIndexPaths[(item.last + 1) ..< min(item.last + 6, sectionIndexPaths.endIndex)]
+                    }()
+                    let previousItemsInSection: ArraySlice<IndexPath> = {
+                        guard (item.first - 1) >= sectionIndexPaths.startIndex else { return [] }
+                        return sectionIndexPaths[max(sectionIndexPaths.startIndex, item.first - 5) ..< item.first]
+                    }()
                     return Array(nextItemsInSection) + Array(previousItemsInSection)
                 }
                 // CHECK IF THERES AN EARLIER SECTION TO PRELOAD
@@ -313,8 +319,8 @@ extension ASCollectionView.Coordinator {
                 }
                 // CHECK IF THERES A LATER SECTION TO PRELOAD
                 if
-                    let lastSection = toPrefetch.keys.max(), // FIND THE EARLIEST VISIBLE SECTION
-                    (lastSection + 1) < self.parent.sections.endIndex, // CHECK THERE IS A SECTION BEFORE THIS
+                    let lastSection = toPrefetch.keys.max(), // FIND THE LAST VISIBLE SECTION
+                    (lastSection + 1) < self.parent.sections.endIndex, // CHECK THERE IS A SECTION AFTER THIS
                     let lastIndex = visibleIndexPathsBySection[lastSection]?.last,
                     let lastSectionEndIndex = self.parent.sections[lastSection].getIndexPaths(withSectionIndex: lastSection).last?.item,
                     (lastSectionEndIndex - lastIndex) < 5 // CHECK HOW CLOSE TO THIS SECTION WE ARE
