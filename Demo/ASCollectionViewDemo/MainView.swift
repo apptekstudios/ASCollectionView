@@ -8,24 +8,30 @@ struct MainView: View
 	{
 		TabView
 		{
-			FeedView()
-				.tabItem
-			{
-				Image(systemName: "1.square.fill")
-				Text("Feed")
-			}
-			GridView()
-				.tabItem
-			{
-				Image(systemName: "2.square.fill")
-				Text("Explore")
-			}
-			OrthoView()
-				.tabItem
-			{
-				Image(systemName: "3.square.fill")
-				Text("Store")
-			}
+            InstaFeedScreen()
+                .tabItem
+                {
+                    Image(systemName: "1.square.fill")
+                    Text("Insta Feed")
+            }
+            PhotoGridScreen()
+                .tabItem
+                {
+                    Image(systemName: "2.square.fill")
+                    Text("Photo grid")
+            }
+            AppStoreScreen()
+                .tabItem
+                {
+                    Image(systemName: "3.square.fill")
+                    Text("App Store")
+            }
+            TagsScreen()
+                .tabItem
+                {
+                    Image(systemName: "4.square.fill")
+                    Text("Tags Flow Layout")
+            }
 		}
 	}
 }

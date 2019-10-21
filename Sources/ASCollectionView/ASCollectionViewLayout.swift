@@ -156,12 +156,12 @@ public struct ASCollectionViewLayoutFlow: ASCollectionViewLayoutSection
 		switch primaryScrollDirection
 		{
 		case .horizontal:
-			itemSize = NSCollectionLayoutSize(widthDimension: .estimated(150), heightDimension: .estimated(50))
+            itemSize = NSCollectionLayoutSize(widthDimension: .estimated(150), heightDimension: .estimated(layoutEnvironment.container.effectiveContentSize.height))
 			groupSize = NSCollectionLayoutSize(widthDimension: .estimated(150), heightDimension: .fractionalHeight(1.0))
 			supplementarySize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .fractionalHeight(1.0))
 		case .vertical: fallthrough
 		@unknown default:
-			itemSize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .estimated(55))
+            itemSize = NSCollectionLayoutSize(widthDimension: .estimated(layoutEnvironment.container.effectiveContentSize.width), heightDimension: .estimated(55))
 			groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(55))
 			supplementarySize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
 		}
