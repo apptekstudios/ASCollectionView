@@ -89,7 +89,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		let cellReuseID = UUID().uuidString
 		let supplementaryReuseID = UUID().uuidString
 
-		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, UIViewController>()
+		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 
 		typealias Cell = ASTableViewCell
 
@@ -109,7 +109,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				.first(where: { $0.id.hashValue == itemID.sectionIDHash })
 		}
 
-		func hostingController(forItemID itemID: ASCollectionViewItemUniqueID) -> UIViewController?
+		func hostingController(forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
 		{
 			let controller = section(forItemID: itemID)?.hostController(reusingController: hostingControllerCache[itemID], forItemID: itemID)
 			hostingControllerCache[itemID] = controller

@@ -132,7 +132,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		let supplementaryReuseID = UUID().uuidString
         let supplementaryEmptyKind = UUID().uuidString //Used to prevent crash if supplementaries defined in layout but not provided by the section
 
-		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, UIViewController>()
+		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 
 		typealias Cell = ASCollectionViewCell
 
@@ -156,7 +156,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			parent.sections.reduce(into: Set<String>()) { result, section in result.formUnion(section.supplementaryKinds) }
 		}
 
-		func hostingController(forItemID itemID: ASCollectionViewItemUniqueID) -> UIViewController?
+		func hostingController(forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
 		{
 			let controller = section(forItemID: itemID)?.hostController(reusingController: hostingControllerCache[itemID], forItemID: itemID)
 			hostingControllerCache[itemID] = controller

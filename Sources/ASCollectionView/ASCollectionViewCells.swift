@@ -5,7 +5,7 @@ import SwiftUI
 
 class ASCollectionViewCell: UICollectionViewCell
 {
-	var hostingController: UIViewController?
+	var hostingController: ASHostingControllerProtocol?
 	{
 		didSet
 		{
@@ -13,8 +13,8 @@ class ASCollectionViewCell: UICollectionViewCell
 				self.shouldInvalidateLayout = true
 				self.setNeedsLayout()
 			})
-			(hostingController as? ASHostingControllerProtocol)?.applyModifier(modifier)
-			hostingController?.view.backgroundColor = .clear
+			hostingController?.applyModifier(modifier)
+            hostingController?.viewController.view.backgroundColor = .clear
 		}
 	}
 
@@ -23,43 +23,43 @@ class ASCollectionViewCell: UICollectionViewCell
 
 	private(set) var id: ASCollectionViewItemUniqueID?
 
-	func setupFor(id: ASCollectionViewItemUniqueID, hostingController: UIViewController?)
+	func setupFor(id: ASCollectionViewItemUniqueID, hostingController: ASHostingControllerProtocol?)
 	{
 		self.hostingController = hostingController
 		self.id = id
 	}
 
-	func update(_ hostingController: UIViewController?)
+	func update(_ hostingController: ASHostingControllerProtocol?)
 	{
 		self.hostingController = hostingController
 	}
 
 	func willAppear(in vc: UIViewController?)
 	{
-        hostingController?.removeFromParent()
+        hostingController?.viewController.removeFromParent()
         contentView.subviews.forEach { $0.removeFromSuperview() }
         
         hostingController.map
             {
-                vc?.addChild($0)
-                contentView.addSubview($0.view)
+                vc?.addChild($0.viewController)
+                contentView.addSubview($0.viewController.view)
                 
                 setNeedsLayout()
                 
-                vc.map { hostingController?.didMove(toParent: $0) }
+                vc.map { hostingController?.viewController.didMove(toParent: $0) }
         }
 	}
 
 	func didDisappear()
 	{
 		contentView.subviews.forEach { $0.removeFromSuperview() }
-		hostingController?.removeFromParent()
+		hostingController?.viewController.removeFromParent()
 	}
 
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
-		hostingController?.view.frame = contentView.bounds
+		hostingController?.viewController.view.frame = contentView.bounds
 		if shouldInvalidateLayout
 		{
 			shouldInvalidateLayout = false
@@ -70,7 +70,7 @@ class ASCollectionViewCell: UICollectionViewCell
 	override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes
 	{
 		guard let hc = hostingController else { return layoutAttributes }
-		let sizeThatFits = hc.view.sizeThatFits(layoutAttributes.size)
+        let sizeThatFits = hc.viewController.view.sizeThatFits(layoutAttributes.size)
 		layoutAttributes.size = sizeThatFits
 		return layoutAttributes
 	}
