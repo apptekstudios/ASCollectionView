@@ -7,7 +7,7 @@ internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func hostController(reusingController: UIViewController?, forItemID itemID: ASCollectionViewItemUniqueID) -> UIViewController?
+	func hostController(reusingController: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
 	func prefetch(_ indexPaths: [IndexPath])
@@ -38,7 +38,7 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 	var onCellEvent: OnCellEvent<Data>?
 	var content: (Data) -> Content
 	
-	func hostController(reusingController: UIViewController? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> UIViewController?
+	func hostController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
 	{
 		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
 		let view = content(item)

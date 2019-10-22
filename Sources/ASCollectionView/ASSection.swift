@@ -38,7 +38,7 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 		dataSource.getIndexPaths(withSectionIndex: sectionIndex)
 	}
 
-	func hostController(reusingController: UIViewController? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> UIViewController?
+	func hostController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
 	{
 		dataSource.hostController(reusingController: reusingController, forItemID: itemID)
 	}

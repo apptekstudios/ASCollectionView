@@ -15,40 +15,44 @@ internal struct ASHostingControllerModifier: ViewModifier
 
 internal protocol ASHostingControllerProtocol
 {
+    var viewController: UIViewController { get }
 	func applyModifier(_ modifier: ASHostingControllerModifier)
 	func sizeThatFits(in size: CGSize) -> CGSize
 }
 
-internal class ASHostingController<ViewType: View>: UIHostingController<ModifiedContent<ViewType, ASHostingControllerModifier>>, ASHostingControllerProtocol
-{
-	init(_ view: ViewType)
-	{
-		hostedView = view
-		super.init(rootView: view.modifier(modifier))
-	}
-	
-	var hostedView: ViewType
-	var modifier: ASHostingControllerModifier = ASHostingControllerModifier()
-	{
-		didSet
-		{
-			rootView = hostedView.modifier(modifier)
-		}
-	}
-	
-	func setView(_ view: ViewType)
-	{
-		hostedView = view
-		rootView = hostedView.modifier(modifier)
-	}
-	
-	func applyModifier(_ modifier: ASHostingControllerModifier)
-	{
-		self.modifier = modifier
-	}
-	
-	@objc dynamic required init?(coder aDecoder: NSCoder)
-	{
-		fatalError("init(coder:) has not been implemented")
-	}
+internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol {
+    init(_ view: ViewType)
+    {
+        hostedView = view
+        uiHostingController = .init(rootView: view.modifier(ASHostingControllerModifier()))
+    }
+    
+    let uiHostingController: UIHostingController<ModifiedContent<ViewType, ASHostingControllerModifier>>
+    var viewController: UIViewController {
+        uiHostingController as UIViewController
+    }
+    
+    var hostedView: ViewType
+    var modifier: ASHostingControllerModifier = ASHostingControllerModifier()
+    {
+        didSet
+        {
+            uiHostingController.rootView = hostedView.modifier(modifier)
+        }
+    }
+    
+    func setView(_ view: ViewType)
+    {
+        hostedView = view
+        uiHostingController.rootView = hostedView.modifier(modifier)
+    }
+    
+    func applyModifier(_ modifier: ASHostingControllerModifier)
+    {
+        self.modifier = modifier
+    }
+    
+    func sizeThatFits(in size: CGSize) -> CGSize {
+        uiHostingController.sizeThatFits(in: size)
+    }
 }
