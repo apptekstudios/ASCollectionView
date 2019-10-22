@@ -29,9 +29,9 @@ public struct ASCollectionViewLayout<SectionID: Hashable>
 		self.layout = .compositional({ _ in layout }, interSectionSpacing: interSectionSpacing, scrollDirection: scrollDirection) // ignore section ID -> all have same layout
 	}
 
-	public init(layout: UICollectionViewLayout)
+	public init(customLayout: (() -> UICollectionViewLayout))
 	{
-		self.layout = .custom(layout)
+		self.layout = .custom(customLayout())
 	}
 
 	public func makeLayout(withCoordinator coordinator: ASCollectionView<SectionID>.Coordinator) -> UICollectionViewLayout
@@ -134,7 +134,9 @@ public struct ASCollectionViewLayoutList: ASCollectionViewLayoutSection
 		return section
 	}
 }
-
+/*
+ //It is recommended to use UICollectionViewFlowLayout instead (see demo project). The new CompositionalLayout doesn't yet handle flow layouts well.
+ 
 public struct ASCollectionViewLayoutFlow: ASCollectionViewLayoutSection
 {
 	var itemSpacing: CGFloat
@@ -192,7 +194,7 @@ public struct ASCollectionViewLayoutFlow: ASCollectionViewLayoutSection
 		return section
 	}
 }
-
+*/
 public struct ASCollectionViewLayoutGrid: ASCollectionViewLayoutSection
 {
 	var layoutMode: LayoutMode
