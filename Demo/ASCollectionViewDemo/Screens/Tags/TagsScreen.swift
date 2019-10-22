@@ -18,11 +18,11 @@ struct TagsScreen: View {
                 .font(.title)
             ASCollectionView(
                 data: store.items,
-                layout: .init(layout: {
+                layout: ASCollectionViewLayout(customLayout: {
                     let fl = AlignedFlowLayout()
                     fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
                     return fl
-                }())
+                })
             ) { item in
                 Text(item.displayString)
                     .fixedSize()
