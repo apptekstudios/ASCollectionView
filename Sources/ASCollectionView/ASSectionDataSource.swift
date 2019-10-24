@@ -84,13 +84,19 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 	
 	func prefetch(_ indexPaths: [IndexPath])
 	{
-		let dataToPrefetch = indexPaths.map { data[$0.item] }
+        let dataToPrefetch: [Data] = indexPaths.compactMap {
+            guard $0.item < data.endIndex else { return nil }
+            return data[$0.item]
+        }
 		onCellEvent?(.prefetchForData(data: dataToPrefetch))
 	}
 	
 	func cancelPrefetch(_ indexPaths: [IndexPath])
 	{
-		let dataToCancelPrefetch = indexPaths.map { data[$0.item] }
+        let dataToCancelPrefetch: [Data] = indexPaths.compactMap {
+            guard $0.item < data.endIndex else { return nil }
+            return data[$0.item]
+        }
 		onCellEvent?(.cancelPrefetchForData(data: dataToCancelPrefetch))
 	}
 }

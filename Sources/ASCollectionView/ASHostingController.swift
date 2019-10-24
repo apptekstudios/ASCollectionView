@@ -52,7 +52,7 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol 
         self.modifier = modifier
     }
     
-    func sizeThatFits(in size: CGSize) -> CGSize {
-        uiHostingController.sizeThatFits(in: size)
+    func sizeThatFits(in size: CGSize, horizontalPriority: UILayoutPriority, verticalPriority: UILayoutPriority) -> CGSize {
+        uiHostingController.view.systemLayoutSizeFitting(size, withHorizontalFittingPriority: horizontalPriority, verticalFittingPriority: verticalPriority)
     }
 }

@@ -149,7 +149,7 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 
 	override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes
 	{
-		layoutAttributes.size = hostingController?.sizeThatFits(in: layoutAttributes.size) ?? CGSize(width: 1, height: 0.0001)
+		layoutAttributes.size = hostingController?.sizeThatFits(in: layoutAttributes.size) ?? CGSize(width: 1, height: 1)
 		return layoutAttributes
 	}
 }

@@ -109,15 +109,15 @@ struct DataSource
 		(0..<number).map
 		{ b -> Post in
 			let aspect: CGFloat = [1.0, 1.5, 0.75].randomElement() ?? 1
-			return Post.randomPost(number * 10_000 + b, aspectRatio: aspect)
+			return Post.randomPost(sectionID * 10_000 + b, aspectRatio: aspect)
 		}
 	}
 
-	static func appsForSection(_ number: Int) -> [App]
+	static func appsForSection(_ sectionID: Int) -> [App]
 	{
 		(0...17).map
 		{ b -> App in
-			App.randomApp(number * 10_000 + b)
+			App.randomApp(sectionID * 10_000 + b)
 		}
 	}
 }

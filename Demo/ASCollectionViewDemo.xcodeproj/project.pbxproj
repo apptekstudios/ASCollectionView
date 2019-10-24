@@ -28,6 +28,9 @@
 		B86C6F4F234B0B9D00522AEF /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B86C6F42234B0B9D00522AEF /* MainView.swift */; };
 		B89129FE235DB71900D8BA90 /* TagsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B89129FC235DB71900D8BA90 /* TagsScreen.swift */; };
 		B89129FF235DB71900D8BA90 /* TagStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B89129FD235DB71900D8BA90 /* TagStore.swift */; };
+		B8A95E3923607F850017A7EA /* CustomDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A95E3823607F850017A7EA /* CustomDelegate.swift */; };
+		B8A95E3C2360800D0017A7EA /* MagazineLayout in Frameworks */ = {isa = PBXBuildFile; productRef = B8A95E3B2360800D0017A7EA /* MagazineLayout */; };
+		B8A95E3E236081500017A7EA /* MagazineLayoutScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A95E3D236081500017A7EA /* MagazineLayoutScreen.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,6 +57,8 @@
 		B86C6F42234B0B9D00522AEF /* MainView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		B89129FC235DB71900D8BA90 /* TagsScreen.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagsScreen.swift; sourceTree = "<group>"; };
 		B89129FD235DB71900D8BA90 /* TagStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagStore.swift; sourceTree = "<group>"; };
+		B8A95E3823607F850017A7EA /* CustomDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomDelegate.swift; sourceTree = "<group>"; };
+		B8A95E3D236081500017A7EA /* MagazineLayoutScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagazineLayoutScreen.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,6 +66,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B8A95E3C2360800D0017A7EA /* MagazineLayout in Frameworks */,
 				B86C6F2F234B0B8600522AEF /* ASCollectionView in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -142,6 +148,7 @@
 		B86C6F38234B0B9D00522AEF /* Screens */ = {
 			isa = PBXGroup;
 			children = (
+				B8A95E3723607F760017A7EA /* MagazineLayout */,
 				B89129FB235DB6ED00D8BA90 /* Tags */,
 				B86C6F39234B0B9D00522AEF /* PhotoGrid */,
 				B86C6F3B234B0B9D00522AEF /* AppStore */,
@@ -185,6 +192,15 @@
 			path = Tags;
 			sourceTree = "<group>";
 		};
+		B8A95E3723607F760017A7EA /* MagazineLayout */ = {
+			isa = PBXGroup;
+			children = (
+				B8A95E3D236081500017A7EA /* MagazineLayoutScreen.swift */,
+				B8A95E3823607F850017A7EA /* CustomDelegate.swift */,
+			);
+			path = MagazineLayout;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -203,6 +219,7 @@
 			name = ASCollectionViewDemo;
 			packageProductDependencies = (
 				B86C6F2E234B0B8600522AEF /* ASCollectionView */,
+				B8A95E3B2360800D0017A7EA /* MagazineLayout */,
 			);
 			productName = ASCollectionViewDemo;
 			productReference = B86C6F13234B078600522AEF /* ASCollectionViewDemo.app */;
@@ -232,6 +249,9 @@
 				Base,
 			);
 			mainGroup = B86C6F0A234B078600522AEF;
+			packageReferences = (
+				B8A95E3A2360800D0017A7EA /* XCRemoteSwiftPackageReference "MagazineLayout" */,
+			);
 			productRefGroup = B86C6F14234B078600522AEF /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -276,6 +296,8 @@
 				B86C6F4C234B0B9D00522AEF /* PostView.swift in Sources */,
 				B86C6F4F234B0B9D00522AEF /* MainView.swift in Sources */,
 				B86C6F19234B078600522AEF /* SceneDelegate.swift in Sources */,
+				B8A95E3E236081500017A7EA /* MagazineLayoutScreen.swift in Sources */,
+				B8A95E3923607F850017A7EA /* CustomDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -470,10 +492,26 @@
 		};
 /* End XCConfigurationList section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		B8A95E3A2360800D0017A7EA /* XCRemoteSwiftPackageReference "MagazineLayout" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/airbnb/MagazineLayout";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		B86C6F2E234B0B8600522AEF /* ASCollectionView */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ASCollectionView;
+		};
+		B8A95E3B2360800D0017A7EA /* MagazineLayout */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B8A95E3A2360800D0017A7EA /* XCRemoteSwiftPackageReference "MagazineLayout" */;
+			productName = MagazineLayout;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

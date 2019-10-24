@@ -59,6 +59,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	public typealias Layout = ASCollectionViewLayout<SectionID>
 	public var layout: Layout
 	public var sections: [Section]
+    
+    var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
 
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 
@@ -90,11 +92,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	public func makeUIViewController(context: Context) -> UICollectionViewController
 	{
-		context.coordinator.parent = self
+        context.coordinator.parent = self
+        
+        let delegate = delegateInitialiser()
+        context.coordinator.delegate = delegate
+        delegate.coordinator = context.coordinator
+        
 		let collectionViewLayout = layout.makeLayout(withCoordinator: context.coordinator)
 
 		let collectionViewController = UICollectionViewController(collectionViewLayout: collectionViewLayout)
-		updateCollectionViewSettings(collectionViewController.collectionView)
+        updateCollectionViewSettings(collectionViewController.collectionView, delegate: delegate)
 
 		context.coordinator.collectionViewController = collectionViewController
 
@@ -105,12 +112,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	public func updateUIViewController(_ collectionViewController: UICollectionViewController, context: Context)
 	{
 		context.coordinator.parent = self
-		updateCollectionViewSettings(collectionViewController.collectionView)
+        updateCollectionViewSettings(collectionViewController.collectionView, delegate: context.coordinator.delegate)
 		context.coordinator.updateContent(collectionViewController.collectionView, refreshExistingCells: true)
 	}
 
-	func updateCollectionViewSettings(_ collectionView: UICollectionView)
+    func updateCollectionViewSettings(_ collectionView: UICollectionView, delegate: ASCollectionViewDelegate?)
 	{
+        collectionView.delegate = delegate
 		collectionView.backgroundColor = .clear
 		collectionView.showsVerticalScrollIndicator = scrollIndicatorsEnabled
 		collectionView.showsHorizontalScrollIndicator = scrollIndicatorsEnabled
@@ -121,9 +129,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		Coordinator(self)
 	}
 
-	public class Coordinator: NSObject, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout
+    public class Coordinator: ASCollectionViewCoordinator
 	{
 		var parent: ASCollectionView
+        var delegate: ASCollectionViewDelegate?
+        
 		var collectionViewController: UICollectionViewController?
 
 		var dataSource: UICollectionViewDiffableDataSource<SectionID, ASCollectionViewItemUniqueID>?
@@ -165,7 +175,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func setupDataSource(forCollectionView cv: UICollectionView)
 		{
-			cv.delegate = self
 			cv.register(Cell.self, forCellWithReuseIdentifier: cellReuseID)
             cv.register(ASCollectionViewSupplementaryView.self, forSupplementaryViewOfKind: supplementaryEmptyKind, withReuseIdentifier: supplementaryReuseID) //Used to prevent crash if supplementaries defined in layout but not provided by the section
 			supplementaryKinds().forEach { kind in
@@ -270,19 +279,60 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		private var currentlyPrefetching: Set<IndexPath> = []
 
 
-		/*
-		 //REPLACED WITH CUSTOM PREFETCH SOLUTION AS PREFETCH API WAS NOT WORKING FOR COMPOSITIONAL LAYOUT
-		  public func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath])
-		  public func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath])
-        */
 	}
+}
+
+public extension ASCollectionView {
+    func customDelegate(_ delegateInitialiser: @escaping (() -> ASCollectionViewDelegate)) -> Self {
+        var cv = self
+        cv.delegateInitialiser = delegateInitialiser
+        return cv
+    }
+}
+
+internal protocol ASCollectionViewCoordinator: class {
+    func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
+    func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
+    func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
+    func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
+}
+
+
+open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+    weak var coordinator: ASCollectionViewCoordinator?
+    public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
+    {
+        coordinator?.collectionView(collectionView, willDisplay: cell, forItemAt: indexPath)
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
+    {
+        coordinator?.collectionView(collectionView, didEndDisplaying: cell, forItemAt: indexPath)
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
+    {
+        coordinator?.collectionView(collectionView, willDisplaySupplementaryView: view, forElementKind: elementKind, at: indexPath)
+    }
+    
+    public func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
+    {
+        coordinator?.collectionView(collectionView, didEndDisplayingSupplementaryView: view, forElementOfKind: elementKind, at: indexPath)
+    }
+    
+    
+    /*
+     //REPLACED WITH CUSTOM PREFETCH SOLUTION AS PREFETCH API WAS NOT WORKING FOR COMPOSITIONAL LAYOUT
+     public func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath])
+     public func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath])
+     */
 }
 
 extension ASCollectionView.Coordinator {
     func setupPrefetching()
     {
         prefetchSubscription = queuePrefetch
-            .collect(.byTime(DispatchQueue.main, 0.1)) // Wanted to use .throttle(for: 0.1, scheduler: DispatchQueue(label: "TEST"), latest: true) -> THIS CRASHES?? BUG??
+            .collect(.byTime(DispatchQueue.main, 0.1)) // Wanted to use .throttle(for: 0.1, scheduler: DispatchQueue(label: "ASCollectionView PREFETCH"), latest: true) -> THIS CRASHES?? BUG??
             .compactMap
             { _ in
                 self.collectionViewController?.collectionView.indexPathsForVisibleItems

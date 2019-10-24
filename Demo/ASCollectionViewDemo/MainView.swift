@@ -8,6 +8,12 @@ struct MainView: View
 	{
 		TabView
 		{
+            MagazineLayoutScreen()
+                .tabItem
+                {
+                    Image(systemName: "5.square.fill")
+                    Text("Magazine Layout")
+            }
             InstaFeedScreen()
                 .tabItem
                 {
