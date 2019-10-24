@@ -8,12 +8,6 @@ struct MainView: View
 	{
 		TabView
 		{
-            MagazineLayoutScreen()
-                .tabItem
-                {
-                    Image(systemName: "5.square.fill")
-                    Text("Magazine Layout")
-            }
             InstaFeedScreen()
                 .tabItem
                 {
@@ -37,6 +31,12 @@ struct MainView: View
                 {
                     Image(systemName: "4.square.fill")
                     Text("Tags Flow Layout")
+            }
+            MagazineLayoutScreen()
+                .tabItem
+                {
+                    Image(systemName: "5.square.fill")
+                    Text("Magazine Layout")
             }
 		}
 	}

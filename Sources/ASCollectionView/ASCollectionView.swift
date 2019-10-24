@@ -190,6 +190,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				cell.invalidateLayout = {
 					collectionView.collectionViewLayout.invalidateLayout()
 				}
+                cell.selfSizeHorizontal = self.delegate?.collectionView(cellShouldSelfSizeHorizontallyForItemAt: indexPath) ?? true
+                cell.selfSizeVertical = self.delegate?.collectionView(cellShouldSelfSizeVerticallyForItemAt: indexPath) ?? true
 				cell.setupFor(id: itemID,
 				              hostingController: hostController)
 				return cell
@@ -300,6 +302,15 @@ internal protocol ASCollectionViewCoordinator: class {
 
 open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     weak var coordinator: ASCollectionViewCoordinator?
+    
+    open func collectionView(cellShouldSelfSizeHorizontallyForItemAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    
+    open func collectionView(cellShouldSelfSizeVerticallyForItemAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    
     public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
     {
         coordinator?.collectionView(collectionView, willDisplay: cell, forItemAt: indexPath)

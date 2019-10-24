@@ -66,14 +66,33 @@ class ASCollectionViewCell: UICollectionViewCell
 			invalidateLayout?()
 		}
 	}
+    
+    var selfSizeHorizontal: Bool = true
+    var selfSizeVertical: Bool = true
+    
+    override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
+    {
+        guard let hc = hostingController else
+        {
+            return super.systemLayoutSizeFitting(targetSize, withHorizontalFittingPriority: horizontalFittingPriority, verticalFittingPriority: verticalFittingPriority)
+        }
+        var size = hc.sizeThatFits(in: targetSize,
+                                   horizontalPriority: selfSizeHorizontal ? horizontalFittingPriority : UILayoutPriority.required,
+                                   verticalPriority: selfSizeVertical ? verticalFittingPriority : UILayoutPriority.required )
+        if !selfSizeHorizontal { size.width = targetSize.width }
+        if !selfSizeVertical { size.height = targetSize.height }
+        return size
+    }
 
-	override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes
+	/*override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes
 	{
 		guard let hc = hostingController else { return layoutAttributes }
-        let sizeThatFits = hc.viewController.view.sizeThatFits(layoutAttributes.size)
+        let sizeThatFits = systemLayoutSizeFitting(layoutAttributes.size,
+                                                   withHorizontalFittingPriority: selfSizeHorizontal ? horizontalFittingPriority : UILayoutPriority.required,
+                                                   verticalFittingPriority: selfSizeVertical ? verticalFittingPriority : UILayoutPriority.required)
 		layoutAttributes.size = sizeThatFits
 		return layoutAttributes
-	}
+	}*/
 }
 
 class ASCollectionViewSupplementaryView: UICollectionReusableView

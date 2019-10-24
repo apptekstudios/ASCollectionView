@@ -11,6 +11,13 @@ import ASCollectionView
 import MagazineLayout
 
 class ASCollectionViewMagazineLayoutDelegate: ASCollectionViewDelegate, UICollectionViewDelegateMagazineLayout {
+    override func collectionView(cellShouldSelfSizeVerticallyForItemAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    
+    override func collectionView(cellShouldSelfSizeHorizontallyForItemAt indexPath: IndexPath) -> Bool {
+        return false
+    }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeModeForItemAt indexPath: IndexPath) -> MagazineLayoutItemSizeMode {
         let rowIsThree = (indexPath.item % 5) < 3

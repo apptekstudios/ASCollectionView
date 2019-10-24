@@ -74,11 +74,7 @@ class ASTableViewCell: UITableViewCell
 		{
 			return super.systemLayoutSizeFitting(targetSize, withHorizontalFittingPriority: horizontalFittingPriority, verticalFittingPriority: verticalFittingPriority)
 		}
-        let prioritisedSize = CGSize(width: horizontalFittingPriority == UILayoutPriority.fittingSizeLevel ? .infinity : targetSize.width,
-                                     height: verticalFittingPriority == UILayoutPriority.fittingSizeLevel ? .infinity : targetSize.height )
-        var size = hc.sizeThatFits(in: prioritisedSize)
-        if size.width == .infinity { size.width = targetSize.width }
-        if size.height == .infinity { size.height = targetSize.height }
+        var size = hc.sizeThatFits(in: targetSize, horizontalPriority: horizontalFittingPriority, verticalPriority: verticalFittingPriority)
 		return size
 	}
 }
