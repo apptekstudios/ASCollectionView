@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "MagazineLayout",
+        "repositoryURL": "https://github.com/airbnb/MagazineLayout",
+        "state": {
+          "branch": "master",
+          "revision": "61fd38f770fb1b635fe486a6670381061424ff80",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}
