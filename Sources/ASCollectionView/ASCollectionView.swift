@@ -63,6 +63,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
     var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
 
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
+	@Environment(\.contentInsets) private var contentInsets
 
 	/**
 	Initializes a  collection view with the given sections
@@ -120,6 +121,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	{
         collectionView.delegate = delegate
 		collectionView.backgroundColor = .clear
+		collectionView.contentInset = contentInsets
 		collectionView.showsVerticalScrollIndicator = scrollIndicatorsEnabled
 		collectionView.showsHorizontalScrollIndicator = scrollIndicatorsEnabled
 	}
@@ -166,9 +168,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			parent.sections.reduce(into: Set<String>()) { result, section in result.formUnion(section.supplementaryKinds) }
 		}
 
-		func hostingController(forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
+		@discardableResult
+		func configureHostingController(forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
 		{
-			let controller = section(forItemID: itemID)?.hostController(reusingController: hostingControllerCache[itemID], forItemID: itemID)
+			let controller = section(forItemID: itemID)?.configureHostingController(reusingController: hostingControllerCache[itemID], forItemID: itemID)
 			hostingControllerCache[itemID] = controller
 			return controller
 		}
@@ -184,9 +187,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			dataSource = .init(collectionView: cv)
 			{ (collectionView, indexPath, itemID) -> UICollectionViewCell? in
 				guard
-					let cell = collectionView.dequeueReusableCell(withReuseIdentifier: self.cellReuseID, for: indexPath) as? Cell,
-					let hostController = self.hostingController(forItemID: itemID)
-				else { return nil }
+					let cell = collectionView.dequeueReusableCell(withReuseIdentifier: self.cellReuseID, for: indexPath) as? Cell
+					else { return nil }
+				guard let hostController = self.configureHostingController(forItemID: itemID)
+					else { return cell }
 				cell.invalidateLayout = {
 					collectionView.collectionViewLayout.invalidateLayout()
 				}
@@ -199,17 +203,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			dataSource?.supplementaryViewProvider = { (cv, kind, indexPath) -> UICollectionReusableView? in
                 guard self.supplementaryKinds().contains(kind) else {
                     let emptyView = cv.dequeueReusableSupplementaryView(ofKind: self.supplementaryEmptyKind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
-                    emptyView?.setupFor(id: indexPath.section, view: nil)
                     return emptyView
                 }
 				guard let reusableView = cv.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
                     else { return nil }
-				let supplementaryView = self.parent.sections[indexPath.section].supplementary(ofKind: kind)
-				reusableView.setupFor(id: indexPath.section,
-				                      view: supplementaryView)
+				if let supplementaryView = self.parent.sections[indexPath.section].supplementary(ofKind: kind) {
+					reusableView.setupFor(id: indexPath.section,
+										  view: supplementaryView)
+				}
 				return reusableView
 			}
-			populateDataSource()
 			setupPrefetching()
 		}
 
@@ -232,10 +235,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				{ cell in
 					guard
 						let cell = cell as? Cell,
-						let itemID = cell.id,
-						let hostController = self.hostingController(forItemID: itemID)
+						let itemID = cell.id
 					else { return }
-					cell.update(hostController)
+					self.configureHostingController(forItemID: itemID)
 				}
 				
 				supplementaryKinds().forEach { kind in
@@ -254,7 +256,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			(cell as? Cell)?.willAppear(in: collectionViewController)
 			currentlyPrefetching.remove(indexPath)
-            guard indexPath.section < parent.sections.endIndex else { return }
+            guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
 			parent.sections[indexPath.section].onAppear(indexPath)
 			queuePrefetch.send()
 		}
@@ -262,7 +264,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		public func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 		{
 			(cell as? Cell)?.didDisappear()
-            guard indexPath.section < parent.sections.endIndex else { return }
+			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
 			parent.sections[indexPath.section].onDisappear(indexPath)
 		}
 

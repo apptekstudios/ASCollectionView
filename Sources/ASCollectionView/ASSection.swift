@@ -38,7 +38,7 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 		dataSource.getIndexPaths(withSectionIndex: sectionIndex)
 	}
 
-	func hostController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
+	func configureHostingController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
 	{
 		dataSource.hostController(reusingController: reusingController, forItemID: itemID)
 	}
@@ -174,6 +174,24 @@ public extension ASCollectionViewSection
 				ASCollectionViewStaticContent(id: $0.offset, view: $0.element)
 			},
 		                                                                                                                         content: { $0.view })
+	}
+	
+	/**
+	Initializes a section with a single view
+	
+	- Parameters:
+	- id: The id for this section
+	- content: A single SwiftUI views to display in the collection view
+	*/
+	init<Content: View>(id: SectionID, content: Content)
+	{
+		self.id = id
+		dataSource = ASSectionDataSource<ASCollectionViewStaticContent, ASCollectionViewStaticContent.ID, AnyView>(
+			data: [
+				ASCollectionViewStaticContent(id: 0, view: AnyView(content))
+			],
+			content: { $0.view }
+		)
 	}
 }
 

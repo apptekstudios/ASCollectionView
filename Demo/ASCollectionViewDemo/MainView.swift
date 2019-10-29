@@ -32,12 +32,21 @@ struct MainView: View
                     Image(systemName: "4.square.fill")
                     Text("Tags Flow Layout")
             }
-            MagazineLayoutScreen()
+			
+			RemindersScreen()
+		.navigationViewStyle(StackNavigationViewStyle())
+			.tabItem
+				{
+					Image(systemName: "5.square.fill")
+					Text("Reminders")
+			}
+			
+           /* MagazineLayoutScreen()
                 .tabItem
                 {
-                    Image(systemName: "5.square.fill")
+                    Image(systemName: "6.square.fill")
                     Text("Magazine Layout")
-            }
+            }*/
 		}
 	}
 }

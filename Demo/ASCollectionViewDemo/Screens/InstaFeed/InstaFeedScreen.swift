@@ -90,8 +90,7 @@ struct InstaFeedScreen: View
 		.tableViewSeparatorsEnabled(false)
 		.tableViewReachedBottom
 		{
-			print("REACHED BOTTOM, LOADING MORE CONTENT")
-			self.loadMoreContent()
+			self.loadMoreContent() //REACHED BOTTOM, LOADING MORE CONTENT
 		}
 	}
 

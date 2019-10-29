@@ -17,7 +17,7 @@ internal protocol ASHostingControllerProtocol
 {
     var viewController: UIViewController { get }
 	func applyModifier(_ modifier: ASHostingControllerModifier)
-	func sizeThatFits(in size: CGSize, horizontalPriority: UILayoutPriority, verticalPriority: UILayoutPriority) -> CGSize
+	func sizeThatFits(in size: CGSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize
 }
 
 internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol {
@@ -29,7 +29,8 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol 
     
     let uiHostingController: UIHostingController<ModifiedContent<ViewType, ASHostingControllerModifier>>
     var viewController: UIViewController {
-        uiHostingController as UIViewController
+		uiHostingController.view.backgroundColor = .clear
+        return uiHostingController as UIViewController
     }
     
     var hostedView: ViewType
@@ -52,21 +53,27 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol 
         self.modifier = modifier
     }
     
-    func sizeThatFits(in size: CGSize, horizontalPriority: UILayoutPriority, verticalPriority: UILayoutPriority) -> CGSize {
-        let prioritisedSize = CGSize(width: horizontalPriority == UILayoutPriority.fittingSizeLevel ? .infinity : size.width,
-                                     height: verticalPriority == UILayoutPriority.fittingSizeLevel ? .infinity : size.height )
-        var desiredSize = uiHostingController.view.systemLayoutSizeFitting(prioritisedSize, withHorizontalFittingPriority: horizontalPriority, verticalFittingPriority: verticalPriority)
+    func sizeThatFits(in size: CGSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize {
+        let fittingSize = CGSize(width: selfSizeHorizontal ? .infinity : size.width,
+                                     height: selfSizeVertical ? .infinity : size.height )
+		//Find the desired size
+		var desiredSize = uiHostingController.sizeThatFits(in: fittingSize)
         
         //Accounting for 'greedy' swiftUI views that take up as much space as they can
         switch (desiredSize.width, desiredSize.height) {
         case (.infinity, .infinity):
-            desiredSize = uiHostingController.view.systemLayoutSizeFitting(size, withHorizontalFittingPriority: horizontalPriority, verticalFittingPriority: verticalPriority)
+            desiredSize = uiHostingController.sizeThatFits(in: size)
         case (.infinity, _):
-            desiredSize = uiHostingController.view.systemLayoutSizeFitting(CGSize(width: size.width, height: prioritisedSize.height), withHorizontalFittingPriority: horizontalPriority, verticalFittingPriority: verticalPriority)
+            desiredSize = uiHostingController.sizeThatFits(in: CGSize(width: size.width, height: fittingSize.height))
         case (_, .infinity):
-            desiredSize = uiHostingController.view.systemLayoutSizeFitting(CGSize(width: prioritisedSize.width, height: size.height), withHorizontalFittingPriority: horizontalPriority, verticalFittingPriority: verticalPriority)
+            desiredSize = uiHostingController.sizeThatFits(in: CGSize(width: fittingSize.width, height: size.height))
         default: break
         }
+		
+		//Ensure correct dimensions in non-self sizing axes
+		if !selfSizeHorizontal { desiredSize.width = size.width }
+		if !selfSizeVertical { desiredSize.height = size.height }
+		
         return desiredSize
     }
 }

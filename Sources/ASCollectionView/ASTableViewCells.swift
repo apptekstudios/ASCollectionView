@@ -14,7 +14,6 @@ class ASTableViewCell: UITableViewCell
                 self.setNeedsLayout()
             })
             hostingController?.applyModifier(modifier)
-            hostingController?.viewController.view.backgroundColor = .clear
         }
     }
     
@@ -30,18 +29,11 @@ class ASTableViewCell: UITableViewCell
         selectionStyle = .none
     }
     
-    func update(_ hostingController: ASHostingControllerProtocol?)
-    {
-        self.hostingController = hostingController
-    }
-    
     func willAppear(in vc: UIViewController?)
     {
-        hostingController?.viewController.removeFromParent()
-        contentView.subviews.forEach { $0.removeFromSuperview() }
-        
         hostingController.map
             {
+				$0.viewController.removeFromParent()
                 vc?.addChild($0.viewController)
                 contentView.addSubview($0.viewController.view)
                 
@@ -53,9 +45,13 @@ class ASTableViewCell: UITableViewCell
     
     func didDisappear()
     {
-        contentView.subviews.forEach { $0.removeFromSuperview() }
         hostingController?.viewController.removeFromParent()
     }
+	
+	override func prepareForReuse() {
+		hostingController = nil
+		contentView.subviews.forEach { $0.removeFromSuperview() }
+	}
     
     override func layoutSubviews()
     {
@@ -68,99 +64,85 @@ class ASTableViewCell: UITableViewCell
         }
     }
 
+	var selfSizeVertical: Bool = true
+	
+	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize {
+		guard let hc = hostingController else { return .zero }
+		let size = hc.sizeThatFits(in: targetSize,
+								   selfSizeHorizontal: false,
+								   selfSizeVertical: selfSizeVertical)
+		return size
+	}
+	
 	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
 	{
-		guard let hc = hostingController else
-		{
-			return super.systemLayoutSizeFitting(targetSize, withHorizontalFittingPriority: horizontalFittingPriority, verticalFittingPriority: verticalFittingPriority)
-		}
-        var size = hc.sizeThatFits(in: targetSize, horizontalPriority: horizontalFittingPriority, verticalPriority: verticalFittingPriority)
-		return size
+		systemLayoutSizeFitting(targetSize)
 	}
 }
 
 class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 {
-	var hostingController: UIHostingController<AnyView>?
-	{
-		didSet
-		{
-			hostingController?.view.backgroundColor = .clear
-		}
-	}
-
+	var hostingController: ASHostingControllerProtocol?
+	
 	private(set) var id: Int?
-
-	func setupFor(id: Int, view: AnyView?)
+	
+	func setupFor<Content: View>(id: Int, view: Content?)
 	{
-		guard let view = view else
-		{
-			hostingController?.view.removeFromSuperview()
-			hostingController?.removeFromParent()
-			return
-		}
-		if let hc = hostingController
-		{
-			hc.rootView = view
-		}
-		else
-		{
-			hostingController = UIHostingController(rootView: view)
-		}
 		self.id = id
+		if let view = view {
+			self.hostingController = ASHostingController<Content>(view)
+		} else {
+			self.hostingController = nil
+			subviews.forEach { $0.removeFromSuperview() }
+		}
 	}
-
-	func updateView(_ view: AnyView?)
+	
+	func updateView<Content: View>(_ view: Content)
 	{
-		guard let view = view else
-		{
-			hostingController?.view.removeFromSuperview()
-			hostingController?.removeFromParent()
-			return
-		}
-		withAnimation
-		{
-			hostingController?.rootView = view
-		}
+		guard let hc = hostingController as? ASHostingController<Content> else { return }
+		hc.setView(view)
 	}
-
+	
 	func willAppear(in vc: UIViewController?)
 	{
-		if hostingController?.parent !== vc
-		{
-			hostingController?.removeFromParent()
-			hostingController.map
+		hostingController.map
 			{
-				vc?.addChild($0)
-				if $0.view.superview !== contentView
-				{
-					contentView.subviews.forEach { $0.removeFromSuperview() }
-					contentView.addSubview($0.view)
-				}
-			}
-			setNeedsLayout()
-			vc.map { hostingController?.didMove(toParent: $0) }
+				$0.viewController.removeFromParent()
+				vc?.addChild($0.viewController)
+				addSubview($0.viewController.view)
+				
+				setNeedsLayout()
+				
+				vc.map { hostingController?.viewController.didMove(toParent: $0) }
 		}
 	}
-
+	
 	func didDisappear()
 	{
-		contentView.subviews.forEach { $0.removeFromSuperview() }
-		hostingController?.removeFromParent()
+		hostingController?.viewController.removeFromParent()
 	}
-
-	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
-	{
-		guard let hc = hostingController else
-		{
-			return super.systemLayoutSizeFitting(targetSize, withHorizontalFittingPriority: horizontalFittingPriority, verticalFittingPriority: verticalFittingPriority)
-		}
-		return hc.view.sizeThatFits(targetSize)
+	
+	override func prepareForReuse() {
+		hostingController = nil
+		subviews.forEach { $0.removeFromSuperview() }
 	}
-
+	
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
-		hostingController?.view.frame = bounds
+		hostingController?.viewController.view.frame = bounds
+	}
+	
+	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize {
+		guard let hc = hostingController else { return CGSize(width: 1, height: 1) }
+		let size = hc.sizeThatFits(in: targetSize,
+								   selfSizeHorizontal: true,
+								   selfSizeVertical: true)
+		return size
+	}
+	
+	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
+	{
+		systemLayoutSizeFitting(targetSize)
 	}
 }

@@ -14,6 +14,11 @@ struct EnvironmentKeyASScrollIndicatorsEnabled: EnvironmentKey
 	static let defaultValue: Bool = true
 }
 
+struct EnvironmentKeyASContentInsets: EnvironmentKey
+{
+	static let defaultValue: UIEdgeInsets = .zero
+}
+
 struct EnvironmentKeyASTableViewSeparatorsEnabled: EnvironmentKey
 {
 	static let defaultValue: Bool = true
@@ -37,6 +42,12 @@ public extension EnvironmentValues
 		get { return self[EnvironmentKeyASScrollIndicatorsEnabled.self] }
 		set { self[EnvironmentKeyASScrollIndicatorsEnabled.self] = newValue }
 	}
+	
+	var contentInsets: UIEdgeInsets
+	{
+		get { return self[EnvironmentKeyASContentInsets.self] }
+		set { self[EnvironmentKeyASContentInsets.self] = newValue }
+	}
 
 	var tableViewSeparatorsEnabled: Bool
 	{
@@ -56,6 +67,11 @@ public extension View
 	func scrollIndicatorsEnabled(_ enabled: Bool) -> some View
 	{
 		environment(\.scrollIndicatorsEnabled, enabled)
+	}
+	
+	func contentInsets(_ insets: UIEdgeInsets) -> some View
+	{
+		environment(\.contentInsets, insets)
 	}
 
 	func tableViewSeparatorsEnabled(_ enabled: Bool) -> some View

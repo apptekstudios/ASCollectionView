@@ -37,10 +37,10 @@ struct MagazineLayoutScreen: View
 			{ item in
 				ASRemoteImageView(item.squareThumbURL)
 					.aspectRatio(1, contentMode: .fit)
-                    .contextMenu {
-                        Text("Test item")
-                        Text("Another item")
-                }
+					.contextMenu {
+						Text("Test item")
+						Text("Another item")
+				}
 			}
             .sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader) {
                 HStack {

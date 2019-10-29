@@ -14,7 +14,6 @@ class ASCollectionViewCell: UICollectionViewCell
 				self.setNeedsLayout()
 			})
 			hostingController?.applyModifier(modifier)
-            hostingController?.viewController.view.backgroundColor = .clear
 		}
 	}
 
@@ -29,18 +28,11 @@ class ASCollectionViewCell: UICollectionViewCell
 		self.id = id
 	}
 
-	func update(_ hostingController: ASHostingControllerProtocol?)
-	{
-		self.hostingController = hostingController
-	}
-
 	func willAppear(in vc: UIViewController?)
 	{
-        hostingController?.viewController.removeFromParent()
-        contentView.subviews.forEach { $0.removeFromSuperview() }
-        
         hostingController.map
             {
+				$0.viewController.removeFromParent()
                 vc?.addChild($0.viewController)
                 contentView.addSubview($0.viewController.view)
                 
@@ -52,14 +44,19 @@ class ASCollectionViewCell: UICollectionViewCell
 
 	func didDisappear()
 	{
-		contentView.subviews.forEach { $0.removeFromSuperview() }
 		hostingController?.viewController.removeFromParent()
+	}
+	
+	override func prepareForReuse() {
+		hostingController = nil
+		contentView.subviews.forEach { $0.removeFromSuperview() }
 	}
 
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
 		hostingController?.viewController.view.frame = contentView.bounds
+		hostingController?.viewController.view.setNeedsLayout()
 		if shouldInvalidateLayout
 		{
 			shouldInvalidateLayout = false
@@ -70,105 +67,78 @@ class ASCollectionViewCell: UICollectionViewCell
     var selfSizeHorizontal: Bool = true
     var selfSizeVertical: Bool = true
     
+	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize {
+		guard let hc = hostingController else { return .zero }
+		let size = hc.sizeThatFits(in: targetSize,
+								   selfSizeHorizontal: selfSizeHorizontal,
+								   selfSizeVertical: selfSizeVertical)
+		return size
+	}
+	
     override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
     {
-        guard let hc = hostingController else
-        {
-            return super.systemLayoutSizeFitting(targetSize, withHorizontalFittingPriority: horizontalFittingPriority, verticalFittingPriority: verticalFittingPriority)
-        }
-        var size = hc.sizeThatFits(in: targetSize,
-                                   horizontalPriority: selfSizeHorizontal ? horizontalFittingPriority : UILayoutPriority.required,
-                                   verticalPriority: selfSizeVertical ? verticalFittingPriority : UILayoutPriority.required )
-        if !selfSizeHorizontal { size.width = targetSize.width }
-        if !selfSizeVertical { size.height = targetSize.height }
-        return size
+        systemLayoutSizeFitting(targetSize)
     }
-
-	/*override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes
-	{
-		guard let hc = hostingController else { return layoutAttributes }
-        let sizeThatFits = systemLayoutSizeFitting(layoutAttributes.size,
-                                                   withHorizontalFittingPriority: selfSizeHorizontal ? horizontalFittingPriority : UILayoutPriority.required,
-                                                   verticalFittingPriority: selfSizeVertical ? verticalFittingPriority : UILayoutPriority.required)
-		layoutAttributes.size = sizeThatFits
-		return layoutAttributes
-	}*/
 }
 
 class ASCollectionViewSupplementaryView: UICollectionReusableView
 {
-	var hostingController: UIHostingController<AnyView>?
-	{
-		didSet
-		{
-			hostingController?.view.backgroundColor = .clear
-		}
-	}
+	var hostingController: ASHostingControllerProtocol?
 
 	private(set) var id: Int?
 
-	func setupFor(id: Int, view: AnyView?)
+	func setupFor<Content: View>(id: Int, view: Content)
 	{
-		guard let view = view else
-		{
-			hostingController = nil
-			return
-		}
-		if let hc = hostingController
-		{
-			hc.rootView = view
-		}
-		else
-		{
-			hostingController = UIHostingController(rootView: view)
-		}
 		self.id = id
+		self.hostingController = ASHostingController<Content>(view)
 	}
 
-	func updateView(_ view: AnyView?)
+	func updateView<Content: View>(_ view: Content)
 	{
-		guard let view = view else
-		{
-			hostingController = nil
-			return
-		}
-		hostingController?.rootView = view
+		guard let hc = hostingController as? ASHostingController<Content> else { return }
+		hc.setView(view)
 	}
 
 	func willAppear(in vc: UIViewController?)
 	{
-		if hostingController?.parent !== vc
-		{
-			hostingController?.removeFromParent()
-			hostingController.map
+		hostingController.map
 			{
-				vc?.addChild($0)
-				if $0.view.superview !== self
-				{
-					subviews.forEach { $0.removeFromSuperview() }
-					addSubview($0.view)
-				}
-			}
-			setNeedsLayout()
-			vc.map { hostingController?.didMove(toParent: $0) }
+				$0.viewController.removeFromParent()
+				vc?.addChild($0.viewController)
+				addSubview($0.viewController.view)
+				
+				setNeedsLayout()
+				
+				vc.map { hostingController?.viewController.didMove(toParent: $0) }
 		}
 	}
-
+	
 	func didDisappear()
 	{
-		subviews.forEach { $0.removeFromSuperview() }
-		hostingController?.removeFromParent()
+		hostingController?.viewController.removeFromParent()
 	}
-
+	
+	override func prepareForReuse() {
+		hostingController = nil
+		subviews.forEach { $0.removeFromSuperview() }
+	}
+	
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
-		hostingController?.view.frame = bounds
+		hostingController?.viewController.view.frame = bounds
 	}
-
-	override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes
+	
+	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize {
+		guard let hc = hostingController else { return CGSize(width: 1, height: 1) }
+		let size = hc.sizeThatFits(in: targetSize,
+								   selfSizeHorizontal: true,
+								   selfSizeVertical: true)
+		return size
+	}
+	
+	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
 	{
-		layoutAttributes.size = hostingController?.sizeThatFits(in: layoutAttributes.size) ?? CGSize(width: 1, height: 1)
-		return layoutAttributes
+		systemLayoutSizeFitting(targetSize)
 	}
 }

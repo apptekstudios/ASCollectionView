@@ -263,6 +263,7 @@ public struct ASCollectionViewLayoutGrid: ASCollectionViewLayoutSection
 
 		let section = NSCollectionLayoutSection(group: group)
 		section.interGroupSpacing = lineSpacing
+		section.contentInsets = .init(top: 0, leading: 20, bottom: 0, trailing: 20)
 
 		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
 		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
