@@ -187,6 +187,7 @@ struct AppStoreScreen: View
 			                        				ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
 			                        			}
 			                        		}
+										default: break
 			                        	}
 			})
 			{ item in
@@ -209,14 +210,10 @@ struct AppStoreScreen: View
 
 	var body: some View
 	{
-		NavigationView
-		{
-			ASCollectionView(layout: self.layout,
-			                 sections: self.sections)
-				.edgesIgnoringSafeArea(.all)
-				.navigationBarTitle("Apps", displayMode: .inline)
-		}
-		.navigationViewStyle(StackNavigationViewStyle())
+		ASCollectionView(layout: self.layout,
+						 sections: self.sections)
+			.edgesIgnoringSafeArea(.all)
+			.navigationBarTitle("Apps", displayMode: .inline)
 	}
 }
 

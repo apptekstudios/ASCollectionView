@@ -30,6 +30,7 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol 
     let uiHostingController: UIHostingController<ModifiedContent<ViewType, ASHostingControllerModifier>>
     var viewController: UIViewController {
 		uiHostingController.view.backgroundColor = .clear
+		uiHostingController.view.insetsLayoutMarginsFromSafeArea = false
         return uiHostingController as UIViewController
     }
     

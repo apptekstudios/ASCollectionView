@@ -103,25 +103,28 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		let collectionViewController = AS_CollectionViewController(collectionViewLayout: collectionViewLayout)
 		collectionViewController.coordinator = context.coordinator
-        //updateCollectionViewSettings(collectionViewController.collectionView, delegate: delegate)
+        updateCollectionViewSettings(collectionViewController.collectionView, delegate: delegate)
 
 		context.coordinator.collectionViewController = collectionViewController
 
-		//context.coordinator.setupDataSource(forCollectionView: collectionViewController.collectionView)
+		context.coordinator.setupDataSource(forCollectionView: collectionViewController.collectionView)
 		return collectionViewController
 	}
 
 	public func updateUIViewController(_ collectionViewController: AS_CollectionViewController, context: Context)
 	{
 		context.coordinator.parent = self
-        //updateCollectionViewSettings(collectionViewController.collectionView, delegate: context.coordinator.delegate)
-		//context.coordinator.updateContent(collectionViewController.collectionView, animated: true, refreshExistingCells: false)
+        updateCollectionViewSettings(collectionViewController.collectionView, delegate: context.coordinator.delegate)
+		context.coordinator.updateContent(collectionViewController.collectionView, animated: true, refreshExistingCells: true)
 	}
 
     func updateCollectionViewSettings(_ collectionView: UICollectionView, delegate: ASCollectionViewDelegate?)
 	{
         collectionView.delegate = delegate
-		collectionView.backgroundColor = .clear
+		collectionView.dragDelegate = delegate
+		collectionView.dropDelegate = delegate
+		collectionView.dragInteractionEnabled = true
+		collectionView.contentInsetAdjustmentBehavior = delegate?.collectionViewContentInsetAdjustmentBehavior ?? .automatic
 		collectionView.contentInset = contentInsets
 		collectionView.showsVerticalScrollIndicator = scrollIndicatorsEnabled
 		collectionView.showsHorizontalScrollIndicator = scrollIndicatorsEnabled
@@ -227,15 +230,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 			dataSource?.apply(snapshot, animatingDifferences: animated)
 		}
-		
-		func didMoveToParent(_ cv: UICollectionView) {
-			updateContent(cv, animated: false, refreshExistingCells: false)
-		}
 
 		func updateContent(_ cv: UICollectionView, animated: Bool, refreshExistingCells: Bool)
 		{
-			guard collectionViewController?.parent != nil else { return }
-			if refreshExistingCells
+			if refreshExistingCells && collectionViewController?.parent != nil
 			{
 				cv.visibleCells.forEach
 				{ cell in
@@ -255,7 +253,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					}
 				}
 			}
-			populateDataSource(animated: animated)
+			populateDataSource(animated: collectionViewController?.parent != nil)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
@@ -283,11 +281,30 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			(view as? ASCollectionViewSupplementaryView)?.didDisappear()
 		}
+		
+		func dragItem(for indexPath: IndexPath) -> UIDragItem? {
+			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return nil }
+			return parent.sections[indexPath.section].dataSource.getDragItem(for: indexPath)
+		}
+		
+		func canDrop(at indexPath: IndexPath) -> Bool {
+			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return false }
+			return parent.sections[indexPath.section].dataSource.dropEnabled
+		}
+		
+		func removeItem(from indexPath: IndexPath) {
+			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
+			parent.sections[indexPath.section].dataSource.removeItem(from: indexPath)
+		}
+		
+		func insertItems(_ items: [UIDragItem], at indexPath: IndexPath) {
+			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
+			parent.sections[indexPath.section].dataSource.insertDragItems(items, at: indexPath)
+		}
 
 		private let queuePrefetch = PassthroughSubject<Void, Never>()
 		private var prefetchSubscription: AnyCancellable?
 		private var currentlyPrefetching: Set<IndexPath> = []
-
 
 	}
 }
@@ -305,7 +322,10 @@ internal protocol ASCollectionViewCoordinator: class {
     func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
     func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
     func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
-	func didMoveToParent(_ cv: UICollectionView)
+	func dragItem(for indexPath: IndexPath) -> UIDragItem?
+	func canDrop(at indexPath: IndexPath) -> Bool
+	func removeItem(from indexPath: IndexPath)
+	func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
 }
 
 
@@ -319,6 +339,10 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
     open func collectionView(cellShouldSelfSizeVerticallyForItemAt indexPath: IndexPath) -> Bool {
         return true
     }
+	
+	open var collectionViewContentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior {
+		.scrollableAxes
+	}
     
     public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
     {
@@ -340,12 +364,70 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
         coordinator?.collectionView(collectionView, didEndDisplayingSupplementaryView: view, forElementOfKind: elementKind, at: indexPath)
     }
     
-    
     /*
      //REPLACED WITH CUSTOM PREFETCH SOLUTION AS PREFETCH API WAS NOT WORKING FOR COMPOSITIONAL LAYOUT
      public func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath])
      public func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath])
      */
+}
+
+extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionViewDropDelegate {
+	public func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
+		guard let dragItem = self.coordinator?.dragItem(for: indexPath) else { return [] }
+		return [dragItem]
+	}
+	
+	public func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal {
+		guard session.localDragSession != nil else {
+			return UICollectionViewDropProposal(operation: .forbidden)
+		}
+		if collectionView.hasActiveDrag
+		{
+			if let destination = destinationIndexPath {
+				guard (self.coordinator?.canDrop(at: destination) ?? false) else { return UICollectionViewDropProposal(operation: .cancel) }
+			}
+			return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+		}
+		else
+		{
+			return UICollectionViewDropProposal(operation: .copy, intent: .insertAtDestinationIndexPath)
+		}
+	}
+	
+	public func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator) {
+		var proposedDestinationIndexPath: IndexPath? = coordinator.destinationIndexPath
+		
+		if proposedDestinationIndexPath == nil && collectionView.numberOfSections != 0
+		{
+			// Get last index path of collection view.
+			let section = collectionView.numberOfSections - 1
+			let row = collectionView.numberOfItems(inSection: section)
+			proposedDestinationIndexPath = IndexPath(row: row, section: section)
+		}
+		
+		guard let destinationIndexPath = proposedDestinationIndexPath else { return }
+		
+		switch coordinator.proposal.operation
+		{
+		case .move:
+			coordinator.items.forEach { item in
+				if let sourceIndex = item.sourceIndexPath {
+					self.coordinator?.removeItem(from: sourceIndex)
+				}
+			}
+			self.coordinator?.insertItems(coordinator.items.map { $0.dragItem }, at: destinationIndexPath)
+			/*coordinator.items.forEach { (item) in
+				coordinator.drop(item.dragItem, toItemAt: destinationIndexPath) // This assumption is flawed if dropping multiple items
+			}*/
+			
+		case .copy:
+			//Add the code to copy items
+			break
+			
+		default:
+			return
+		}
+	}
 }
 
 extension ASCollectionView.Coordinator {
@@ -355,8 +437,7 @@ extension ASCollectionView.Coordinator {
             .collect(.byTime(DispatchQueue.main, 0.1)) // Wanted to use .throttle(for: 0.1, scheduler: DispatchQueue(label: "ASCollectionView PREFETCH"), latest: true) -> THIS CRASHES?? BUG??
             .compactMap
             { _ in
-				Array<IndexPath>()
-                //self.collectionViewController?.collectionView.indexPathsForVisibleItems
+				self.collectionViewController?.collectionView.indexPathsForVisibleItems
         }
         .receive(on: DispatchQueue.global(qos: .background))
         .map
@@ -426,7 +507,7 @@ public class AS_CollectionViewController: UIViewController {
 	
 	var collectionViewLayout: UICollectionViewLayout
 	lazy var collectionView: UICollectionView = {
-		UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
+		AS_CollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
 	}()
 	
 	public init(collectionViewLayout layout: UICollectionViewLayout) {
@@ -440,28 +521,35 @@ public class AS_CollectionViewController: UIViewController {
 	
 	public override func viewDidLoad() {
 		super.viewDidLoad()
-		view.backgroundColor = .blue
+		view.backgroundColor = .clear
 		view.addSubview(collectionView)
-	}
-	
-	public override func viewDidLayoutSubviews() {
-		super.viewDidLayoutSubviews()
-		collectionView.frame = view.bounds
-	}
-	
-	public override func didMove(toParent parent: UIViewController?) {
-		super.didMove(toParent: parent)
-		if parent != nil {
-			coordinator?.didMoveToParent(collectionView)
-			collectionViewLayout.invalidateLayout()
-		}
+		collectionView.backgroundColor = .clear
+		
+		collectionView.translatesAutoresizingMaskIntoConstraints = false
+		NSLayoutConstraint.activate([
+			collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
+			collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
+			collectionView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
+			collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
+		])
 	}
 	
 	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
 		super.viewWillTransition(to: size, with: coordinator)
 		self.view.frame = CGRect(origin: self.view.frame.origin, size: size)
-		self.view.setNeedsLayout()
-		self.view.layoutIfNeeded()
-		print("WILL TRANSITION")
+		coordinator.animate(alongsideTransition: { (context) in
+			self.view.setNeedsLayout()
+			self.view.layoutIfNeeded()
+			self.collectionViewLayout.invalidateLayout()
+		}, completion: nil)
 	}
+	
+	public override func viewSafeAreaInsetsDidChange() {
+		super.viewSafeAreaInsetsDidChange()
+		self.collectionViewLayout.invalidateLayout()
+	}
+}
+
+class AS_CollectionView: UICollectionView {
+	
 }

@@ -6,48 +6,35 @@ struct MainView: View
 {
 	var body: some View
 	{
-		TabView
-		{
-            InstaFeedScreen()
-                .tabItem
-                {
-                    Image(systemName: "1.square.fill")
-                    Text("Insta Feed")
-            }
-            PhotoGridScreen()
-                .tabItem
-                {
-                    Image(systemName: "2.square.fill")
-                    Text("Photo grid")
-            }
-            AppStoreScreen()
-                .tabItem
-                {
-                    Image(systemName: "3.square.fill")
-                    Text("App Store")
-            }
-            TagsScreen()
-                .tabItem
-                {
-                    Image(systemName: "4.square.fill")
-                    Text("Tags Flow Layout")
-            }
-			
-			RemindersScreen()
-		.navigationViewStyle(StackNavigationViewStyle())
-			.tabItem
-				{
+		NavigationView {
+			List {
+				NavigationLink(destination: InstaFeedScreen()) {
+					Image(systemName: "1.square.fill")
+					Text("Insta Feed")
+				}
+				NavigationLink(destination: PhotoGridScreen()) {
+					Image(systemName: "2.square.fill")
+					Text("Photo grid (with drag and drop)")
+				}
+				NavigationLink(destination: AppStoreScreen()) {
+					Image(systemName: "3.square.fill")
+					Text("App Store")
+				}
+				NavigationLink(destination: TagsScreen()) {
+					Image(systemName: "4.square.fill")
+					Text("Tags Flow Layout")
+				}
+				NavigationLink(destination: RemindersScreen()) {
 					Image(systemName: "5.square.fill")
 					Text("Reminders")
+				}
+				NavigationLink(destination: MagazineLayoutScreen()) {
+					Image(systemName: "6.square.fill")
+					Text("Magazine Layout (with context menu)")
+				}
 			}
-			
-           /* MagazineLayoutScreen()
-                .tabItem
-                {
-                    Image(systemName: "6.square.fill")
-                    Text("Magazine Layout")
-            }*/
 		}
+		.navigationViewStyle(StackNavigationViewStyle())
 	}
 }
 

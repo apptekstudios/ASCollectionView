@@ -35,7 +35,7 @@ struct TagsScreen: View {
         .onTapGesture {
             self.store.refreshStore()
         }
-        
+		.navigationBarTitle("Tags", displayMode: .inline)
     }
 }
 

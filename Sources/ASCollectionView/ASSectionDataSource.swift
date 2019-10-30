@@ -12,6 +12,11 @@ internal protocol ASSectionDataSourceProtocol
 	func onDisappear(_ indexPath: IndexPath)
 	func prefetch(_ indexPaths: [IndexPath])
 	func cancelPrefetch(_ indexPaths: [IndexPath])
+	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
+	func removeItem(from indexPath: IndexPath)
+	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
+	var dragEnabled: Bool { get set }
+	var dropEnabled: Bool { get set }
 }
 
 public enum CellEvent<Data>
@@ -27,6 +32,10 @@ public enum CellEvent<Data>
 	
 	/// Called when an item is disappearing from the screen
 	case onDisappear(item: Data)
+	
+	/// Called when an item should be moved
+	case onRemoveItem(indexPath: IndexPath)
+	case onAddItems(items: [Data], atIndexPath: IndexPath)
 }
 
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
@@ -37,6 +46,9 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 	var dataIDKeyPath: KeyPath<Data, DataID>
 	var onCellEvent: OnCellEvent<Data>?
 	var content: (Data) -> Content
+	
+	var dragEnabled: Bool = false
+	var dropEnabled: Bool = false
 	
 	func hostController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
 	{
@@ -98,6 +110,28 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
             return data[$0.item]
         }
 		onCellEvent?(.cancelPrefetchForData(data: dataToCancelPrefetch))
+	}
+	
+	func getDragItem(for indexPath: IndexPath) -> UIDragItem? {
+		guard dragEnabled else { return nil }
+		let dragItem = UIDragItem(itemProvider: NSItemProvider())
+		dragItem.localObject = data[indexPath.item]
+		return dragItem
+	}
+	
+	func removeItem(from indexPath: IndexPath) {
+		guard indexPath.item < data.endIndex else { return }
+		onCellEvent?(.onRemoveItem(indexPath: indexPath))
+	}
+	
+	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath) {
+		guard dropEnabled else { return }
+		let index = IndexPath(item: min(indexPath.item, data.endIndex), section: indexPath.section)
+		let dataItems = items.compactMap { (dragItem) -> Data? in
+			guard let item = dragItem.localObject as? Data else { return nil }
+			return item
+		}
+		onCellEvent?(.onAddItems(items: dataItems, atIndexPath: index))
 	}
 }
 

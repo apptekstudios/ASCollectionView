@@ -60,27 +60,25 @@ struct PhotoGridScreen: View
 					{
 						ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
 					}
+				case let .onRemoveItem(indexPath):
+					self.data[indexPath.section].remove(at: indexPath.item)
+				case let .onAddItems(items, indexPath):
+					self.data[indexPath.section].insert(contentsOf: items, at: indexPath.item)
 				}
 			})
 			{ item in
 				ASRemoteImageView(item.squareThumbURL)
 					.aspectRatio(1, contentMode: .fill)
-                    .contextMenu {
-                        Text("Test item")
-                        Text("Another item")
-                }
 			}
+		.dragAndDropEnabled(true)
 		}
 	}
 
 	var body: some View
 	{
-		NavigationView
-		{
-			ASCollectionView(layout: self.layout,
-			                 sections: self.sections)
-				.navigationBarTitle("Explore", displayMode: .inline)
-		}.navigationViewStyle(StackNavigationViewStyle())
+		ASCollectionView(layout: self.layout,
+						 sections: self.sections)
+			.navigationBarTitle("Explore", displayMode: .inline)
 	}
 }
 

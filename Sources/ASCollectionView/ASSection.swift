@@ -132,6 +132,17 @@ internal extension ASCollectionViewSection {
 	}
 }
 
+// MARK: DRAG & DROP - PUBLIC MODIFIERS
+
+public extension ASCollectionViewSection {
+	func dragAndDropEnabled(_ isEnabled: Bool) -> Self {
+		var section = self
+		section.dataSource.dragEnabled = true
+		section.dataSource.dropEnabled = true
+		return section
+	}
+}
+
 // MARK: SUPPLEMENTARY VIEWS - PUBLIC MODIFIERS
 
 public extension ASCollectionViewSection {

@@ -18,6 +18,10 @@ class ASCollectionViewMagazineLayoutDelegate: ASCollectionViewDelegate, UICollec
     override func collectionView(cellShouldSelfSizeHorizontallyForItemAt indexPath: IndexPath) -> Bool {
         return false
     }
+	
+	override var collectionViewContentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior {
+		.always
+	}
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeModeForItemAt indexPath: IndexPath) -> MagazineLayoutItemSizeMode {
         let rowIsThree = (indexPath.item % 5) < 3

@@ -32,6 +32,7 @@ struct MagazineLayoutScreen: View
 					{
 						ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
 					}
+				default: break
 				}
 			})
 			{ item in
@@ -55,13 +56,11 @@ struct MagazineLayoutScreen: View
 
 	var body: some View
 	{
-		NavigationView
-		{
-            ASCollectionView(layout: .init(customLayout: { MagazineLayout() }),
-			                 sections: self.sections)
-                .customDelegate(ASCollectionViewMagazineLayoutDelegate.init)
-				.navigationBarTitle("Explore", displayMode: .inline)
-		}.navigationViewStyle(StackNavigationViewStyle())
+		ASCollectionView(layout: .init(customLayout: { MagazineLayout() }),
+						 sections: self.sections)
+			.customDelegate(ASCollectionViewMagazineLayoutDelegate.init)
+			.edgesIgnoringSafeArea(.all)
+			.navigationBarTitle("Magazine Layout (custom delegate)", displayMode: .inline)
 	}
 }
 
