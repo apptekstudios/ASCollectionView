@@ -79,6 +79,11 @@ class ASCollectionViewCell: UICollectionViewCell
     {
         systemLayoutSizeFitting(targetSize)
     }
+	
+	override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
+		layoutAttributes.size = systemLayoutSizeFitting(layoutAttributes.size)
+		return layoutAttributes
+	}
 }
 
 class ASCollectionViewSupplementaryView: UICollectionReusableView
@@ -127,6 +132,7 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 	{
 		super.layoutSubviews()
 		hostingController?.viewController.view.frame = bounds
+		hostingController?.viewController.view.setNeedsLayout()
 	}
 	
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize {
@@ -140,5 +146,10 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
 	{
 		systemLayoutSizeFitting(targetSize)
+	}
+	
+	override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes {
+		layoutAttributes.size = systemLayoutSizeFitting(layoutAttributes.size)
+		return layoutAttributes
 	}
 }

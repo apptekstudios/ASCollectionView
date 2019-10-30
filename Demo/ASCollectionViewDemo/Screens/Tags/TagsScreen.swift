@@ -41,7 +41,11 @@ struct TagsScreen: View {
 
 class AlignedFlowLayout: UICollectionViewFlowLayout {
 	override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
-		true
+		if let collectionView = self.collectionView {
+			return collectionView.frame.size != newBounds.size
+		}
+		
+		return false
 	}
 	
     override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
@@ -57,11 +61,19 @@ class AlignedFlowLayout: UICollectionViewFlowLayout {
         return attributes
     }
 	
+	private var leftEdge: CGFloat {
+		guard let insets = collectionView?.adjustedContentInset else {
+			return sectionInset.left
+		}
+		return insets.left  + sectionInset.left
+	}
+	
 	private var contentWidth: CGFloat? {
-		guard let collectionViewWidth = collectionView?.frame.size.width else {
+		guard let collectionViewWidth = collectionView?.frame.size.width,
+			let insets = collectionView?.adjustedContentInset else {
 			return nil
 		}
-		return collectionViewWidth - sectionInset.left - sectionInset.right
+		return collectionViewWidth - insets.left - insets.right - sectionInset.left - sectionInset.right
 	}
 	
 	fileprivate func isFrame(for firstItemAttributes: UICollectionViewLayoutAttributes, inSameLineAsFrameFor secondItemAttributes: UICollectionViewLayoutAttributes) -> Bool {
@@ -69,7 +81,7 @@ class AlignedFlowLayout: UICollectionViewFlowLayout {
 			return false
 		}
 		let firstItemFrame = firstItemAttributes.frame
-		let lineFrame = CGRect(x: sectionInset.left,
+		let lineFrame = CGRect(x: leftEdge,
 							   y: firstItemFrame.origin.y,
 							   width: lineWidth,
 							   height: firstItemFrame.size.height)
@@ -87,14 +99,14 @@ class AlignedFlowLayout: UICollectionViewFlowLayout {
 			indexPath.item > 0,
 			let previousAttributes = self.layoutAttributesForItem(at: IndexPath(item: indexPath.item - 1, section: indexPath.section))
 			else {
-				attributes.frame.origin.x = sectionInset.left // first item of the section should always be left aligned
+				attributes.frame.origin.x = leftEdge // first item of the section should always be left aligned
 				return attributes
 		}
 		
 		if isFrame(for: attributes, inSameLineAsFrameFor: previousAttributes) {
 			attributes.frame.origin.x = previousAttributes.frame.maxX + minimumInteritemSpacing
 		} else {
-			attributes.frame.origin.x = sectionInset.left
+			attributes.frame.origin.x = leftEdge
 		}
 		
 		return attributes

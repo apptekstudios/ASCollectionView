@@ -213,6 +213,7 @@ struct AppStoreScreen: View
 		{
 			ASCollectionView(layout: self.layout,
 			                 sections: self.sections)
+				.edgesIgnoringSafeArea(.all)
 				.navigationBarTitle("Apps", displayMode: .inline)
 		}
 		.navigationViewStyle(StackNavigationViewStyle())

@@ -91,7 +91,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		self.sections = sections()
 	}
 
-	public func makeUIViewController(context: Context) -> UICollectionViewController
+	public func makeUIViewController(context: Context) -> AS_CollectionViewController
 	{
         context.coordinator.parent = self
         
@@ -101,20 +101,21 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
         
 		let collectionViewLayout = layout.makeLayout(withCoordinator: context.coordinator)
 
-		let collectionViewController = UICollectionViewController(collectionViewLayout: collectionViewLayout)
-        updateCollectionViewSettings(collectionViewController.collectionView, delegate: delegate)
+		let collectionViewController = AS_CollectionViewController(collectionViewLayout: collectionViewLayout)
+		collectionViewController.coordinator = context.coordinator
+        //updateCollectionViewSettings(collectionViewController.collectionView, delegate: delegate)
 
 		context.coordinator.collectionViewController = collectionViewController
 
-		context.coordinator.setupDataSource(forCollectionView: collectionViewController.collectionView)
+		//context.coordinator.setupDataSource(forCollectionView: collectionViewController.collectionView)
 		return collectionViewController
 	}
 
-	public func updateUIViewController(_ collectionViewController: UICollectionViewController, context: Context)
+	public func updateUIViewController(_ collectionViewController: AS_CollectionViewController, context: Context)
 	{
 		context.coordinator.parent = self
-        updateCollectionViewSettings(collectionViewController.collectionView, delegate: context.coordinator.delegate)
-		context.coordinator.updateContent(collectionViewController.collectionView, refreshExistingCells: true)
+        //updateCollectionViewSettings(collectionViewController.collectionView, delegate: context.coordinator.delegate)
+		//context.coordinator.updateContent(collectionViewController.collectionView, animated: true, refreshExistingCells: false)
 	}
 
     func updateCollectionViewSettings(_ collectionView: UICollectionView, delegate: ASCollectionViewDelegate?)
@@ -136,7 +137,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		var parent: ASCollectionView
         var delegate: ASCollectionViewDelegate?
         
-		var collectionViewController: UICollectionViewController?
+		var collectionViewController: AS_CollectionViewController?
 
 		var dataSource: UICollectionViewDiffableDataSource<SectionID, ASCollectionViewItemUniqueID>?
 
@@ -216,7 +217,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			setupPrefetching()
 		}
 
-		func populateDataSource()
+		func populateDataSource(animated: Bool = true)
 		{
 			var snapshot = NSDiffableDataSourceSnapshot<SectionID, ASCollectionViewItemUniqueID>()
 			snapshot.appendSections(parent.sections.map { $0.id })
@@ -224,11 +225,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			{
 				snapshot.appendItems($0.itemIDs, toSection: $0.id)
 			}
-			dataSource?.apply(snapshot)
+			dataSource?.apply(snapshot, animatingDifferences: animated)
+		}
+		
+		func didMoveToParent(_ cv: UICollectionView) {
+			updateContent(cv, animated: false, refreshExistingCells: false)
 		}
 
-		func updateContent(_ cv: UICollectionView, refreshExistingCells: Bool)
+		func updateContent(_ cv: UICollectionView, animated: Bool, refreshExistingCells: Bool)
 		{
+			guard collectionViewController?.parent != nil else { return }
 			if refreshExistingCells
 			{
 				cv.visibleCells.forEach
@@ -249,7 +255,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					}
 				}
 			}
-			populateDataSource()
+			populateDataSource(animated: animated)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
@@ -299,6 +305,7 @@ internal protocol ASCollectionViewCoordinator: class {
     func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
     func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
     func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
+	func didMoveToParent(_ cv: UICollectionView)
 }
 
 
@@ -348,7 +355,8 @@ extension ASCollectionView.Coordinator {
             .collect(.byTime(DispatchQueue.main, 0.1)) // Wanted to use .throttle(for: 0.1, scheduler: DispatchQueue(label: "ASCollectionView PREFETCH"), latest: true) -> THIS CRASHES?? BUG??
             .compactMap
             { _ in
-                self.collectionViewController?.collectionView.indexPathsForVisibleItems
+				Array<IndexPath>()
+                //self.collectionViewController?.collectionView.indexPathsForVisibleItems
         }
         .receive(on: DispatchQueue.global(qos: .background))
         .map
@@ -411,4 +419,49 @@ extension ASCollectionView.Coordinator {
                 self.currentlyPrefetching = Set(prefetch.flatMap { $0.value })
         }
     }
+}
+
+public class AS_CollectionViewController: UIViewController {
+	weak var coordinator: ASCollectionViewCoordinator?
+	
+	var collectionViewLayout: UICollectionViewLayout
+	lazy var collectionView: UICollectionView = {
+		UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
+	}()
+	
+	public init(collectionViewLayout layout: UICollectionViewLayout) {
+		self.collectionViewLayout = layout
+		super.init(nibName: nil, bundle: nil)
+	}
+	
+	required init?(coder: NSCoder) {
+		fatalError("init(coder:) has not been implemented")
+	}
+	
+	public override func viewDidLoad() {
+		super.viewDidLoad()
+		view.backgroundColor = .blue
+		view.addSubview(collectionView)
+	}
+	
+	public override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
+		collectionView.frame = view.bounds
+	}
+	
+	public override func didMove(toParent parent: UIViewController?) {
+		super.didMove(toParent: parent)
+		if parent != nil {
+			coordinator?.didMoveToParent(collectionView)
+			collectionViewLayout.invalidateLayout()
+		}
+	}
+	
+	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+		super.viewWillTransition(to: size, with: coordinator)
+		self.view.frame = CGRect(origin: self.view.frame.origin, size: size)
+		self.view.setNeedsLayout()
+		self.view.layoutIfNeeded()
+		print("WILL TRANSITION")
+	}
 }

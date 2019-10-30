@@ -64,7 +64,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	{
 		context.coordinator.parent = self
 		updateTableViewSettings(tableViewController.tableView)
-		context.coordinator.updateContent(tableViewController.tableView, refreshExistingCells: true)
+		context.coordinator.updateContent(tableViewController.tableView, refreshExistingCells: false)
 	}
 
 	func updateTableViewSettings(_ tableView: UITableView)
@@ -151,8 +151,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			                           view: headerView)
 			     return reusableView
 			 } */
-
-			updateContent(tv, refreshExistingCells: false)
 		}
 
 		func updateContent(_ tv: UITableView, refreshExistingCells: Bool)

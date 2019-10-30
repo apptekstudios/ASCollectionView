@@ -17,10 +17,10 @@ class TagStore: ObservableObject {
         items = TagStore.randomItems()
     }
     
-    fileprivate static let allWords = ["alias", "consequatur", "aut", "perferendis", "sit", "voluptatem", "accusantium", "doloremque", "aperiam", "eaque", "ipsa", "quae", "ab", "illo"]
-    
+	fileprivate static let allWords = ["alias", "consequatur", "aut", "perferendis", "sit", "voluptatem", "accusantium", "doloremque", "aperiam", "eaque", "ipsa", "quae", "ab", "illo", "inventore", "veritatis", "et", "quasi", "architecto", "beatae", "vitae", "dicta", "sunt", "explicabo", "aspernatur", "aut", "maiores", "doloribus", "asperiores", "repellat"]
+
     static func randomItems() -> [Item] {
-        TagStore.allWords.indices.shuffled()[0...Int.random(in: 5...10)].map {
+        TagStore.allWords.indices.shuffled()[0...Int.random(in: 8...18)].map {
             Item(id: $0, displayString: TagStore.allWords[$0])
         }
     }

@@ -26,11 +26,11 @@ struct RemindersScreen: View {
 	let addNewModel = GroupModel(icon: "plus", title: "Create new list", contentCount: nil, color: .green)
 	
     var body: some View {
-		ASCollectionView<Section>(layout: layout, sections: [
-			ASCollectionViewSection(id: .upper, data: upperData) { model in
+		ASCollectionView<Section>(layout: self.layout, sections: [
+			ASCollectionViewSection(id: .upper, data: self.upperData) { model in
 				GroupLarge(model: model)
 			},
-			ASCollectionViewSection(id: .list, data: upperData) { model in
+			ASCollectionViewSection(id: .list, data: self.upperData) { model in
 				GroupSmall(model: model)
 			}
 			.sectionHeader {
@@ -43,7 +43,7 @@ struct RemindersScreen: View {
 				}
 			},
 			ASCollectionViewSection(id: .addNew, content:
-				GroupSmall(model: addNewModel)
+				GroupSmall(model: self.addNewModel)
 			)
 				.sectionFooter {
 					HStack {
