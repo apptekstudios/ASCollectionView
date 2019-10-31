@@ -16,10 +16,10 @@ extension ASCollectionView where SectionID == Int
 		- layout: The layout to use for the collection view
 		- content: A closure returning a SwiftUI view for the given data item
 	*/
-	@inlinable public init<Data, DataID: Hashable, Content: View>(data: [Data], id idKeyPath: KeyPath<Data, DataID>, estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data) -> Content))
+	@inlinable public init<Data, DataID: Hashable, Content: View>(data: [Data], id idKeyPath: KeyPath<Data, DataID>, estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data) -> Content))
 	{
 		self.layout = layout
-		sections = [Section(id: 0, data: data, dataID: idKeyPath, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, contentBuilder: content)]
+		sections = [Section(id: 0, data: data, dataID: idKeyPath, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDrop: onDragDrop, contentBuilder: content)]
 	}
 	
 	/**
@@ -32,10 +32,10 @@ extension ASCollectionView where SectionID == Int
 		- layout: The layout to use for the collection view
 		- content: A closure returning a SwiftUI view for the given data item
 	*/
-	@inlinable public init<Data, Content: View>(data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data) -> Content)) where Data: Identifiable
+	@inlinable public init<Data, Content: View>(data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data) -> Content)) where Data: Identifiable
 	{
 		self.layout = layout
-		sections = [Section(id: 0, data: data, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, contentBuilder: content)]
+		sections = [Section(id: 0, data: data, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDrop: onDragDrop, contentBuilder: content)]
 	}
 	
 	/**

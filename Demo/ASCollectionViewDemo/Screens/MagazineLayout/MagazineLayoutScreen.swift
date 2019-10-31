@@ -32,7 +32,6 @@ struct MagazineLayoutScreen: View
 					{
 						ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
 					}
-				default: break
 				}
 			})
 			{ item in

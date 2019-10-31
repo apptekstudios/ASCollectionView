@@ -15,8 +15,8 @@ internal protocol ASSectionDataSourceProtocol
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	func removeItem(from indexPath: IndexPath)
 	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
-	var dragEnabled: Bool { get set }
-	var dropEnabled: Bool { get set }
+	var dragEnabled: Bool { get }
+	var dropEnabled: Bool { get }
 }
 
 public enum CellEvent<Data>
@@ -32,23 +32,27 @@ public enum CellEvent<Data>
 	
 	/// Called when an item is disappearing from the screen
 	case onDisappear(item: Data)
-	
-	/// Called when an item should be moved
+}
+
+public enum DragDrop<Data>
+{
 	case onRemoveItem(indexPath: IndexPath)
 	case onAddItems(items: [Data], atIndexPath: IndexPath)
 }
 
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
+public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
 
 internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View
 {
 	var data: [Data]
 	var dataIDKeyPath: KeyPath<Data, DataID>
 	var onCellEvent: OnCellEvent<Data>?
+	var onDragDrop: OnDragDrop<Data>?
 	var content: (Data) -> Content
 	
-	var dragEnabled: Bool = false
-	var dropEnabled: Bool = false
+	var dragEnabled: Bool { onDragDrop != nil }
+	var dropEnabled: Bool { onDragDrop != nil }
 	
 	func hostController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
 	{
@@ -121,7 +125,7 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 	
 	func removeItem(from indexPath: IndexPath) {
 		guard indexPath.item < data.endIndex else { return }
-		onCellEvent?(.onRemoveItem(indexPath: indexPath))
+		onDragDrop?(.onRemoveItem(indexPath: indexPath))
 	}
 	
 	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath) {
@@ -131,14 +135,14 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 			guard let item = dragItem.localObject as? Data else { return nil }
 			return item
 		}
-		onCellEvent?(.onAddItems(items: dataItems, atIndexPath: index))
+		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: index))
 	}
 }
 
 extension ASSectionDataSource where Data: Identifiable, DataID == Data.ID
 {
-	init(data: [Data], onCellEvent: OnCellEvent<Data>? = nil, content: @escaping ((Data) -> Content))
+	init(data: [Data], onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, content: @escaping ((Data) -> Content))
 	{
-		self.init(data: data, dataIDKeyPath: \.id, onCellEvent: onCellEvent, content: content)
+		self.init(data: data, dataIDKeyPath: \.id, onCellEvent: onCellEvent, onDragDrop: onDragDrop, content: content)
 	}
 }

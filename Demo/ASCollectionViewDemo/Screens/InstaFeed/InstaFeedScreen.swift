@@ -34,7 +34,6 @@ struct InstaFeedScreen: View
 						                 		{
 						                 			ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
 						                 		}
-											default: break
 						                 	}
 						                 },
 						                 layout: .init(scrollDirection: .horizontal,
@@ -73,7 +72,6 @@ struct InstaFeedScreen: View
 				                               			ASRemoteImageManager.shared.cancelLoad(for: item.url)
 				                               			ASRemoteImageManager.shared.cancelLoad(for: item.usernamePhotoURL)
 				                               		}
-												default: break
 				                               	}
 				})
 				{ item in

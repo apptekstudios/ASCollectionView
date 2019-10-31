@@ -83,6 +83,7 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 	                                                   dataID dataIDKeyPath: KeyPath<Data, DataID>,
 	                                                   estimatedItemSize: CGSize? = nil,
 	                                                   onCellEvent: OnCellEvent<Data>? = nil,
+													   onDragDrop: OnDragDrop<Data>? = nil,
 	                                                   @ViewBuilder contentBuilder: @escaping ((Data) -> Content))
 	{
 		self.id = id
@@ -90,6 +91,7 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 		dataSource = ASSectionDataSource<Data, DataID, Content>(data: data,
 		                                                                      dataIDKeyPath: dataIDKeyPath,
 		                                                                      onCellEvent: onCellEvent,
+																			  onDragDrop: onDragDrop,
 		                                                                      content: contentBuilder)
 	}
 
@@ -129,17 +131,6 @@ internal extension ASCollectionViewSection {
 	
 	func supplementary(ofKind kind: String) -> AnyView? {
 		supplementaryViews[kind]
-	}
-}
-
-// MARK: DRAG & DROP - PUBLIC MODIFIERS
-
-public extension ASCollectionViewSection {
-	func dragAndDropEnabled(_ isEnabled: Bool) -> Self {
-		var section = self
-		section.dataSource.dragEnabled = true
-		section.dataSource.dropEnabled = true
-		return section
 	}
 }
 
@@ -220,8 +211,8 @@ public extension ASCollectionViewSection
 		- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
 		- contentBuilder: A closure returning a SwiftUI view for the given data item
 	*/
-	@inlinable init<Content: View, Data: Identifiable>(id: SectionID, data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, @ViewBuilder contentBuilder: @escaping ((Data) -> Content))
+	@inlinable init<Content: View, Data: Identifiable>(id: SectionID, data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, @ViewBuilder contentBuilder: @escaping ((Data) -> Content))
 	{
-		self.init(id: id, data: data, dataID: \.id, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: \.id, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDrop: onDragDrop, contentBuilder: contentBuilder)
 	}
 }
