@@ -1,6 +1,6 @@
 language: swift
 osx_image: xcode11.2
 install: (swift package update)
-script:
-  - (swift build)
-  - (swift test)
+xcode_project: Demo/ASCollectionView.xcodeproj
+xcode_scheme: ASCollectionView
+xcode_destination: platform=iOS Simulator,OS=13.2,name=iPhone 11
