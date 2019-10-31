@@ -29,6 +29,17 @@ struct EnvironmentKeyASTableViewOnReachedBottom: EnvironmentKey
 	static let defaultValue: (() -> Void) = {}
 }
 
+struct EnvironmentKeyASAlwaysBounceVertical: EnvironmentKey
+{
+	static let defaultValue: Bool = false
+}
+
+struct EnvironmentKeyASAlwaysBounceHorizontal: EnvironmentKey
+{
+	static let defaultValue: Bool = false
+}
+
+
 public extension EnvironmentValues
 {
 	var invalidateCellLayout: () -> Void
@@ -60,6 +71,18 @@ public extension EnvironmentValues
 		get { return self[EnvironmentKeyASTableViewOnReachedBottom.self] }
 		set { self[EnvironmentKeyASTableViewOnReachedBottom.self] = newValue }
 	}
+	
+	var alwaysBounceVertical: Bool
+	{
+		get { return self[EnvironmentKeyASAlwaysBounceVertical.self] }
+		set { self[EnvironmentKeyASAlwaysBounceVertical.self] = newValue }
+	}
+	
+	var alwaysBounceHorizontal: Bool
+	{
+		get { return self[EnvironmentKeyASAlwaysBounceHorizontal.self] }
+		set { self[EnvironmentKeyASAlwaysBounceHorizontal.self] = newValue }
+	}
 }
 
 public extension View
@@ -82,5 +105,15 @@ public extension View
 	func tableViewReachedBottom(_ onReachedBottom: @escaping (() -> Void)) -> some View
 	{
 		environment(\.tableViewOnReachedBottom, onReachedBottom)
+	}
+	
+	func alwaysBounceHorizontal(_ alwaysBounce: Bool = true) -> some View
+	{
+		environment(\.alwaysBounceHorizontal, alwaysBounce)
+	}
+	
+	func alwaysBounceVertical(_ alwaysBounce: Bool = true) -> some View
+	{
+		environment(\.alwaysBounceVertical, alwaysBounce)
 	}
 }

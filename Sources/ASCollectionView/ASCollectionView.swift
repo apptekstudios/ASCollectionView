@@ -64,6 +64,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
+	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
+	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 
 	/**
 	Initializes a  collection view with the given sections
@@ -126,6 +128,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		collectionView.dragInteractionEnabled = true
 		collectionView.contentInsetAdjustmentBehavior = delegate?.collectionViewContentInsetAdjustmentBehavior ?? .automatic
 		collectionView.contentInset = contentInsets
+		collectionView.alwaysBounceVertical = alwaysBounceVertical
+		collectionView.alwaysBounceHorizontal = alwaysBounceHorizontal
 		collectionView.showsVerticalScrollIndicator = scrollIndicatorsEnabled
 		collectionView.showsHorizontalScrollIndicator = scrollIndicatorsEnabled
 	}

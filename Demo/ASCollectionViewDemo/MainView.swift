@@ -8,31 +8,32 @@ struct MainView: View
 	{
 		NavigationView {
 			List {
-				NavigationLink(destination: InstaFeedScreen()) {
-					Image(systemName: "1.square.fill")
-					Text("Insta Feed")
-				}
 				NavigationLink(destination: PhotoGridScreen()) {
-					Image(systemName: "2.square.fill")
+					Image(systemName: "1.square.fill")
 					Text("Photo grid (with drag and drop)")
 				}
 				NavigationLink(destination: AppStoreScreen()) {
-					Image(systemName: "3.square.fill")
+					Image(systemName: "2.square.fill")
 					Text("App Store")
 				}
 				NavigationLink(destination: TagsScreen()) {
-					Image(systemName: "4.square.fill")
+					Image(systemName: "3.square.fill")
 					Text("Tags Flow Layout")
 				}
 				NavigationLink(destination: RemindersScreen()) {
-					Image(systemName: "5.square.fill")
+					Image(systemName: "4.square.fill")
 					Text("Reminders")
+				}
+				NavigationLink(destination: InstaFeedScreen()) {
+					Image(systemName: "5.square.fill")
+					Text("Insta Feed (table view)")
 				}
 				NavigationLink(destination: MagazineLayoutScreen()) {
 					Image(systemName: "6.square.fill")
 					Text("Magazine Layout (with context menu)")
 				}
 			}
+			.navigationBarTitle("Demo App")
 		}
 		.navigationViewStyle(StackNavigationViewStyle())
 	}

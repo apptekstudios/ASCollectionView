@@ -57,6 +57,7 @@ struct RemindersScreen: View {
 			}
 		])
 			.contentInsets(.init(top: 20, left: 0, bottom: 20, right: 0))
+			.alwaysBounceVertical()
 			.background(Color(.systemGroupedBackground))
 			.edgesIgnoringSafeArea(.all)
 			.navigationBarTitle("Reminders", displayMode: .inline)

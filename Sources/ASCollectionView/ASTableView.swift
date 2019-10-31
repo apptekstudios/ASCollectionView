@@ -34,6 +34,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	@Environment(\.tableViewOnReachedBottom) private var onReachedBottom
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
+	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	
 	@inlinable public init(mode: UITableView.Style = .plain, sections: [Section])
 	{
@@ -72,6 +73,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		tableView.backgroundColor = .clear
 		tableView.separatorStyle = separatorsEnabled ? .singleLine : .none
 		tableView.contentInset = contentInsets
+		tableView.alwaysBounceVertical = alwaysBounceVertical
 		tableView.showsVerticalScrollIndicator = scrollIndicatorsEnabled
 		tableView.showsHorizontalScrollIndicator = scrollIndicatorsEnabled
 	}

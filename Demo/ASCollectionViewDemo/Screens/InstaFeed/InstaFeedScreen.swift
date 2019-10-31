@@ -92,6 +92,7 @@ struct InstaFeedScreen: View
 		{
 			self.loadMoreContent() //REACHED BOTTOM, LOADING MORE CONTENT
 		}
+		.navigationBarTitle("Insta Feed (tableview)", displayMode: .inline)
 	}
 
 	func loadMoreContent()
