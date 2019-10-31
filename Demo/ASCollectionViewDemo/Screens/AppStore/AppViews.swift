@@ -2,14 +2,14 @@
 
 import SwiftUI
 
-
 struct GetButton: View
 {
 	var body: some View
 	{
 		Button(action: {
 			// Do something
-		}) {
+		})
+		{
 			Text("GET")
 				.fontWeight(.bold)
 				.padding(EdgeInsets(top: 5, leading: 20, bottom: 5, trailing: 20))
@@ -64,7 +64,6 @@ struct AppViewLarge: View
 		}
 	}
 }
-
 
 struct AppViewCompact: View
 {

@@ -25,7 +25,7 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 	public var id: SectionID
 
 	private var supplementaryViews: [String: AnyView] = [:]
-	
+
 	internal var dataSource: ASSectionDataSourceProtocol
 
 	public var itemIDs: [ASCollectionViewItemUniqueID]
@@ -38,7 +38,7 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 		dataSource.getIndexPaths(withSectionIndex: sectionIndex)
 	}
 
-	func hostController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
+	func configureHostingController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
 	{
 		dataSource.hostController(reusingController: reusingController, forItemID: itemID)
 	}
@@ -64,33 +64,34 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 	}
 
 	var estimatedItemSize: CGSize?
-	
-	
 
 	/**
-	Initializes a  section with data
-	
-	- Parameters:
-		- id: The id for this section
-		- data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'
-		- dataID: The keypath to a hashable identifier of each data item
-		- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
-		- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
-		- contentBuilder: A closure returning a SwiftUI view for the given data item
-	*/
+	 Initializes a  section with data
+
+	 - Parameters:
+	 	- id: The id for this section
+	 	- data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'
+	 	- dataID: The keypath to a hashable identifier of each data item
+	 	- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
+	 	- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
+		- onDragDrop: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
+	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
+	 */
 	public init<Data, DataID: Hashable, Content: View>(id: SectionID,
 	                                                   data: [Data],
 	                                                   dataID dataIDKeyPath: KeyPath<Data, DataID>,
 	                                                   estimatedItemSize: CGSize? = nil,
 	                                                   onCellEvent: OnCellEvent<Data>? = nil,
+	                                                   onDragDrop: OnDragDrop<Data>? = nil,
 	                                                   @ViewBuilder contentBuilder: @escaping ((Data) -> Content))
 	{
 		self.id = id
 		self.estimatedItemSize = estimatedItemSize
 		dataSource = ASSectionDataSource<Data, DataID, Content>(data: data,
-		                                                                      dataIDKeyPath: dataIDKeyPath,
-		                                                                      onCellEvent: onCellEvent,
-		                                                                      content: contentBuilder)
+		                                                        dataIDKeyPath: dataIDKeyPath,
+		                                                        onCellEvent: onCellEvent,
+		                                                        onDragDrop: onDragDrop,
+		                                                        content: contentBuilder)
 	}
 
 	public func hash(into hasher: inout Hasher)
@@ -105,49 +106,61 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 }
 
 // MARK: SUPPLEMENTARY VIEWS - INTERNAL
-internal extension ASCollectionViewSection {
-	mutating func setHeaderView<Content: View>(_ view: Content?) {
+
+internal extension ASCollectionViewSection
+{
+	mutating func setHeaderView<Content: View>(_ view: Content?)
+	{
 		setSupplementaryView(view, ofKind: UICollectionView.elementKindSectionHeader)
 	}
-	
-	mutating func setFooterView<Content: View>(_ view: Content?) {
+
+	mutating func setFooterView<Content: View>(_ view: Content?)
+	{
 		setSupplementaryView(view, ofKind: UICollectionView.elementKindSectionFooter)
 	}
-	
-	mutating func setSupplementaryView<Content: View>(_ view: Content?, ofKind kind: String) {
-		guard let view = view else {
+
+	mutating func setSupplementaryView<Content: View>(_ view: Content?, ofKind kind: String)
+	{
+		guard let view = view else
+		{
 			supplementaryViews.removeValue(forKey: kind)
 			return
 		}
-		
+
 		supplementaryViews[kind] = AnyView(view)
 	}
-	
-	var supplementaryKinds: Set<String> {
+
+	var supplementaryKinds: Set<String>
+	{
 		Set(supplementaryViews.keys)
 	}
-	
-	func supplementary(ofKind kind: String) -> AnyView? {
+
+	func supplementary(ofKind kind: String) -> AnyView?
+	{
 		supplementaryViews[kind]
 	}
 }
 
 // MARK: SUPPLEMENTARY VIEWS - PUBLIC MODIFIERS
 
-public extension ASCollectionViewSection {
-	func sectionHeader<Content: View>(content: (() -> Content?)) -> Self {
+public extension ASCollectionViewSection
+{
+	func sectionHeader<Content: View>(content: () -> Content?) -> Self
+	{
 		var section = self
 		section.setHeaderView(content())
 		return section
 	}
-	
-	func sectionFooter<Content: View>(content: (() -> Content?)) -> Self {
+
+	func sectionFooter<Content: View>(content: () -> Content?) -> Self
+	{
 		var section = self
 		section.setFooterView(content())
 		return section
 	}
-	
-	func sectionSupplementary<Content: View>(ofKind kind: String, content: (() -> Content?)) -> Self {
+
+	func sectionSupplementary<Content: View>(ofKind kind: String, content: () -> Content?) -> Self
+	{
 		var section = self
 		section.setSupplementaryView(content(), ofKind: kind)
 		return section
@@ -158,14 +171,13 @@ public extension ASCollectionViewSection {
 
 public extension ASCollectionViewSection
 {
-	
 	/**
-	Initializes a section with static content
-	
-	- Parameters:
-	- id: The id for this section
-	- content: A closure returning a number of SwiftUI views to display in the collection view
-	*/
+	 Initializes a section with static content
+
+	 - Parameters:
+	 - id: The id for this section
+	 - content: A closure returning a number of SwiftUI views to display in the collection view
+	 */
 	init(id: SectionID, @ViewArrayBuilder content: () -> [AnyView])
 	{
 		self.id = id
@@ -173,7 +185,21 @@ public extension ASCollectionViewSection
 			{
 				ASCollectionViewStaticContent(id: $0.offset, view: $0.element)
 			},
-		                                                                                                                         content: { $0.view })
+		                                                                                                           content: { $0.view })
+	}
+
+	/**
+	 Initializes a section with a single view
+
+	 - Parameters:
+	 - id: The id for this section
+	 - content: A single SwiftUI views to display in the collection view
+	 */
+	init<Content: View>(id: SectionID, content: Content)
+	{
+		self.id = id
+		dataSource = ASSectionDataSource<ASCollectionViewStaticContent, ASCollectionViewStaticContent.ID, AnyView>(data: [ASCollectionViewStaticContent(id: 0, view: AnyView(content))],
+		                                                                                                           content: { $0.view })
 	}
 }
 
@@ -182,17 +208,18 @@ public extension ASCollectionViewSection
 public extension ASCollectionViewSection
 {
 	/**
-	Initializes a  section with identifiable data
-	
-	- Parameters:
-		- id: The id for this section
-		- data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'
-		- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
-		- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
-		- contentBuilder: A closure returning a SwiftUI view for the given data item
-	*/
-	@inlinable init<Content: View, Data: Identifiable>(id: SectionID, data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, @ViewBuilder contentBuilder: @escaping ((Data) -> Content))
+	 Initializes a  section with identifiable data
+
+	 - Parameters:
+	 	- id: The id for this section
+	 	- data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'
+	 	- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
+	 	- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
+		- onDragDrop: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
+	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
+	 */
+	@inlinable init<Content: View, Data: Identifiable>(id: SectionID, data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, @ViewBuilder contentBuilder: @escaping ((Data) -> Content))
 	{
-		self.init(id: id, data: data, dataID: \.id, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: \.id, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDrop: onDragDrop, contentBuilder: contentBuilder)
 	}
 }

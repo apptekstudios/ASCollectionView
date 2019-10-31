@@ -33,6 +33,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	@Environment(\.tableViewSeparatorsEnabled) private var separatorsEnabled
 	@Environment(\.tableViewOnReachedBottom) private var onReachedBottom
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
+	@Environment(\.contentInsets) private var contentInsets
+	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 
 	@inlinable public init(mode: UITableView.Style = .plain, sections: [Section])
 	{
@@ -63,13 +65,15 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	{
 		context.coordinator.parent = self
 		updateTableViewSettings(tableViewController.tableView)
-		context.coordinator.updateContent(tableViewController.tableView, refreshExistingCells: true)
+		context.coordinator.updateContent(tableViewController.tableView, refreshExistingCells: false)
 	}
 
 	func updateTableViewSettings(_ tableView: UITableView)
 	{
 		tableView.backgroundColor = .clear
 		tableView.separatorStyle = separatorsEnabled ? .singleLine : .none
+		tableView.contentInset = contentInsets
+		tableView.alwaysBounceVertical = alwaysBounceVertical
 		tableView.showsVerticalScrollIndicator = scrollIndicatorsEnabled
 		tableView.showsHorizontalScrollIndicator = scrollIndicatorsEnabled
 	}
@@ -109,9 +113,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				.first(where: { $0.id.hashValue == itemID.sectionIDHash })
 		}
 
-		func hostingController(forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
+		@discardableResult
+		func configureHostingController(forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
 		{
-			let controller = section(forItemID: itemID)?.hostController(reusingController: hostingControllerCache[itemID], forItemID: itemID)
+			let controller = section(forItemID: itemID)?.configureHostingController(reusingController: hostingControllerCache[itemID], forItemID: itemID)
 			hostingControllerCache[itemID] = controller
 			return controller
 		}
@@ -121,13 +126,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			tv.delegate = self
 			tv.prefetchDataSource = self
 			tv.register(Cell.self, forCellReuseIdentifier: cellReuseID)
-            tv.register(ASTableViewSupplementaryView.self, forHeaderFooterViewReuseIdentifier: supplementaryReuseID)
-            
+			tv.register(ASTableViewSupplementaryView.self, forHeaderFooterViewReuseIdentifier: supplementaryReuseID)
+
 			dataSource = .init(tableView: tv)
 			{ (tableView, indexPath, itemID) -> UITableViewCell? in
 				guard
 					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell,
-					let hostController = self.hostingController(forItemID: itemID)
+					let hostController = self.configureHostingController(forItemID: itemID)
 				else { return nil }
 				cell.invalidateLayout = {
 					tv.beginUpdates()
@@ -148,8 +153,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			                           view: headerView)
 			     return reusableView
 			 } */
-
-			updateContent(tv, refreshExistingCells: false)
 		}
 
 		func updateContent(_ tv: UITableView, refreshExistingCells: Bool)
@@ -166,10 +169,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				{ cell in
 					guard
 						let cell = cell as? Cell,
-						let itemID = cell.id,
-						let hostController = self.hostingController(forItemID: itemID)
+						let itemID = cell.id
 					else { return }
-					cell.update(hostController)
+					self.configureHostingController(forItemID: itemID)
 				}
 				/* tv.indexPathsForVisibleSupplementaryElements(ofKind: UICollectionView.elementKindSectionHeader).forEach {
 				     guard let header = parent.sections[$0.section].header else { return }
@@ -212,14 +214,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		{
 			(view as? ASTableViewSupplementaryView)?.didDisappear()
 		}
-        
-        public func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int) {
-            (view as? ASTableViewSupplementaryView)?.willAppear(in: tableViewController)
-        }
-        
-        public func tableView(_ tableView: UITableView, didEndDisplayingFooterView view: UIView, forSection section: Int) {
-            (view as? ASTableViewSupplementaryView)?.didDisappear()
-        }
+
+		public func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int)
+		{
+			(view as? ASTableViewSupplementaryView)?.willAppear(in: tableViewController)
+		}
+
+		public func tableView(_ tableView: UITableView, didEndDisplayingFooterView view: UIView, forSection section: Int)
+		{
+			(view as? ASTableViewSupplementaryView)?.didDisappear()
+		}
 
 		public func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath])
 		{
