@@ -77,10 +77,11 @@ struct PostView: View
 			{
 				if !self.captionExpanded
 				{
-                    withAnimation() {
-                        self.captionExpanded = true
-                        self.invalidateCellLayout()
-                    }
+					withAnimation
+					{
+						self.captionExpanded = true
+						self.invalidateCellLayout()
+					}
 				}
 			}
 			Text("View all \(post.comments) comments").foregroundColor(Color(.systemGray))
@@ -105,7 +106,7 @@ struct PostView: View
 				)
 			buttonBar
 			textContent
-            Spacer()
+			Spacer()
 		}
 		.padding([.top, .bottom])
 	}

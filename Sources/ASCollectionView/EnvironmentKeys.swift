@@ -3,7 +3,6 @@
 import Foundation
 import SwiftUI
 
-
 struct EnvironmentKeyInvalidateCellLayout: EnvironmentKey
 {
 	static let defaultValue: (() -> Void) = {}
@@ -39,7 +38,6 @@ struct EnvironmentKeyASAlwaysBounceHorizontal: EnvironmentKey
 	static let defaultValue: Bool = false
 }
 
-
 public extension EnvironmentValues
 {
 	var invalidateCellLayout: () -> Void
@@ -47,13 +45,13 @@ public extension EnvironmentValues
 		get { return self[EnvironmentKeyInvalidateCellLayout.self] }
 		set { self[EnvironmentKeyInvalidateCellLayout.self] = newValue }
 	}
-	
+
 	var scrollIndicatorsEnabled: Bool
 	{
 		get { return self[EnvironmentKeyASScrollIndicatorsEnabled.self] }
 		set { self[EnvironmentKeyASScrollIndicatorsEnabled.self] = newValue }
 	}
-	
+
 	var contentInsets: UIEdgeInsets
 	{
 		get { return self[EnvironmentKeyASContentInsets.self] }
@@ -71,13 +69,13 @@ public extension EnvironmentValues
 		get { return self[EnvironmentKeyASTableViewOnReachedBottom.self] }
 		set { self[EnvironmentKeyASTableViewOnReachedBottom.self] = newValue }
 	}
-	
+
 	var alwaysBounceVertical: Bool
 	{
 		get { return self[EnvironmentKeyASAlwaysBounceVertical.self] }
 		set { self[EnvironmentKeyASAlwaysBounceVertical.self] = newValue }
 	}
-	
+
 	var alwaysBounceHorizontal: Bool
 	{
 		get { return self[EnvironmentKeyASAlwaysBounceHorizontal.self] }
@@ -91,7 +89,7 @@ public extension View
 	{
 		environment(\.scrollIndicatorsEnabled, enabled)
 	}
-	
+
 	func contentInsets(_ insets: UIEdgeInsets) -> some View
 	{
 		environment(\.contentInsets, insets)
@@ -106,12 +104,12 @@ public extension View
 	{
 		environment(\.tableViewOnReachedBottom, onReachedBottom)
 	}
-	
+
 	func alwaysBounceHorizontal(_ alwaysBounce: Bool = true) -> some View
 	{
 		environment(\.alwaysBounceHorizontal, alwaysBounce)
 	}
-	
+
 	func alwaysBounceVertical(_ alwaysBounce: Bool = true) -> some View
 	{
 		environment(\.alwaysBounceVertical, alwaysBounce)

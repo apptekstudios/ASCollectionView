@@ -29,9 +29,9 @@ public struct ASCollectionViewLayout<SectionID: Hashable>
 		self.layout = .compositional({ _ in layout }, interSectionSpacing: interSectionSpacing, scrollDirection: scrollDirection) // ignore section ID -> all have same layout
 	}
 
-	public init(customLayout: (() -> UICollectionViewLayout))
+	public init(customLayout: () -> UICollectionViewLayout)
 	{
-		self.layout = .custom(customLayout())
+		layout = .custom(customLayout())
 	}
 
 	public func makeLayout(withCoordinator coordinator: ASCollectionView<SectionID>.Coordinator) -> UICollectionViewLayout
@@ -128,73 +128,74 @@ public struct ASCollectionViewLayoutList: ASCollectionViewLayoutSection
 		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
 		                                                                      alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
 		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-																			  elementKind: UICollectionView.elementKindSectionFooter,
-																			  alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
+		                                                                      elementKind: UICollectionView.elementKindSectionFooter,
+		                                                                      alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
 		section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
 		return section
 	}
 }
+
 /*
  //It is recommended to use UICollectionViewFlowLayout instead (see demo project). The new CompositionalLayout doesn't yet handle flow layouts well.
- 
-public struct ASCollectionViewLayoutFlow: ASCollectionViewLayoutSection
-{
-	var itemSpacing: CGFloat
-	var lineSpacing: CGFloat
-	
-	public init(itemSpacing: CGFloat = 5,
-				lineSpacing: CGFloat = 5)
-	{
-		self.itemSpacing = itemSpacing
-		self.lineSpacing = lineSpacing
-	}
 
-	public func makeLayout(in layoutEnvironment: NSCollectionLayoutEnvironment, primaryScrollDirection: UICollectionView.ScrollDirection) -> NSCollectionLayoutSection
-	{
-		let itemSize: NSCollectionLayoutSize
-		let groupSize: NSCollectionLayoutSize
-		let supplementarySize: NSCollectionLayoutSize
+ public struct ASCollectionViewLayoutFlow: ASCollectionViewLayoutSection
+ {
+ var itemSpacing: CGFloat
+ var lineSpacing: CGFloat
 
-		switch primaryScrollDirection
-		{
-		case .horizontal:
+ public init(itemSpacing: CGFloat = 5,
+ lineSpacing: CGFloat = 5)
+ {
+ self.itemSpacing = itemSpacing
+ self.lineSpacing = lineSpacing
+ }
+
+ public func makeLayout(in layoutEnvironment: NSCollectionLayoutEnvironment, primaryScrollDirection: UICollectionView.ScrollDirection) -> NSCollectionLayoutSection
+ {
+ let itemSize: NSCollectionLayoutSize
+ let groupSize: NSCollectionLayoutSize
+ let supplementarySize: NSCollectionLayoutSize
+
+ switch primaryScrollDirection
+ {
+ case .horizontal:
             itemSize = NSCollectionLayoutSize(widthDimension: .estimated(150), heightDimension: .estimated(layoutEnvironment.container.effectiveContentSize.height))
-			groupSize = NSCollectionLayoutSize(widthDimension: .estimated(150), heightDimension: .fractionalHeight(1.0))
-			supplementarySize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .fractionalHeight(1.0))
-		case .vertical: fallthrough
-		@unknown default:
+ groupSize = NSCollectionLayoutSize(widthDimension: .estimated(150), heightDimension: .fractionalHeight(1.0))
+ supplementarySize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .fractionalHeight(1.0))
+ case .vertical: fallthrough
+ @unknown default:
             itemSize = NSCollectionLayoutSize(widthDimension: .estimated(layoutEnvironment.container.effectiveContentSize.width), heightDimension: .estimated(55))
-			groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(55))
-			supplementarySize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
-		}
+ groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(55))
+ supplementarySize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
+ }
 
-		let item = NSCollectionLayoutItem(layoutSize: itemSize)
-		let group: NSCollectionLayoutGroup
+ let item = NSCollectionLayoutItem(layoutSize: itemSize)
+ let group: NSCollectionLayoutGroup
 
-		if primaryScrollDirection == .horizontal
-		{
-			group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
-		}
-		else
-		{
-			group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-		}
-		group.interItemSpacing = .fixed(itemSpacing)
+ if primaryScrollDirection == .horizontal
+ {
+ group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+ }
+ else
+ {
+ group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
+ }
+ group.interItemSpacing = .fixed(itemSpacing)
 
-		let section = NSCollectionLayoutSection(group: group)
-		section.interGroupSpacing = lineSpacing
+ let section = NSCollectionLayoutSection(group: group)
+ section.interGroupSpacing = lineSpacing
 
-		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
-		                                                                      alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
-		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-																			  elementKind: UICollectionView.elementKindSectionFooter,
-																			  alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
-		section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
-		return section
-	}
-}
-*/
+ let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
+ elementKind: UICollectionView.elementKindSectionHeader,
+ alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
+ let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
+ elementKind: UICollectionView.elementKindSectionFooter,
+ alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
+ section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
+ return section
+ }
+ }
+ */
 public struct ASCollectionViewLayoutGrid: ASCollectionViewLayoutSection
 {
 	var layoutMode: LayoutMode
@@ -203,16 +204,16 @@ public struct ASCollectionViewLayoutGrid: ASCollectionViewLayoutSection
 	var itemSize: NSCollectionLayoutDimension
 
 	public init(layoutMode: LayoutMode = .fixedNumberOfColumns(2),
-				itemSpacing: CGFloat = 5,
-				lineSpacing: CGFloat = 5,
-				itemSize: NSCollectionLayoutDimension = .estimated(150))
+	            itemSpacing: CGFloat = 5,
+	            lineSpacing: CGFloat = 5,
+	            itemSize: NSCollectionLayoutDimension = .estimated(150))
 	{
 		self.layoutMode = layoutMode
 		self.itemSpacing = itemSpacing
 		self.lineSpacing = lineSpacing
 		self.itemSize = itemSize
 	}
-	
+
 	public enum LayoutMode
 	{
 		case fixedNumberOfColumns(Int)
@@ -269,8 +270,8 @@ public struct ASCollectionViewLayoutGrid: ASCollectionViewLayoutSection
 		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
 		                                                                      alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
 		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-																			  elementKind: UICollectionView.elementKindSectionFooter,
-																			  alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
+		                                                                      elementKind: UICollectionView.elementKindSectionFooter,
+		                                                                      alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
 		section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
 		return section
 	}
@@ -287,12 +288,12 @@ public struct ASCollectionViewLayoutOrthogonalGrid: ASCollectionViewLayoutSectio
 	public var sectionInsets: NSDirectionalEdgeInsets = .zero
 
 	public init(gridSize: Int = 2,
-				itemDimension: NSCollectionLayoutDimension = .fractionalWidth(0.9),
-				sectionDimension: NSCollectionLayoutDimension = .fractionalHeight(0.8),
-				orthogonalScrollingBehavior: UICollectionLayoutSectionOrthogonalScrollingBehavior = .groupPagingCentered,
-				gridSpacing: CGFloat = 5,
-				itemInsets: NSDirectionalEdgeInsets = .zero,
-				sectionInsets: NSDirectionalEdgeInsets = .zero)
+	            itemDimension: NSCollectionLayoutDimension = .fractionalWidth(0.9),
+	            sectionDimension: NSCollectionLayoutDimension = .fractionalHeight(0.8),
+	            orthogonalScrollingBehavior: UICollectionLayoutSectionOrthogonalScrollingBehavior = .groupPagingCentered,
+	            gridSpacing: CGFloat = 5,
+	            itemInsets: NSDirectionalEdgeInsets = .zero,
+	            sectionInsets: NSDirectionalEdgeInsets = .zero)
 	{
 		self.gridSize = gridSize
 		self.itemDimension = itemDimension
@@ -351,8 +352,8 @@ public struct ASCollectionViewLayoutOrthogonalGrid: ASCollectionViewLayoutSectio
 		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
 		                                                                      alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
 		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-																			  elementKind: UICollectionView.elementKindSectionFooter,
-																			  alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
+		                                                                      elementKind: UICollectionView.elementKindSectionFooter,
+		                                                                      alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
 		headerSupplementary.contentInsets = itemInsets
 		footerSupplementary.contentInsets = itemInsets
 

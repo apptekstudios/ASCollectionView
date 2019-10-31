@@ -1,15 +1,16 @@
 // ASCollectionView. Created by Apptek Studios 2019
 
 import ASCollectionView
+import MagazineLayout
 import SwiftUI
 import UIKit
-import MagazineLayout
 
 struct MagazineLayoutScreen: View
 {
-    @State var data: [[Post]] = (0...5).map {
-        DataSource.postsForSection($0, number: 10)
-        }
+	@State var data: [[Post]] = (0...5).map
+	{
+		DataSource.postsForSection($0, number: 10)
+	}
 
 	var sections: [ASCollectionViewSection<Int>]
 	{
@@ -37,26 +38,29 @@ struct MagazineLayoutScreen: View
 			{ item in
 				ASRemoteImageView(item.squareThumbURL)
 					.aspectRatio(1, contentMode: .fit)
-					.contextMenu {
-						Text("Test item")
-						Text("Another item")
+					.contextMenu
+				{
+					Text("Test item")
+					Text("Another item")
 				}
 			}
-            .sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader) {
-                HStack {
-                    Text("Section \(offset)")
-                        .padding()
-                    Spacer()
-                }
-                .background(Color.blue)
-            }
+			.sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader)
+			{
+				HStack
+				{
+					Text("Section \(offset)")
+						.padding()
+					Spacer()
+				}
+				.background(Color.blue)
+			}
 		}
 	}
 
 	var body: some View
 	{
 		ASCollectionView(layout: .init(customLayout: { MagazineLayout() }),
-						 sections: self.sections)
+		                 sections: self.sections)
 			.customDelegate(ASCollectionViewMagazineLayoutDelegate.init)
 			.edgesIgnoringSafeArea(.all)
 			.navigationBarTitle("Magazine Layout (custom delegate)", displayMode: .inline)

@@ -35,7 +35,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
-	
+
 	@inlinable public init(mode: UITableView.Style = .plain, sections: [Section])
 	{
 		self.mode = mode
@@ -126,8 +126,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			tv.delegate = self
 			tv.prefetchDataSource = self
 			tv.register(Cell.self, forCellReuseIdentifier: cellReuseID)
-            tv.register(ASTableViewSupplementaryView.self, forHeaderFooterViewReuseIdentifier: supplementaryReuseID)
-            
+			tv.register(ASTableViewSupplementaryView.self, forHeaderFooterViewReuseIdentifier: supplementaryReuseID)
+
 			dataSource = .init(tableView: tv)
 			{ (tableView, indexPath, itemID) -> UITableViewCell? in
 				guard
@@ -214,14 +214,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		{
 			(view as? ASTableViewSupplementaryView)?.didDisappear()
 		}
-        
-        public func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int) {
-            (view as? ASTableViewSupplementaryView)?.willAppear(in: tableViewController)
-        }
-        
-        public func tableView(_ tableView: UITableView, didEndDisplayingFooterView view: UIView, forSection section: Int) {
-            (view as? ASTableViewSupplementaryView)?.didDisappear()
-        }
+
+		public func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int)
+		{
+			(view as? ASTableViewSupplementaryView)?.willAppear(in: tableViewController)
+		}
+
+		public func tableView(_ tableView: UITableView, didEndDisplayingFooterView view: UIView, forSection section: Int)
+		{
+			(view as? ASTableViewSupplementaryView)?.didDisappear()
+		}
 
 		public func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath])
 		{

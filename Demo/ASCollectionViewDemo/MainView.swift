@@ -6,29 +6,37 @@ struct MainView: View
 {
 	var body: some View
 	{
-		NavigationView {
-			List {
-				NavigationLink(destination: PhotoGridScreen()) {
+		NavigationView
+		{
+			List
+			{
+				NavigationLink(destination: PhotoGridScreen())
+				{
 					Image(systemName: "1.square.fill")
 					Text("Photo grid (with drag and drop)")
 				}
-				NavigationLink(destination: AppStoreScreen()) {
+				NavigationLink(destination: AppStoreScreen())
+				{
 					Image(systemName: "2.square.fill")
 					Text("App Store")
 				}
-				NavigationLink(destination: TagsScreen()) {
+				NavigationLink(destination: TagsScreen())
+				{
 					Image(systemName: "3.square.fill")
 					Text("Tags Flow Layout")
 				}
-				NavigationLink(destination: RemindersScreen()) {
+				NavigationLink(destination: RemindersScreen())
+				{
 					Image(systemName: "4.square.fill")
 					Text("Reminders")
 				}
-				NavigationLink(destination: InstaFeedScreen()) {
+				NavigationLink(destination: InstaFeedScreen())
+				{
 					Image(systemName: "5.square.fill")
 					Text("Insta Feed (table view)")
 				}
-				NavigationLink(destination: MagazineLayoutScreen()) {
+				NavigationLink(destination: MagazineLayoutScreen())
+				{
 					Image(systemName: "6.square.fill")
 					Text("Magazine Layout (with context menu)")
 				}

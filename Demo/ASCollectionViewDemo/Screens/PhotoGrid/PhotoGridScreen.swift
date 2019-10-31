@@ -43,38 +43,36 @@ struct PhotoGridScreen: View
 	{
 		data.enumerated().map
 		{ (offset, sectionData) -> ASCollectionViewSection<Int> in
-			ASCollectionViewSection(
-				id: offset,
-				data: sectionData,
-				onCellEvent: { event in
-					switch event
-					{
-					case let .onAppear(item):
-						ASRemoteImageManager.shared.load(item.squareThumbURL)
-					case let .onDisappear(item):
-						ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-					case let .prefetchForData(data):
-						for item in data
-						{
-							ASRemoteImageManager.shared.load(item.squareThumbURL)
-						}
-					case let .cancelPrefetchForData(data):
-						for item in data
-						{
-							ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-						}
-					}
-			},
-				onDragDrop: { event in
-					switch event
-					{
-					case let .onRemoveItem(indexPath):
-						self.data[indexPath.section].remove(at: indexPath.item)
-					case let .onAddItems(items, indexPath):
-						self.data[indexPath.section].insert(contentsOf: items, at: indexPath.item)
-					}
-			}
-			)
+			ASCollectionViewSection(id: offset,
+			                        data: sectionData,
+			                        onCellEvent: { event in
+			                        	switch event
+			                        	{
+			                        	case let .onAppear(item):
+			                        		ASRemoteImageManager.shared.load(item.squareThumbURL)
+			                        	case let .onDisappear(item):
+			                        		ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+			                        	case let .prefetchForData(data):
+			                        		for item in data
+			                        		{
+			                        			ASRemoteImageManager.shared.load(item.squareThumbURL)
+			                        		}
+			                        	case let .cancelPrefetchForData(data):
+			                        		for item in data
+			                        		{
+			                        			ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+			                        		}
+			                        	}
+			                        },
+			                        onDragDrop: { event in
+			                        	switch event
+			                        	{
+			                        	case let .onRemoveItem(indexPath):
+			                        		self.data[indexPath.section].remove(at: indexPath.item)
+			                        	case let .onAddItems(items, indexPath):
+			                        		self.data[indexPath.section].insert(contentsOf: items, at: indexPath.item)
+			                        	}
+			})
 			{ item in
 				ASRemoteImageView(item.squareThumbURL)
 					.aspectRatio(1, contentMode: .fill)
@@ -85,7 +83,7 @@ struct PhotoGridScreen: View
 	var body: some View
 	{
 		ASCollectionView(layout: self.layout,
-						 sections: self.sections)
+		                 sections: self.sections)
 			.navigationBarTitle("Explore", displayMode: .inline)
 	}
 }

@@ -1,27 +1,26 @@
-//
-//  GroupLarge.swift
-//  ASCollectionViewDemo
-//
-//  Created by Toby Brennan on 26/10/19.
-//  Copyright © 2019 Apptek Studios. All rights reserved.
-//
+// ASCollectionView. Created by Apptek Studios 2019
 
 import SwiftUI
 
-struct GroupLarge: View {
+struct GroupLarge: View
+{
 	var model: GroupModel
-	
-    var body: some View {
-		VStack(alignment: .leading) {
-			HStack(alignment: .center) {
+
+	var body: some View
+	{
+		VStack(alignment: .leading)
+		{
+			HStack(alignment: .center)
+			{
 				Image(systemName: model.icon)
 					.foregroundColor(.white)
 					.padding(10)
 					.background(
 						Circle().fill(model.color)
-				)
+					)
 				Spacer()
-				model.contentCount.map {
+				model.contentCount.map
+				{
 					Text("\($0)")
 						.font(.title)
 						.bold()
@@ -34,15 +33,18 @@ struct GroupLarge: View {
 		}
 		.padding()
 		.background(Color(.secondarySystemGroupedBackground))
-	.clipShape(RoundedRectangle(cornerRadius: 5))
-    }
+		.clipShape(RoundedRectangle(cornerRadius: 5))
+	}
 }
 
-struct GroupLarge_Previews: PreviewProvider {
-    static var previews: some View {
-		ZStack {
+struct GroupLarge_Previews: PreviewProvider
+{
+	static var previews: some View
+	{
+		ZStack
+		{
 			Color(.secondarySystemBackground)
 			GroupLarge(model: .demo)
 		}
-    }
+	}
 }
