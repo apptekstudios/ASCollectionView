@@ -38,7 +38,7 @@ struct InstaFeedScreen: View
 						                 },
 						                 layout: .init(scrollDirection: .horizontal,
 						                               layout: ASCollectionViewLayoutList(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))))
-						{ item in
+						{ item, _ in
 							StoryView(post: item)
 						}
 						.frame(height: 100)
@@ -74,7 +74,7 @@ struct InstaFeedScreen: View
 				                               		}
 				                               	}
 				})
-				{ item in
+				{ item, _ in
 					PostView(post: item)
 				}
 			}

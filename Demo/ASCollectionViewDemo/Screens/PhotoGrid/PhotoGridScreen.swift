@@ -73,7 +73,7 @@ struct PhotoGridScreen: View
 			                        		self.data[indexPath.section].insert(contentsOf: items, at: indexPath.item)
 			                        	}
 			})
-			{ item in
+			{ item, _ in
 				ASRemoteImageView(item.squareThumbURL)
 					.aspectRatio(1, contentMode: .fill)
 			}

@@ -4,12 +4,12 @@ import Combine
 import SwiftUI
 
 /* extension ASTableView where SectionID == Int {
- @inlinable public init<Data, DataID: Hashable, Content: View>(data: [Data], id idKeyPath: KeyPath<Data, DataID>, onCellEvent: ASTableViewSectionDataSource<Data, DataID, Content>.OnCellEvent? = nil, mode: UITableView.Style = .plain, @ViewBuilder content: @escaping ((Data) -> Content)) {
+ @inlinable public init<Data, DataID: Hashable, Content: View>(data: [Data], id idKeyPath: KeyPath<Data, DataID>, onCellEvent: ASTableViewSectionDataSource<Data, DataID, Content>.OnCellEvent? = nil, mode: UITableView.Style = .plain, @ViewBuilder content: @escaping ((Data, ExtraInfo) -> Content)) {
  self.mode = mode
  self.sections = [Section(id: 0, data: data, dataID: idKeyPath, onCellEvent: onCellEvent, contentBuilder: content)]
  }
 
- @inlinable init<Data, Content: View>(data: [Data], onCellEvent: ASTableViewSectionDataSource<Data, Data.ID, Content>.OnCellEvent? = nil, mode: UITableView.Style = .plain, @ViewBuilder content: @escaping ((Data) -> Content)) where Data: Identifiable {
+ @inlinable init<Data, Content: View>(data: [Data], onCellEvent: ASTableViewSectionDataSource<Data, Data.ID, Content>.OnCellEvent? = nil, mode: UITableView.Style = .plain, @ViewBuilder content: @escaping ((Data, ExtraInfo) -> Content) where Data: Identifiable {
  self.mode = mode
  self.sections = [Section(id: 0, data: data, onCellEvent: onCellEvent, contentBuilder: content)]
  }

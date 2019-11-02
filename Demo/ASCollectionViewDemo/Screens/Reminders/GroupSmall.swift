@@ -28,8 +28,6 @@ struct GroupSmall: View
 			}
 		}
 		.padding()
-		.background(Color(.secondarySystemGroupedBackground))
-		.clipShape(RoundedRectangle(cornerRadius: 5))
 	}
 }
 

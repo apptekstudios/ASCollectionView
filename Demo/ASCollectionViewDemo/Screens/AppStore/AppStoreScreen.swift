@@ -182,7 +182,7 @@ struct AppStoreScreen: View
 			                        		}
 			                        	}
 			})
-			{ item in
+			{ item, _ in
 				if sectionID == 0 {
 					AppViewFeature(app: item)
 				}

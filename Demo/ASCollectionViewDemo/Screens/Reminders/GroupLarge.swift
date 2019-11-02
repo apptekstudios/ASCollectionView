@@ -33,7 +33,7 @@ struct GroupLarge: View
 		}
 		.padding()
 		.background(Color(.secondarySystemGroupedBackground))
-		.clipShape(RoundedRectangle(cornerRadius: 5))
+		.clipShape(RoundedRectangle(cornerRadius: 12))
 	}
 }
 

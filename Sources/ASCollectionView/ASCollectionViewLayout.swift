@@ -13,6 +13,9 @@ public struct ASCollectionViewLayout<SectionID: Hashable>
 	}
 
 	var layout: LayoutType
+	var decorationTypes: [(elementKind: String, ViewType: UICollectionReusableView.Type)] = []
+	
+	
 	typealias CompositionalLayout = ((_ sectionID: SectionID) -> ASCollectionViewLayoutSection)
 
 	public init(scrollDirection: UICollectionView.ScrollDirection = .vertical,
@@ -39,6 +42,7 @@ public struct ASCollectionViewLayout<SectionID: Hashable>
 		switch layout
 		{
 		case let .custom(layout):
+			registerDecorationViews(layout)
 			return layout
 		case let .compositional(layoutClosure, interSectionSpacing, scrollDirection):
 			let config = UICollectionViewCompositionalLayoutConfiguration()
@@ -52,6 +56,7 @@ public struct ASCollectionViewLayout<SectionID: Hashable>
 			}
 
 			let cvLayout = UICollectionViewCompositionalLayout(sectionProvider: sectionProvider, configuration: config)
+			registerDecorationViews(cvLayout)
 			return cvLayout
 		}
 	}
@@ -60,11 +65,28 @@ public struct ASCollectionViewLayout<SectionID: Hashable>
 	{
 		ASCollectionViewLayout(layout: ASCollectionViewLayoutList())
 	}
+	
+	func registerDecorationViews(_ layout: UICollectionViewLayout) {
+		decorationTypes.forEach { (elementKind, ViewType) in
+			layout.register(ViewType, forDecorationViewOfKind: elementKind)
+		}
+	}
 }
+
 
 public protocol ASCollectionViewLayoutSection
 {
 	func makeLayout(in layoutEnvironment: NSCollectionLayoutEnvironment, primaryScrollDirection: UICollectionView.ScrollDirection) -> NSCollectionLayoutSection
+}
+
+
+public extension ASCollectionViewLayout
+{
+	func decorationView<Content: View & Decoration>(_ viewType: Content.Type, forDecorationViewOfKind elementKind: String) -> Self {
+		var layout = self
+		layout.decorationTypes.append((elementKind, ASCollectionViewDecoration<Content>.self))
+		return layout
+	}
 }
 
 public struct ASCollectionViewLayoutCustomCompositionalSection: ASCollectionViewLayoutSection

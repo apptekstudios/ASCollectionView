@@ -35,7 +35,7 @@ struct MagazineLayoutScreen: View
 					}
 				}
 			})
-			{ item in
+			{ item, _ in
 				ASRemoteImageView(item.squareThumbURL)
 					.aspectRatio(1, contentMode: .fit)
 					.contextMenu

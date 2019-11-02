@@ -27,7 +27,7 @@ struct TagsScreen: View
 			                 	fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
 			                 	return fl
 			}))
-			{ item in
+			{ item, _ in
 				Text(item.displayString)
 					.fixedSize()
 					.padding(5)

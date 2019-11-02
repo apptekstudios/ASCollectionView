@@ -43,21 +43,35 @@ public enum DragDrop<Data>
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
 public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
 
+
+public struct ExtraInfo {
+	public var isSelected: Bool
+	public var isFirstInSection: Bool
+	public var isLastInSection: Bool
+}
+
 internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View
 {
 	var data: [Data]
 	var dataIDKeyPath: KeyPath<Data, DataID>
 	var onCellEvent: OnCellEvent<Data>?
 	var onDragDrop: OnDragDrop<Data>?
-	var content: (Data) -> Content
+	var content: (Data, ExtraInfo) -> Content
 
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
 
+	func info(forItemID itemID: ASCollectionViewItemUniqueID) -> ExtraInfo {
+		#warning("isSelected value always returns false")
+		return ExtraInfo(isSelected: false,
+						 isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
+						 isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
+	}
+	
 	func hostController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
 	{
 		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
-		let view = content(item)
+		let view = content(item, info(forItemID: itemID))
 
 		if let existingHC = reusingController as? ASHostingController<Content>
 		{
@@ -147,7 +161,7 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 
 extension ASSectionDataSource where Data: Identifiable, DataID == Data.ID
 {
-	init(data: [Data], onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, content: @escaping ((Data) -> Content))
+	init(data: [Data], onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, content: @escaping ((Data, ExtraInfo) -> Content))
 	{
 		self.init(data: data, dataIDKeyPath: \.id, onCellEvent: onCellEvent, onDragDrop: onDragDrop, content: content)
 	}
