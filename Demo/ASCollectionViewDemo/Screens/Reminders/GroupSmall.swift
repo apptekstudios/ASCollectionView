@@ -11,23 +11,24 @@ struct GroupSmall: View
 		HStack(alignment: .center)
 		{
 			Image(systemName: model.icon)
+				.font(.system(size: 16, weight: .regular))
+				.padding(14)
 				.foregroundColor(.white)
-				.padding(10)
 				.background(
 					Circle().fill(model.color)
-				)
-
+			)
+			
 			Text(model.title)
 				.multilineTextAlignment(.leading)
 				.foregroundColor(Color(.label))
-
+			
 			Spacer()
 			model.contentCount.map
-			{
-				Text("\($0)")
+				{
+					Text("\($0)")
 			}
 		}
-		.padding()
+		.padding(10)
 	}
 }
 

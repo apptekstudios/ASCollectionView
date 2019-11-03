@@ -13,19 +13,24 @@ struct RemindersScreen: View
 	}
 
 	@State var upperData: [GroupModel] = [GroupModel(icon: "calendar", title: "Today", color: .blue),
-	                                      GroupModel(icon: "clock.fill", title: "Scheduled", color: .orange),
-	                                      GroupModel(icon: "tray.fill", title: "All", color: .gray),
-	                                      GroupModel(icon: "flag.fill", title: "Flagged", color: .red)]
+										  GroupModel(icon: "clock.fill", title: "Scheduled", color: .orange),
+										  GroupModel(icon: "tray.fill", title: "All", color: .gray),
+										  GroupModel(icon: "flag.fill", title: "Flagged", color: .red)]
+	@State var lowerData: [GroupModel] = [GroupModel(icon: "list.bullet", title: "Todo"),
+										  GroupModel(icon: "cart.fill", title: "Groceries"),
+										  GroupModel(icon: "house.fill", title: "House renovation"),
+										  GroupModel(icon: "book.fill", title: "Reading list")]
 
 	let addNewModel = GroupModel(icon: "plus", title: "Create new list", contentCount: nil, color: .green)
 
 	var body: some View
 	{
-		ASCollectionView<Section>(layout: self.layout, sections: [ASCollectionViewSection(id: .upper, data: self.upperData)
+		ASCollectionView<Section>(layout: self.layout, sections: [
+			ASCollectionViewSection(id: .upper, data: self.upperData)
 			{ model, _ in
 				GroupLarge(model: model)
 			},
-		                                                          ASCollectionViewSection(id: .list, data: self.upperData)
+			ASCollectionViewSection(id: .list, data: self.lowerData)
 			{ model, info in
 				VStack(spacing: 0) {
 					GroupSmall(model: model)
@@ -35,35 +40,40 @@ struct RemindersScreen: View
 				}
 			}
 			.sectionHeader
-			{
-				HStack
 				{
-					Text("My Lists")
-						.font(.headline)
-						.bold()
-						.padding(.bottom, 5)
-					Spacer()
-				}
+					HStack
+						{
+							Text("My Lists")
+								.font(.headline)
+								.bold()
+								.padding(.bottom, 5)
+							Spacer()
+					}
 			},
-		                                                          ASCollectionViewSection(id: .addNew, content:
+			ASCollectionViewSection(id: .addNew, content:
 				GroupSmall(model: self.addNewModel))
 				.sectionFooter
-			{
-				HStack
 				{
-					Spacer()
-					Text("Try rotating the screen")
-						.padding()
-						.background(Color(.secondarySystemGroupedBackground))
-					Spacer()
-				}
-				.padding(.top)
-		}])
+					HStack
+						{
+							Spacer()
+							Text("Try rotating the screen")
+								.padding()
+								.background(Color(.secondarySystemGroupedBackground))
+							Spacer()
+					}
+					.padding(.top)
+			}
+		])
 			.contentInsets(.init(top: 20, left: 0, bottom: 20, right: 0))
 			.alwaysBounceVertical()
 			.background(Color(.systemGroupedBackground))
 			.edgesIgnoringSafeArea(.all)
 			.navigationBarTitle("Reminders", displayMode: .inline)
+			.navigationBarItems(trailing:
+				HStack(spacing: 20) {
+					EditButton()
+			})
 	}
 	
 	let groupBackgroundElementID = UUID().uuidString
@@ -110,6 +120,7 @@ struct GroupBackground: View, Decoration {
 			.fill(Color(.secondarySystemGroupedBackground))
 	}
 }
+
 
 struct RemindersScreen_Previews: PreviewProvider
 {
