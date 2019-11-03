@@ -7,7 +7,7 @@ internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func hostController(reusingController: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
+	func configureHostingController(reusingController: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
 	func prefetch(_ indexPaths: [IndexPath])
@@ -15,6 +15,7 @@ internal protocol ASSectionDataSourceProtocol
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	func removeItem(from indexPath: IndexPath)
 	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
+	func updateSelectedItems(_ indexPaths: [IndexPath])
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 }
@@ -54,24 +55,24 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 {
 	var data: [Data]
 	var dataIDKeyPath: KeyPath<Data, DataID>
-	var onCellEvent: OnCellEvent<Data>?
-	var onDragDrop: OnDragDrop<Data>?
+	var onCellEvent: OnCellEvent<Data>? = nil
+	var onDragDrop: OnDragDrop<Data>? = nil
+	var selectedItems: Binding<[Data]>? = nil
 	var content: (Data, ExtraInfo) -> Content
 
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
 
-	func info(forItemID itemID: ASCollectionViewItemUniqueID) -> ExtraInfo {
-		#warning("isSelected value always returns false")
-		return ExtraInfo(isSelected: false,
+	func info(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ExtraInfo {
+		return ExtraInfo(isSelected: isSelected,
 						 isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
 						 isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
 	}
 	
-	func hostController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
+	func configureHostingController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
 	{
 		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
-		let view = content(item, info(forItemID: itemID))
+		let view = content(item, info(forItemID: itemID, isSelected: isSelected))
 
 		if let existingHC = reusingController as? ASHostingController<Content>
 		{
@@ -157,12 +158,13 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 		}
 		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: index))
 	}
-}
-
-extension ASSectionDataSource where Data: Identifiable, DataID == Data.ID
-{
-	init(data: [Data], onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, content: @escaping ((Data, ExtraInfo) -> Content))
-	{
-		self.init(data: data, dataIDKeyPath: \.id, onCellEvent: onCellEvent, onDragDrop: onDragDrop, content: content)
+	
+	func updateSelectedItems(_ indexPaths: [IndexPath]) {
+		let newSelectedItems: [Data] = indexPaths.compactMap
+		{
+			guard $0.item < data.endIndex else { return nil }
+			return data[$0.item]
+		}
+		selectedItems?.wrappedValue = newSelectedItems
 	}
 }

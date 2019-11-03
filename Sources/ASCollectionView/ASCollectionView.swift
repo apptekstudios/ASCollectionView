@@ -68,6 +68,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
+	@Environment(\.editMode) private var editMode
 
 	/**
 	 Initializes a  collection view with the given sections
@@ -134,6 +135,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		collectionView.alwaysBounceHorizontal = alwaysBounceHorizontal
 		collectionView.showsVerticalScrollIndicator = scrollIndicatorsEnabled
 		collectionView.showsHorizontalScrollIndicator = scrollIndicatorsEnabled
+		collectionView.allowsSelection = editMode?.wrappedValue.isEditing ?? false
+		collectionView.allowsMultipleSelection = editMode?.wrappedValue.isEditing ?? false
 	}
 
 	public func makeCoordinator() -> Coordinator
@@ -180,9 +183,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		}
 
 		@discardableResult
-		func configureHostingController(forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
+		func configureHostingController(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
 		{
-			let controller = section(forItemID: itemID)?.configureHostingController(reusingController: hostingControllerCache[itemID], forItemID: itemID)
+			let controller = section(forItemID: itemID)?.dataSource.configureHostingController(reusingController: hostingControllerCache[itemID], forItemID: itemID, isSelected: isSelected)
 			hostingControllerCache[itemID] = controller
 			return controller
 		}
@@ -201,7 +204,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				guard
 					let cell = collectionView.dequeueReusableCell(withReuseIdentifier: self.cellReuseID, for: indexPath) as? Cell
 				else { return nil }
-				guard let hostController = self.configureHostingController(forItemID: itemID)
+				let isSelected = collectionView.indexPathsForSelectedItems?.contains(indexPath) ?? false
+				guard let hostController = self.configureHostingController(forItemID: itemID, isSelected: isSelected)
 				else { return cell }
 				cell.invalidateLayout = {
 					collectionView.collectionViewLayout.invalidateLayout()
@@ -251,7 +255,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						let cell = cell as? Cell,
 						let itemID = cell.id
 					else { return }
-					self.configureHostingController(forItemID: itemID)
+					
+					self.configureHostingController(forItemID: itemID, isSelected: cell.isSelected)
 				}
 
 				supplementaryKinds().forEach
@@ -272,7 +277,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			(cell as? Cell)?.willAppear(in: collectionViewController)
 			currentlyPrefetching.remove(indexPath)
 			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
-			parent.sections[indexPath.section].onAppear(indexPath)
+			parent.sections[indexPath.section].dataSource.onAppear(indexPath)
 			queuePrefetch.send()
 		}
 
@@ -280,7 +285,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			(cell as? Cell)?.didDisappear()
 			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
-			parent.sections[indexPath.section].onDisappear(indexPath)
+			parent.sections[indexPath.section].dataSource.onDisappear(indexPath)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
@@ -291,6 +296,31 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		public func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
 		{
 			(view as? ASCollectionViewSupplementaryView)?.didDisappear()
+		}
+		
+		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+			guard
+				let cell = collectionView.cellForItem(at: indexPath) as? Cell,
+				let itemID = cell.id
+				else { return }
+			self.configureHostingController(forItemID: itemID, isSelected: true)
+		}
+		
+		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+			guard
+				let cell = collectionView.cellForItem(at: indexPath) as? Cell,
+				let itemID = cell.id
+				else { return }
+			self.configureHostingController(forItemID: itemID, isSelected: false)
+		}
+		
+		func updateSelectionBindings(_ collectionView: UICollectionView) {
+			let selected = collectionView.indexPathsForSelectedItems ?? []
+			let selectedBySection = Dictionary(grouping: selected) { $0.section }
+			for (section, selectedIndexPaths) in selectedBySection {
+				guard section < parent.sections.endIndex else { return }
+				parent.sections[section].dataSource.updateSelectedItems(selectedIndexPaths)
+			}
 		}
 
 		func dragItem(for indexPath: IndexPath) -> UIDragItem?
@@ -339,6 +369,8 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
+	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
+	func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
 	func dragItem(for indexPath: IndexPath) -> UIDragItem?
 	func canDrop(at indexPath: IndexPath) -> Bool
 	func removeItem(from indexPath: IndexPath)
@@ -383,6 +415,14 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 	{
 		coordinator?.collectionView(collectionView, didEndDisplayingSupplementaryView: view, forElementOfKind: elementKind, at: indexPath)
 	}
+	
+	public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+		coordinator?.collectionView(collectionView, didSelectItemAt: indexPath)
+	}
+	
+	public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+		coordinator?.collectionView(collectionView, didDeselectItemAt: indexPath)
+	}
 
 	/*
 	 //REPLACED WITH CUSTOM PREFETCH SOLUTION AS PREFETCH API WAS NOT WORKING FOR COMPOSITIONAL LAYOUT
@@ -409,7 +449,9 @@ extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionVi
 		{
 			if let destination = destinationIndexPath
 			{
-				guard coordinator?.canDrop(at: destination) ?? false else { return UICollectionViewDropProposal(operation: .cancel) }
+				guard coordinator?.canDrop(at: destination) ?? false else {
+					return UICollectionViewDropProposal(operation: .cancel)
+				}
 			}
 			return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
 		}
@@ -443,13 +485,16 @@ extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionVi
 					self.coordinator?.removeItem(from: sourceIndex)
 				}
 			}
+			
 			self.coordinator?.insertItems(coordinator.items.map { $0.dragItem }, at: destinationIndexPath)
-			/* coordinator.items.forEach { (item) in
-			 	coordinator.drop(item.dragItem, toItemAt: destinationIndexPath) // This assumption is flawed if dropping multiple items
-			 } */
+			/*self.coordinator?.afterNextUpdate = {
+				coordinator.items.forEach { (item) in
+					coordinator.drop(item.dragItem, toItemAt: destinationIndexPath) // This assumption is flawed if dropping multiple items
+				}
+			}*/
 
 		case .copy:
-			// Add the code to copy items
+			self.coordinator?.insertItems(coordinator.items.map { $0.dragItem }, at: destinationIndexPath)
 			break
 
 		default:
@@ -478,7 +523,7 @@ extension ASCollectionView.Coordinator
 			}
 			var toPrefetch: [Int: [IndexPath]] = visibleIndexPathsBySection.mapValues
 			{ item in
-				let sectionIndexPaths = self.parent.sections[item.section].getIndexPaths(withSectionIndex: item.section)
+				let sectionIndexPaths = self.parent.sections[item.section].dataSource.getIndexPaths(withSectionIndex: item.section)
 				let nextItemsInSection: ArraySlice<IndexPath> = {
 					guard (item.last + 1) < sectionIndexPaths.endIndex else { return [] }
 					return sectionIndexPaths[(item.last + 1)..<min(item.last + 6, sectionIndexPaths.endIndex)]
@@ -496,18 +541,18 @@ extension ASCollectionView.Coordinator
 				let firstIndex = visibleIndexPathsBySection[firstSection]?.first, firstIndex < 5 // CHECK HOW CLOSE TO THIS SECTION WE ARE
 			{
 				let precedingSection = firstSection - 1
-				toPrefetch[precedingSection] = self.parent.sections[precedingSection].getIndexPaths(withSectionIndex: precedingSection).suffix(5)
+				toPrefetch[precedingSection] = self.parent.sections[precedingSection].dataSource.getIndexPaths(withSectionIndex: precedingSection).suffix(5)
 			}
 			// CHECK IF THERES A LATER SECTION TO PRELOAD
 			if
 				let lastSection = toPrefetch.keys.max(), // FIND THE LAST VISIBLE SECTION
 				(lastSection + 1) < self.parent.sections.endIndex, // CHECK THERE IS A SECTION AFTER THIS
 				let lastIndex = visibleIndexPathsBySection[lastSection]?.last,
-				let lastSectionEndIndex = self.parent.sections[lastSection].getIndexPaths(withSectionIndex: lastSection).last?.item,
+				let lastSectionEndIndex = self.parent.sections[lastSection].dataSource.getIndexPaths(withSectionIndex: lastSection).last?.item,
 				(lastSectionEndIndex - lastIndex) < 5 // CHECK HOW CLOSE TO THIS SECTION WE ARE
 			{
 				let nextSection = lastSection + 1
-				toPrefetch[nextSection] = Array(self.parent.sections[nextSection].getIndexPaths(withSectionIndex: nextSection).prefix(5))
+				toPrefetch[nextSection] = Array(self.parent.sections[nextSection].dataSource.getIndexPaths(withSectionIndex: nextSection).prefix(5))
 			}
 			return toPrefetch
 		}
@@ -517,12 +562,12 @@ extension ASCollectionView.Coordinator
 			{ sectionIndex, toPrefetch in
 				if !toPrefetch.isEmpty
 				{
-					self.parent.sections[sectionIndex].prefetch(toPrefetch)
+					self.parent.sections[sectionIndex].dataSource.prefetch(toPrefetch)
 				}
 				let toCancel = Array(self.currentlyPrefetching.filter { $0.section == sectionIndex }.subtracting(toPrefetch))
 				if !toCancel.isEmpty
 				{
-					self.parent.sections[sectionIndex].cancelPrefetch(toCancel)
+					self.parent.sections[sectionIndex].dataSource.cancelPrefetch(toCancel)
 				}
 			}
 

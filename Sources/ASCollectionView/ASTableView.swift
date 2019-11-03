@@ -114,9 +114,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		}
 
 		@discardableResult
-		func configureHostingController(forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
+		func configureHostingController(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
 		{
-			let controller = section(forItemID: itemID)?.configureHostingController(reusingController: hostingControllerCache[itemID], forItemID: itemID)
+			let controller = section(forItemID: itemID)?.dataSource.configureHostingController(reusingController: hostingControllerCache[itemID], forItemID: itemID, isSelected: isSelected)
 			hostingControllerCache[itemID] = controller
 			return controller
 		}
@@ -130,9 +130,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 			dataSource = .init(tableView: tv)
 			{ (tableView, indexPath, itemID) -> UITableViewCell? in
+				let isSelected = tableView.indexPathsForSelectedRows?.contains(indexPath) ?? false
 				guard
 					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell,
-					let hostController = self.configureHostingController(forItemID: itemID)
+					let hostController = self.configureHostingController(forItemID: itemID, isSelected: isSelected)
 				else { return nil }
 				cell.invalidateLayout = {
 					tv.beginUpdates()
@@ -171,7 +172,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 						let cell = cell as? Cell,
 						let itemID = cell.id
 					else { return }
-					self.configureHostingController(forItemID: itemID)
+					
+					self.configureHostingController(forItemID: itemID, isSelected: cell.isSelected)
 				}
 				/* tv.indexPathsForVisibleSupplementaryElements(ofKind: UICollectionView.elementKindSectionHeader).forEach {
 				     guard let header = parent.sections[$0.section].header else { return }
@@ -196,13 +198,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
 			(cell as? Cell)?.willAppear(in: tableViewController)
-			parent.sections[indexPath.section].onAppear(indexPath)
+			parent.sections[indexPath.section].dataSource.onAppear(indexPath)
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplaying cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
 			(cell as? Cell)?.didDisappear()
-			parent.sections[indexPath.section].onDisappear(indexPath)
+			parent.sections[indexPath.section].dataSource.onDisappear(indexPath)
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
@@ -230,7 +232,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			let itemIDsToPrefetchBySection: [Int: [IndexPath]] = Dictionary(grouping: indexPaths) { $0.section }
 			itemIDsToPrefetchBySection.forEach
 			{
-				parent.sections[$0.key].prefetch($0.value)
+				parent.sections[$0.key].dataSource.prefetch($0.value)
 			}
 		}
 
@@ -239,8 +241,24 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			let itemIDsToCancelPrefetchBySection: [Int: [IndexPath]] = Dictionary(grouping: indexPaths) { $0.section }
 			itemIDsToCancelPrefetchBySection.forEach
 			{
-				parent.sections[$0.key].cancelPrefetch($0.value)
+				parent.sections[$0.key].dataSource.cancelPrefetch($0.value)
 			}
+		}
+		
+		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+			guard
+				let cell = tableView.cellForRow(at: indexPath) as? Cell,
+				let itemID = cell.id
+				else { return }
+			self.configureHostingController(forItemID: itemID, isSelected: true)
+		}
+		
+		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
+			guard
+				let cell = tableView.cellForRow(at: indexPath) as? Cell,
+				let itemID = cell.id
+				else { return }
+			self.configureHostingController(forItemID: itemID, isSelected: false)
 		}
 
 		public func scrollViewDidScroll(_ scrollView: UIScrollView)

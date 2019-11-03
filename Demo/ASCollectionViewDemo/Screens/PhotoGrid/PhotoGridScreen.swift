@@ -6,8 +6,9 @@ import UIKit
 
 struct PhotoGridScreen: View
 {
-	@State var data: [[Post]] = [DataSource.postsForSection(1, number: 1000)]
-
+	@State var data: [Post] = DataSource.postsForSection(1, number: 1000)
+	@State var selected: [Post] = []
+	
 	var layout: ASCollectionViewLayout<Int>
 	{
 		ASCollectionViewLayout(scrollDirection: .vertical, interSectionSpacing: 0, layout: ASCollectionViewLayoutCustomCompositionalSection(sectionLayout: { (layoutEnvironment, _) -> NSCollectionLayoutSection in
@@ -23,6 +24,11 @@ struct PhotoGridScreen: View
 			let featureItemSize = NSCollectionLayoutSize(widthDimension: .absolute(gridBlockSize * 2), heightDimension: .absolute(gridBlockSize * 2))
 			let featureItem = NSCollectionLayoutItem(layoutSize: featureItemSize)
 			featureItem.contentInsets = gridItemInsets
+			
+			
+			let fullWidthItemSize = NSCollectionLayoutSize(widthDimension: .absolute(layoutEnvironment.container.effectiveContentSize.width), heightDimension: .absolute(gridBlockSize * 2))
+			let fullWidthItem = NSCollectionLayoutItem(layoutSize: fullWidthItemSize)
+			fullWidthItem.contentInsets = gridItemInsets
 
 			let verticalAndFeatureGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize * 2))
 			let verticalAndFeatureGroupA = NSCollectionLayoutGroup.horizontal(layoutSize: verticalAndFeatureGroupSize, subitems: isWide ? [verticalGroup, verticalGroup, featureItem, verticalGroup] : [verticalGroup, featureItem])
@@ -31,60 +37,91 @@ struct PhotoGridScreen: View
 			let rowGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize))
 			let rowGroup = NSCollectionLayoutGroup.horizontal(layoutSize: rowGroupSize, subitem: item, count: isWide ? 5 : 3)
 
-			let outerGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize * 6))
-			let outerGroup = NSCollectionLayoutGroup.vertical(layoutSize: outerGroupSize, subitems: [verticalAndFeatureGroupA, rowGroup, verticalAndFeatureGroupB, rowGroup])
+			let outerGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize * 8))
+			let outerGroup = NSCollectionLayoutGroup.vertical(layoutSize: outerGroupSize, subitems: [verticalAndFeatureGroupA, rowGroup, fullWidthItem, verticalAndFeatureGroupB, rowGroup])
 
 			let section = NSCollectionLayoutSection(group: outerGroup)
 			return section
 		}))
 	}
-
-	var sections: [ASCollectionViewSection<Int>]
-	{
-		data.enumerated().map
-		{ (offset, sectionData) -> ASCollectionViewSection<Int> in
-			ASCollectionViewSection(id: offset,
-			                        data: sectionData,
-			                        onCellEvent: { event in
-			                        	switch event
-			                        	{
-			                        	case let .onAppear(item):
-			                        		ASRemoteImageManager.shared.load(item.squareThumbURL)
-			                        	case let .onDisappear(item):
-			                        		ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-			                        	case let .prefetchForData(data):
-			                        		for item in data
-			                        		{
-			                        			ASRemoteImageManager.shared.load(item.squareThumbURL)
-			                        		}
-			                        	case let .cancelPrefetchForData(data):
-			                        		for item in data
-			                        		{
-			                        			ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-			                        		}
-			                        	}
-			                        },
-			                        onDragDrop: { event in
-			                        	switch event
-			                        	{
-			                        	case let .onRemoveItem(indexPath):
-			                        		self.data[indexPath.section].remove(at: indexPath.item)
-			                        	case let .onAddItems(items, indexPath):
-			                        		self.data[indexPath.section].insert(contentsOf: items, at: indexPath.item)
-			                        	}
-			})
-			{ item, _ in
-				ASRemoteImageView(item.squareThumbURL)
-					.aspectRatio(1, contentMode: .fill)
+	
+	var section: ASCollectionViewSection<Int> {
+		ASCollectionViewSection(id: 0,
+								data: data,
+								onCellEvent: { event in
+									switch event
+									{
+									case let .onAppear(item):
+										ASRemoteImageManager.shared.load(item.squareThumbURL)
+									case let .onDisappear(item):
+										ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+									case let .prefetchForData(data):
+										for item in data
+										{
+											ASRemoteImageManager.shared.load(item.squareThumbURL)
+										}
+									case let .cancelPrefetchForData(data):
+										for item in data
+										{
+											ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+										}
+									}
+		},
+								onDragDrop: { event in
+									switch event
+									{
+									case let .onRemoveItem(indexPath):
+										self.data.remove(at: indexPath.item)
+									case let .onAddItems(items, indexPath):
+										self.data.insert(contentsOf: items, at: indexPath.item)
+									}
+		},
+								selectedItems: $selected
+			)
+		{ item, state in
+			ZStack(alignment: .bottomTrailing) {
+				GeometryReader { geom in
+					ASRemoteImageView(item.squareThumbURL)
+						.aspectRatio(1, contentMode: .fill)
+						.frame(width: geom.size.width, height: geom.size.height)
+						.clipped()
+						.opacity(state.isSelected ? 0.7 : 1.0)
+				}
+				
+				if state.isSelected {
+					ZStack {
+						Circle()
+							.fill(Color.blue)
+						Circle()
+							.strokeBorder(Color.white, lineWidth: 2)
+						Image(systemName: "checkmark")
+							.font(.system(size: 10, weight: .bold))
+							.foregroundColor(.white)
+					}
+					.frame(width: 20, height: 20)
+					.padding(10)
+				}
 			}
 		}
 	}
 
+
 	var body: some View
 	{
 		ASCollectionView(layout: self.layout,
-		                 sections: self.sections)
+		                 sections: [section])
 			.navigationBarTitle("Explore", displayMode: .inline)
+			.navigationBarItems(trailing:
+				HStack {
+					Button(action: {
+						selected.forEach {
+							data.remove(at: $0.item)
+						}
+					}) {
+						Image(systemName: "trash")
+					}
+					EditButton()
+			})
 	}
 }
 

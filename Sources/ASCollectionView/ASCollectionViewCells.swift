@@ -49,6 +49,7 @@ class ASCollectionViewCell: UICollectionViewCell
 
 	override func prepareForReuse()
 	{
+		isSelected = false
 		hostingController = nil
 		contentView.subviews.forEach { $0.removeFromSuperview() }
 	}
