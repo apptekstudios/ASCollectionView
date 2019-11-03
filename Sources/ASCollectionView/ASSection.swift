@@ -53,7 +53,6 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 	                                                   estimatedItemSize: CGSize? = nil,
 	                                                   onCellEvent: OnCellEvent<Data>? = nil,
 	                                                   onDragDrop: OnDragDrop<Data>? = nil,
-													   selectedItems: Binding<[Data]>? = nil,
 	                                                   @ViewBuilder contentBuilder: @escaping ((Data, ExtraInfo) -> Content))
 	{
 		self.id = id
@@ -62,7 +61,6 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 		                                                        dataIDKeyPath: dataIDKeyPath,
 		                                                        onCellEvent: onCellEvent,
 		                                                        onDragDrop: onDragDrop,
-																selectedItems: selectedItems,
 		                                                        content: contentBuilder)
 	}
 
@@ -201,9 +199,8 @@ public extension ASCollectionViewSection
 													   estimatedItemSize: CGSize? = nil,
 													   onCellEvent: OnCellEvent<Data>? = nil,
 													   onDragDrop: OnDragDrop<Data>? = nil,
-													   selectedItems: Binding<[Data]>? = nil,
 													   @ViewBuilder contentBuilder: @escaping ((Data, ExtraInfo) -> Content))
 	{
-		self.init(id: id, data: data, dataID: \.id, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDrop: onDragDrop, selectedItems: selectedItems, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: \.id, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDrop: onDragDrop, contentBuilder: contentBuilder)
 	}
 }

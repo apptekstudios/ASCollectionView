@@ -61,6 +61,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	public typealias Layout = ASCollectionViewLayout<SectionID>
 	public var layout: Layout
 	public var sections: [Section]
+	public var selectedItems: Binding<[SectionID: IndexSet]>?
 
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
 
@@ -77,9 +78,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	 	- layout: The layout to use for the collection view
 	 	- sections: An array of sections (ASSection)
 	 */
-	@inlinable public init(layout: Layout = .default, sections: [Section])
+	@inlinable public init(layout: Layout = .default, selectedItems: Binding<[SectionID: IndexSet]>? = nil, sections: [Section])
 	{
 		self.layout = layout
+		self.selectedItems = selectedItems
 		self.sections = sections
 	}
 
@@ -90,9 +92,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	 	- layout: The layout to use for the collection view
 	 	- sections: A closure providing sections to display in the collection view (ASSection)
 	 */
-	public init(layout: Layout = .default, @SectionArrayBuilder <SectionID> sections: () -> [Section])
+	public init(layout: Layout = .default, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sections: () -> [Section])
 	{
 		self.layout = layout
+		self.selectedItems = selectedItems
 		self.sections = sections()
 	}
 
@@ -135,8 +138,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		collectionView.alwaysBounceHorizontal = alwaysBounceHorizontal
 		collectionView.showsVerticalScrollIndicator = scrollIndicatorsEnabled
 		collectionView.showsHorizontalScrollIndicator = scrollIndicatorsEnabled
-		collectionView.allowsSelection = editMode?.wrappedValue.isEditing ?? false
-		collectionView.allowsMultipleSelection = editMode?.wrappedValue.isEditing ?? false
+		
+		let isEditing = editMode?.wrappedValue.isEditing ?? false
+		collectionView.allowsSelection = isEditing
+		collectionView.allowsMultipleSelection = isEditing
 	}
 
 	public func makeCoordinator() -> Coordinator
@@ -270,6 +275,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 			}
 			populateDataSource(animated: collectionViewController?.parent != nil)
+			updateSelectionBindings(cv)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
@@ -303,7 +309,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				let cell = collectionView.cellForItem(at: indexPath) as? Cell,
 				let itemID = cell.id
 				else { return }
+			updateSelectionBindings(collectionView)
 			self.configureHostingController(forItemID: itemID, isSelected: true)
+			
 		}
 		
 		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
@@ -311,15 +319,21 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				let cell = collectionView.cellForItem(at: indexPath) as? Cell,
 				let itemID = cell.id
 				else { return }
+			updateSelectionBindings(collectionView)
 			self.configureHostingController(forItemID: itemID, isSelected: false)
 		}
 		
 		func updateSelectionBindings(_ collectionView: UICollectionView) {
+			guard let selectedItemsBinding = parent.selectedItems else { return }
 			let selected = collectionView.indexPathsForSelectedItems ?? []
-			let selectedBySection = Dictionary(grouping: selected) { $0.section }
-			for (section, selectedIndexPaths) in selectedBySection {
-				guard section < parent.sections.endIndex else { return }
-				parent.sections[section].dataSource.updateSelectedItems(selectedIndexPaths)
+			let selectedSafe = selected.filter { $0.section < parent.sections.endIndex }
+			let selectedBySection = Dictionary(grouping: selectedSafe) {
+				parent.sections[$0.section].id
+			}.mapValues {
+				IndexSet($0.map { $0.item })
+			}
+			DispatchQueue.main.async {
+				selectedItemsBinding.wrappedValue = selectedBySection
 			}
 		}
 
@@ -582,7 +596,7 @@ public class AS_CollectionViewController: UIViewController
 
 	var collectionViewLayout: UICollectionViewLayout
 	lazy var collectionView: UICollectionView = {
-		AS_CollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
+		UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
 	}()
 
 	public init(collectionViewLayout layout: UICollectionViewLayout)
@@ -627,6 +641,3 @@ public class AS_CollectionViewController: UIViewController
 		collectionViewLayout.invalidateLayout()
 	}
 }
-
-class AS_CollectionView: UICollectionView
-{}

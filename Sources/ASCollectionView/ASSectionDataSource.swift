@@ -15,7 +15,6 @@ internal protocol ASSectionDataSourceProtocol
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	func removeItem(from indexPath: IndexPath)
 	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
-	func updateSelectedItems(_ indexPaths: [IndexPath])
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 }
@@ -57,7 +56,6 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 	var dataIDKeyPath: KeyPath<Data, DataID>
 	var onCellEvent: OnCellEvent<Data>? = nil
 	var onDragDrop: OnDragDrop<Data>? = nil
-	var selectedItems: Binding<[Data]>? = nil
 	var content: (Data, ExtraInfo) -> Content
 
 	var dragEnabled: Bool { onDragDrop != nil }
@@ -157,14 +155,5 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 			return item
 		}
 		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: index))
-	}
-	
-	func updateSelectedItems(_ indexPaths: [IndexPath]) {
-		let newSelectedItems: [Data] = indexPaths.compactMap
-		{
-			guard $0.item < data.endIndex else { return nil }
-			return data[$0.item]
-		}
-		selectedItems?.wrappedValue = newSelectedItems
 	}
 }

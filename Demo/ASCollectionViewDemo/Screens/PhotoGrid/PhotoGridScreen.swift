@@ -7,7 +7,14 @@ import UIKit
 struct PhotoGridScreen: View
 {
 	@State var data: [Post] = DataSource.postsForSection(1, number: 1000)
-	@State var selected: [Post] = []
+	@State var selectedItems: [SectionID: IndexSet] = [:]
+	
+	@Environment(\.editMode) private var editMode
+	var isEditing: Bool {
+		editMode?.wrappedValue.isEditing ?? false
+	}
+	
+	typealias SectionID = Int
 	
 	var layout: ASCollectionViewLayout<Int>
 	{
@@ -45,7 +52,7 @@ struct PhotoGridScreen: View
 		}))
 	}
 	
-	var section: ASCollectionViewSection<Int> {
+	var section: ASCollectionViewSection<SectionID> {
 		ASCollectionViewSection(id: 0,
 								data: data,
 								onCellEvent: { event in
@@ -75,9 +82,7 @@ struct PhotoGridScreen: View
 									case let .onAddItems(items, indexPath):
 										self.data.insert(contentsOf: items, at: indexPath.item)
 									}
-		},
-								selectedItems: $selected
-			)
+		})
 		{ item, state in
 			ZStack(alignment: .bottomTrailing) {
 				GeometryReader { geom in
@@ -109,17 +114,21 @@ struct PhotoGridScreen: View
 	var body: some View
 	{
 		ASCollectionView(layout: self.layout,
+						 selectedItems: $selectedItems,
 		                 sections: [section])
 			.navigationBarTitle("Explore", displayMode: .inline)
 			.navigationBarItems(trailing:
-				HStack {
-					Button(action: {
-						selected.forEach {
-							data.remove(at: $0.item)
+				HStack(spacing: 20) {
+					if self.isEditing {
+						Button(action: {
+							if let (_, indexSet) = self.selectedItems.first {
+								self.data.remove(atOffsets: indexSet)
+							}
+						}) {
+							Image(systemName: "trash")
 						}
-					}) {
-						Image(systemName: "trash")
 					}
+					
 					EditButton()
 			})
 	}
