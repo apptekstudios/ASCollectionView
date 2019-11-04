@@ -3,6 +3,8 @@
 import Foundation
 import SwiftUI
 
+/*
+///TO BE UTILISED ONCE functionBuilder fully implemented
 @_functionBuilder
 public struct SectionArrayBuilder<SectionID> where SectionID: Hashable
 {
@@ -29,3 +31,4 @@ public struct SectionArrayBuilder<SectionID> where SectionID: Hashable
 		return [item].compactMap { $0 }
 	}
 }
+*/

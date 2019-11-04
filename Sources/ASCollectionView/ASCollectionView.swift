@@ -86,18 +86,19 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	}
 
 	/**
+	 /////Disabled until function builders fully functional
 	 Initializes a  collection view with the given sections
 
 	 - Parameters:
 	 	- layout: The layout to use for the collection view
 	 	- sections: A closure providing sections to display in the collection view (ASSection)
 	 */
-	public init(layout: Layout = .default, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sections: () -> [Section])
+	/*public init(layout: Layout = .default, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sections: () -> [Section])
 	{
 		self.layout = layout
 		self.selectedItems = selectedItems
 		self.sections = sections()
-	}
+	}*/
 
 	public func makeUIViewController(context: Context) -> AS_CollectionViewController
 	{

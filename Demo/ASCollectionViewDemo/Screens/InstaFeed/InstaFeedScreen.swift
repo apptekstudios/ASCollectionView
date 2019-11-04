@@ -83,10 +83,7 @@ struct InstaFeedScreen: View
 
 	var body: some View
 	{
-		ASTableView
-		{
-			sections
-		}
+		ASTableView(sections: sections)
 		.tableViewSeparatorsEnabled(false)
 		.tableViewReachedBottom
 		{

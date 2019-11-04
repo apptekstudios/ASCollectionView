@@ -42,11 +42,12 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		self.sections = sections
 	}
 
-	@inlinable public init(mode: UITableView.Style = .plain, @SectionArrayBuilder <SectionID> sections: () -> [Section])
+	//Disabled until functionBuilder working correctly
+	/*@inlinable public init(mode: UITableView.Style = .plain, @SectionArrayBuilder <SectionID> sections: () -> [Section])
 	{
 		self.mode = mode
 		self.sections = sections()
-	}
+	}*/
 
 	public func makeUIViewController(context: Context) -> UITableViewController
 	{
