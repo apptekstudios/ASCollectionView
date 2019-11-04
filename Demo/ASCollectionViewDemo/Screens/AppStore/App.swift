@@ -26,8 +26,9 @@ struct App: Identifiable
 
 	static func randomApp(_ randomNumber: Int) -> App
 	{
-		App(appName: Lorem.title,
-		    caption: Lorem.caption,
-		    randomNumberForImage: randomNumber)
+		App(
+			appName: Lorem.title,
+			caption: Lorem.caption,
+			randomNumberForImage: randomNumber)
 	}
 }

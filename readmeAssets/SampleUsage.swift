@@ -28,18 +28,20 @@ struct ExampleView: View
 	{
 		ASCollectionView(layout: self.layout)
 		{
-			ASCollectionViewSection(id: 0,
-			                        data: dataExampleA,
-			                        dataID: \.self)
+			ASCollectionViewSection(
+				id: 0,
+				data: dataExampleA,
+				dataID: \.self)
 			{ item in
 				Color.blue
 					.overlay(
 						Text("\(item)")
 					)
 			}
-			ASCollectionViewSection(id: 1,
-			                        data: dataExampleB,
-			                        dataID: \.self)
+			ASCollectionViewSection(
+				id: 1,
+				data: dataExampleB,
+				dataID: \.self)
 			{ item in
 				Color.blue
 					.overlay(
@@ -92,12 +94,14 @@ struct ExampleView: View
 		let section = NSCollectionLayoutSection(group: outerGroup)
 
 		let supplementarySize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
-		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
-		                                                                      alignment: .top)
-		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-		                                                                      elementKind: UICollectionView.elementKindSectionFooter,
-		                                                                      alignment: .bottom)
+		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
+			layoutSize: supplementarySize,
+			elementKind: UICollectionView.elementKindSectionHeader,
+			alignment: .top)
+		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
+			layoutSize: supplementarySize,
+			elementKind: UICollectionView.elementKindSectionFooter,
+			alignment: .bottom)
 		section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
 		return section
 	}

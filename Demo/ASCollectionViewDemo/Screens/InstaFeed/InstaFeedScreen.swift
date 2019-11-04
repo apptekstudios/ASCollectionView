@@ -8,71 +8,73 @@ struct InstaFeedScreen: View
 {
 	@State var data: [[Post]] = (0...3).map { DataSource.postsForSection($0) }
 
-	var sections: [ASCollectionViewSection<Int>]
+	var sections: [ASTableViewSection<Int>]
 	{
 		data.enumerated().map
 		{ i, sectionData in
 			if i == 0 {
-				return ASCollectionViewSection(id: i)
+				return ASTableViewSection(id: i)
 				{
-					[AnyView(
-						ASCollectionView(data: sectionData,
-						                 onCellEvent: { event in
-						                 	switch event
-						                 	{
-						                 	case let .onAppear(item):
-						                 		ASRemoteImageManager.shared.load(item.squareThumbURL)
-						                 	case let .onDisappear(item):
-						                 		ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-						                 	case let .prefetchForData(data):
-						                 		for item in data
-						                 		{
-						                 			ASRemoteImageManager.shared.load(item.squareThumbURL)
-						                 		}
-						                 	case let .cancelPrefetchForData(data):
-						                 		for item in data
-						                 		{
-						                 			ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-						                 		}
-						                 	}
-						                 },
-						                 layout: .init(scrollDirection: .horizontal,
-						                               layout: ASCollectionViewLayoutList(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))))
-						{ item, _ in
-							StoryView(post: item)
-						}
-						.frame(height: 100)
-						.scrollIndicatorsEnabled(false)
-					)]
+					ASCollectionView(
+						data: sectionData,
+						onCellEvent: { event in
+							switch event
+							{
+							case let .onAppear(item):
+								ASRemoteImageManager.shared.load(item.squareThumbURL)
+							case let .onDisappear(item):
+								ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+							case let .prefetchForData(data):
+								for item in data
+								{
+									ASRemoteImageManager.shared.load(item.squareThumbURL)
+								}
+							case let .cancelPrefetchForData(data):
+								for item in data
+								{
+									ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+								}
+							}
+					})
+					{ item, _ in
+						StoryView(post: item)
+					}
+					.layoutCompositional(scrollDirection: .horizontal)
+					{
+						ASCollectionViewLayoutList(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
+					}
+					.frame(height: 100)
+					.scrollIndicatorsEnabled(false)
 				}
 			}
 			else
 			{
-				return ASCollectionViewSection(id: i,
-				                               data: sectionData,
-				                               estimatedItemSize: CGSize(width: 0, height: 500),
-				                               onCellEvent: { event in
-				                               	switch event
-				                               	{
-				                               	case let .onAppear(item):
-				                               		ASRemoteImageManager.shared.load(item.url)
-				                               		ASRemoteImageManager.shared.load(item.usernamePhotoURL)
-				                               	case let .onDisappear(item):
-				                               		ASRemoteImageManager.shared.cancelLoad(for: item.url)
-				                               		ASRemoteImageManager.shared.cancelLoad(for: item.usernamePhotoURL)
-				                               	case let .prefetchForData(data):
-				                               		for item in data
-				                               		{
-				                               			ASRemoteImageManager.shared.load(item.url)
-				                               			ASRemoteImageManager.shared.load(item.usernamePhotoURL)
-				                               		}
-				                               	case let .cancelPrefetchForData(data):
-				                               		for item in data
-				                               		{
-				                               			ASRemoteImageManager.shared.cancelLoad(for: item.url)
-				                               			ASRemoteImageManager.shared.cancelLoad(for: item.usernamePhotoURL)
-				                               		}
-				                               	}
+				return ASTableViewSection(
+					id: i,
+					data: sectionData,
+					estimatedItemSize: CGSize(width: 0, height: 500),
+					onCellEvent: { event in
+						switch event
+						{
+						case let .onAppear(item):
+							ASRemoteImageManager.shared.load(item.url)
+							ASRemoteImageManager.shared.load(item.usernamePhotoURL)
+						case let .onDisappear(item):
+							ASRemoteImageManager.shared.cancelLoad(for: item.url)
+							ASRemoteImageManager.shared.cancelLoad(for: item.usernamePhotoURL)
+						case let .prefetchForData(data):
+							for item in data
+							{
+								ASRemoteImageManager.shared.load(item.url)
+								ASRemoteImageManager.shared.load(item.usernamePhotoURL)
+							}
+						case let .cancelPrefetchForData(data):
+							for item in data
+							{
+								ASRemoteImageManager.shared.cancelLoad(for: item.url)
+								ASRemoteImageManager.shared.cancelLoad(for: item.usernamePhotoURL)
+							}
+						}
 				})
 				{ item, _ in
 					PostView(post: item)

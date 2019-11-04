@@ -59,8 +59,8 @@ struct MagazineLayoutScreen: View
 
 	var body: some View
 	{
-		ASCollectionView(layout: .init(customLayout: { MagazineLayout() }),
-		                 sections: self.sections)
+		ASCollectionView(sections: self.sections)
+			.layoutCustom { MagazineLayout() }
 			.customDelegate(ASCollectionViewMagazineLayoutDelegate.init)
 			.edgesIgnoringSafeArea(.all)
 			.navigationBarTitle("Magazine Layout (custom delegate)", displayMode: .inline)

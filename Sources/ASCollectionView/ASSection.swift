@@ -47,21 +47,23 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 	 - onDragDrop: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
 	 */
-	public init<Data, DataID: Hashable, Content: View>(id: SectionID,
-	                                                   data: [Data],
-	                                                   dataID dataIDKeyPath: KeyPath<Data, DataID>,
-	                                                   estimatedItemSize: CGSize? = nil,
-	                                                   onCellEvent: OnCellEvent<Data>? = nil,
-	                                                   onDragDrop: OnDragDrop<Data>? = nil,
-	                                                   @ViewBuilder contentBuilder: @escaping ((Data, ExtraInfo) -> Content))
+	public init<Data, DataID: Hashable, Content: View>(
+		id: SectionID,
+		data: [Data],
+		dataID dataIDKeyPath: KeyPath<Data, DataID>,
+		estimatedItemSize: CGSize? = nil,
+		onCellEvent: OnCellEvent<Data>? = nil,
+		onDragDrop: OnDragDrop<Data>? = nil,
+		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
 	{
 		self.id = id
 		self.estimatedItemSize = estimatedItemSize
-		dataSource = ASSectionDataSource<Data, DataID, Content>(data: data,
-		                                                        dataIDKeyPath: dataIDKeyPath,
-		                                                        onCellEvent: onCellEvent,
-		                                                        onDragDrop: onDragDrop,
-		                                                        content: contentBuilder)
+		dataSource = ASSectionDataSource<Data, DataID, Content>(
+			data: data,
+			dataIDKeyPath: dataIDKeyPath,
+			onCellEvent: onCellEvent,
+			onDragDrop: onDragDrop,
+			content: contentBuilder)
 	}
 
 	public func hash(into hasher: inout Hasher)
@@ -151,12 +153,13 @@ public extension ASCollectionViewSection
 	init(id: SectionID, @ViewArrayBuilder content: () -> [AnyView])
 	{
 		self.id = id
-		dataSource = ASSectionDataSource<ASCollectionViewStaticContent, ASCollectionViewStaticContent.ID, AnyView>(data: content().enumerated().map
+		dataSource = ASSectionDataSource<ASCollectionViewStaticContent, ASCollectionViewStaticContent.ID, AnyView>(
+			data: content().enumerated().map
 			{
 				ASCollectionViewStaticContent(id: $0.offset, view: $0.element)
 			},
-		                                                                                                           dataIDKeyPath: \.id,
-		                                                                                                           content: { staticContent, _ in staticContent.view })
+			dataIDKeyPath: \.id,
+			content: { staticContent, _ in staticContent.view })
 	}
 
 	/**
@@ -166,12 +169,13 @@ public extension ASCollectionViewSection
 	 - id: The id for this section
 	 - content: A single SwiftUI views to display in the collection view
 	 */
-	init<Content: View>(id: SectionID, content: Content)
+	init<Content: View>(id: SectionID, content: () -> Content)
 	{
 		self.id = id
-		dataSource = ASSectionDataSource<ASCollectionViewStaticContent, ASCollectionViewStaticContent.ID, AnyView>(data: [ASCollectionViewStaticContent(id: 0, view: AnyView(content))],
-		                                                                                                           dataIDKeyPath: \.id,
-		                                                                                                           content: { staticContent, _ in staticContent.view })
+		dataSource = ASSectionDataSource<ASCollectionViewStaticContent, ASCollectionViewStaticContent.ID, AnyView>(
+			data: [ASCollectionViewStaticContent(id: 0, view: AnyView(content()))],
+			dataIDKeyPath: \.id,
+			content: { staticContent, _ in staticContent.view })
 	}
 }
 
@@ -190,12 +194,13 @@ public extension ASCollectionViewSection
 	 - onDragDrop: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
 	 */
-	@inlinable init<Content: View, Data: Identifiable>(id: SectionID,
-	                                                   data: [Data],
-	                                                   estimatedItemSize: CGSize? = nil,
-	                                                   onCellEvent: OnCellEvent<Data>? = nil,
-	                                                   onDragDrop: OnDragDrop<Data>? = nil,
-	                                                   @ViewBuilder contentBuilder: @escaping ((Data, ExtraInfo) -> Content))
+	@inlinable init<Content: View, Data: Identifiable>(
+		id: SectionID,
+		data: [Data],
+		estimatedItemSize: CGSize? = nil,
+		onCellEvent: OnCellEvent<Data>? = nil,
+		onDragDrop: OnDragDrop<Data>? = nil,
+		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
 	{
 		self.init(id: id, data: data, dataID: \.id, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDrop: onDragDrop, contentBuilder: contentBuilder)
 	}

@@ -75,8 +75,9 @@ private extension ASCache
 	{
 		var keys = Set<Key>()
 
-		func cache(_ cache: NSCache<AnyObject, AnyObject>,
-		           willEvictObject object: Any)
+		func cache(
+			_ cache: NSCache<AnyObject, AnyObject>,
+			willEvictObject object: Any)
 		{
 			guard let entry = object as? Entry else
 			{

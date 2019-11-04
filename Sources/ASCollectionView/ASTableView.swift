@@ -140,8 +140,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 					tv.beginUpdates()
 					tv.endUpdates()
 				}
-				cell.setupFor(id: itemID,
-				              hostingController: hostController)
+				cell.setupFor(
+					id: itemID,
+					hostingController: hostController)
 				return cell
 			}
 			dataSource?.defaultRowAnimation = .fade

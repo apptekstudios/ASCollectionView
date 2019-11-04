@@ -17,18 +17,21 @@ public struct ASCollectionViewLayout<SectionID: Hashable>
 
 	typealias CompositionalLayout = ((_ sectionID: SectionID) -> ASCollectionViewLayoutSection)
 
-	public init(scrollDirection: UICollectionView.ScrollDirection = .vertical,
-	            interSectionSpacing: CGFloat = 10,
-	            layoutPerSection: @escaping ((_ sectionID: SectionID) -> ASCollectionViewLayoutSection))
+	public init(
+		scrollDirection: UICollectionView.ScrollDirection = .vertical,
+		interSectionSpacing: CGFloat = 10,
+		layoutPerSection: @escaping ((_ sectionID: SectionID) -> ASCollectionViewLayoutSection))
 	{
 		layout = .compositional(layoutPerSection, interSectionSpacing: interSectionSpacing, scrollDirection: scrollDirection)
 	}
 
-	public init(scrollDirection: UICollectionView.ScrollDirection = .vertical,
-	            interSectionSpacing: CGFloat = 10,
-	            layout: ASCollectionViewLayoutSection)
+	public init(
+		scrollDirection: UICollectionView.ScrollDirection = .vertical,
+		interSectionSpacing: CGFloat = 10,
+		layout: () -> ASCollectionViewLayoutSection)
 	{
-		self.layout = .compositional({ _ in layout }, interSectionSpacing: interSectionSpacing, scrollDirection: scrollDirection) // ignore section ID -> all have same layout
+		let resolvedLayout = layout()
+		self.layout = .compositional({ _ in resolvedLayout }, interSectionSpacing: interSectionSpacing, scrollDirection: scrollDirection) // ignore section ID -> all have same layout
 	}
 
 	public init(customLayout: () -> UICollectionViewLayout)
@@ -62,7 +65,7 @@ public struct ASCollectionViewLayout<SectionID: Hashable>
 
 	public static var `default`: ASCollectionViewLayout<SectionID>
 	{
-		ASCollectionViewLayout(layout: ASCollectionViewLayoutList())
+		ASCollectionViewLayout { ASCollectionViewLayoutList() }
 	}
 
 	func registerDecorationViews(_ layout: UICollectionViewLayout)
@@ -111,9 +114,10 @@ public struct ASCollectionViewLayoutList: ASCollectionViewLayoutSection
 	var spacing: CGFloat
 	var sectionInsets: NSDirectionalEdgeInsets
 
-	public init(itemSize: NSCollectionLayoutDimension = .estimated(200),
-	            spacing: CGFloat = 5,
-	            sectionInsets: NSDirectionalEdgeInsets = .zero)
+	public init(
+		itemSize: NSCollectionLayoutDimension = .estimated(200),
+		spacing: CGFloat = 5,
+		sectionInsets: NSDirectionalEdgeInsets = .zero)
 	{
 		self.itemSize = itemSize
 		self.spacing = spacing
@@ -146,12 +150,14 @@ public struct ASCollectionViewLayoutList: ASCollectionViewLayoutSection
 		section.contentInsets = sectionInsets
 		section.interGroupSpacing = spacing
 
-		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
-		                                                                      alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
-		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-		                                                                      elementKind: UICollectionView.elementKindSectionFooter,
-		                                                                      alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
+		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
+			layoutSize: supplementarySize,
+			elementKind: UICollectionView.elementKindSectionHeader,
+			alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
+		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
+			layoutSize: supplementarySize,
+			elementKind: UICollectionView.elementKindSectionFooter,
+			alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
 		section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
 		return section
 	}
@@ -225,10 +231,11 @@ public struct ASCollectionViewLayoutGrid: ASCollectionViewLayoutSection
 	var lineSpacing: CGFloat
 	var itemSize: NSCollectionLayoutDimension
 
-	public init(layoutMode: LayoutMode = .fixedNumberOfColumns(2),
-	            itemSpacing: CGFloat = 5,
-	            lineSpacing: CGFloat = 5,
-	            itemSize: NSCollectionLayoutDimension = .estimated(150))
+	public init(
+		layoutMode: LayoutMode = .fixedNumberOfColumns(2),
+		itemSpacing: CGFloat = 5,
+		lineSpacing: CGFloat = 5,
+		itemSize: NSCollectionLayoutDimension = .estimated(150))
 	{
 		self.layoutMode = layoutMode
 		self.itemSpacing = itemSpacing
@@ -288,12 +295,14 @@ public struct ASCollectionViewLayoutGrid: ASCollectionViewLayoutSection
 		section.interGroupSpacing = lineSpacing
 		section.contentInsets = .init(top: 0, leading: 20, bottom: 0, trailing: 20)
 
-		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
-		                                                                      alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
-		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-		                                                                      elementKind: UICollectionView.elementKindSectionFooter,
-		                                                                      alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
+		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
+			layoutSize: supplementarySize,
+			elementKind: UICollectionView.elementKindSectionHeader,
+			alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
+		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
+			layoutSize: supplementarySize,
+			elementKind: UICollectionView.elementKindSectionFooter,
+			alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
 		section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
 		return section
 	}
@@ -309,13 +318,14 @@ public struct ASCollectionViewLayoutOrthogonalGrid: ASCollectionViewLayoutSectio
 	public var itemInsets: NSDirectionalEdgeInsets = .zero
 	public var sectionInsets: NSDirectionalEdgeInsets = .zero
 
-	public init(gridSize: Int = 2,
-	            itemDimension: NSCollectionLayoutDimension = .fractionalWidth(0.9),
-	            sectionDimension: NSCollectionLayoutDimension = .fractionalHeight(0.8),
-	            orthogonalScrollingBehavior: UICollectionLayoutSectionOrthogonalScrollingBehavior = .groupPagingCentered,
-	            gridSpacing: CGFloat = 5,
-	            itemInsets: NSDirectionalEdgeInsets = .zero,
-	            sectionInsets: NSDirectionalEdgeInsets = .zero)
+	public init(
+		gridSize: Int = 2,
+		itemDimension: NSCollectionLayoutDimension = .fractionalWidth(0.9),
+		sectionDimension: NSCollectionLayoutDimension = .fractionalHeight(0.8),
+		orthogonalScrollingBehavior: UICollectionLayoutSectionOrthogonalScrollingBehavior = .groupPagingCentered,
+		gridSpacing: CGFloat = 5,
+		itemInsets: NSDirectionalEdgeInsets = .zero,
+		sectionInsets: NSDirectionalEdgeInsets = .zero)
 	{
 		self.gridSize = gridSize
 		self.itemDimension = itemDimension
@@ -370,12 +380,14 @@ public struct ASCollectionViewLayoutOrthogonalGrid: ASCollectionViewLayoutSectio
 		section.orthogonalScrollingBehavior = orthogonalScrollingBehavior
 		section.contentInsets = sectionInsets
 
-		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-		                                                                      elementKind: UICollectionView.elementKindSectionHeader,
-		                                                                      alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
-		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(layoutSize: supplementarySize,
-		                                                                      elementKind: UICollectionView.elementKindSectionFooter,
-		                                                                      alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
+		let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
+			layoutSize: supplementarySize,
+			elementKind: UICollectionView.elementKindSectionHeader,
+			alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
+		let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
+			layoutSize: supplementarySize,
+			elementKind: UICollectionView.elementKindSectionFooter,
+			alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
 		headerSupplementary.contentInsets = itemInsets
 		footerSupplementary.contentInsets = itemInsets
 

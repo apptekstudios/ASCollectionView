@@ -12,24 +12,29 @@ struct RemindersScreen: View
 		case addNew
 	}
 
-	@State var upperData: [GroupModel] = [GroupModel(icon: "calendar", title: "Today", color: .blue),
-	                                      GroupModel(icon: "clock.fill", title: "Scheduled", color: .orange),
-	                                      GroupModel(icon: "tray.fill", title: "All", color: .gray),
-	                                      GroupModel(icon: "flag.fill", title: "Flagged", color: .red)]
-	@State var lowerData: [GroupModel] = [GroupModel(icon: "list.bullet", title: "Todo"),
-	                                      GroupModel(icon: "cart.fill", title: "Groceries"),
-	                                      GroupModel(icon: "house.fill", title: "House renovation"),
-	                                      GroupModel(icon: "book.fill", title: "Reading list")]
+	@State var upperData: [GroupModel] = [
+		GroupModel(icon: "calendar", title: "Today", color: .blue),
+		GroupModel(icon: "clock.fill", title: "Scheduled", color: .orange),
+		GroupModel(icon: "tray.fill", title: "All", color: .gray),
+		GroupModel(icon: "flag.fill", title: "Flagged", color: .red)
+	]
+	@State var lowerData: [GroupModel] = [
+		GroupModel(icon: "list.bullet", title: "Todo"),
+		GroupModel(icon: "cart.fill", title: "Groceries"),
+		GroupModel(icon: "house.fill", title: "House renovation"),
+		GroupModel(icon: "book.fill", title: "Reading list")
+	]
 
 	let addNewModel = GroupModel(icon: "plus", title: "Create new list", contentCount: nil, color: .green)
 
 	var body: some View
 	{
-		ASCollectionView<Section>(layout: self.layout, sections: [ASCollectionViewSection(id: .upper, data: self.upperData)
+		ASCollectionView<Section>(sections: [
+			ASCollectionViewSection(id: .upper, data: self.upperData)
 			{ model, _ in
 				GroupLarge(model: model)
 			},
-		                                                          ASCollectionViewSection(id: .list, data: self.lowerData)
+			ASCollectionViewSection(id: .list, data: self.lowerData)
 			{ model, info in
 				VStack(spacing: 0)
 				{
@@ -51,9 +56,12 @@ struct RemindersScreen: View
 					Spacer()
 				}
 			},
-		                                                          ASCollectionViewSection(id: .addNew, content:
-				GroupSmall(model: self.addNewModel))
-				.sectionFooter
+			ASCollectionViewSection(
+				id: .addNew)
+			{
+				GroupSmall(model: self.addNewModel)
+			}
+			.sectionFooter
 			{
 				HStack
 				{
@@ -64,7 +72,9 @@ struct RemindersScreen: View
 					Spacer()
 				}
 				.padding(.top)
-		}])
+			}
+		])
+			.layoutCompositional(self.layout)
 			.contentInsets(.init(top: 20, left: 0, bottom: 20, right: 0))
 			.alwaysBounceVertical()
 			.background(Color(.systemGroupedBackground))
@@ -85,12 +95,14 @@ struct RemindersScreen: View
 			case .list, .addNew:
 				return ASCollectionViewLayoutCustomCompositionalSection
 				{ (_, _) -> NSCollectionLayoutSection in
-					let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
-					                                      heightDimension: .estimated(60))
+					let itemSize = NSCollectionLayoutSize(
+						widthDimension: .fractionalWidth(1.0),
+						heightDimension: .estimated(60))
 					let item = NSCollectionLayoutItem(layoutSize: itemSize)
 
-					let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0),
-					                                       heightDimension: .estimated(60))
+					let groupSize = NSCollectionLayoutSize(
+						widthDimension: .fractionalWidth(1.0),
+						heightDimension: .estimated(60))
 					let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
 
 					let section = NSCollectionLayoutSection(group: group)

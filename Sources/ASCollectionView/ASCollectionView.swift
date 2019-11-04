@@ -17,9 +17,8 @@ extension ASCollectionView where SectionID == Int
 	 	- layout: The layout to use for the collection view
 	 	- content: A closure returning a SwiftUI view for the given data item
 	 */
-	@inlinable public init<Data, DataID: Hashable, Content: View>(data: [Data], id idKeyPath: KeyPath<Data, DataID>, estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data, ExtraInfo) -> Content))
+	@inlinable public init<Data, DataID: Hashable, Content: View>(data: [Data], id idKeyPath: KeyPath<Data, DataID>, estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, @ViewBuilder content: @escaping ((Data, CellContext) -> Content))
 	{
-		self.layout = layout
 		sections = [Section(id: 0, data: data, dataID: idKeyPath, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDrop: onDragDrop, contentBuilder: content)]
 	}
 
@@ -34,9 +33,8 @@ extension ASCollectionView where SectionID == Int
 	 	- layout: The layout to use for the collection view
 	 	- content: A closure returning a SwiftUI view for the given data item
 	 */
-	@inlinable public init<Data, Content: View>(data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, layout: Layout = .default, @ViewBuilder content: @escaping ((Data, ExtraInfo) -> Content)) where Data: Identifiable
+	@inlinable public init<Data, Content: View>(data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, @ViewBuilder content: @escaping ((Data, CellContext) -> Content)) where Data: Identifiable
 	{
-		self.layout = layout
 		sections = [Section(id: 0, data: data, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDrop: onDragDrop, contentBuilder: content)]
 	}
 
@@ -50,8 +48,11 @@ extension ASCollectionView where SectionID == Int
 	init(layout: Layout = .default, @ViewArrayBuilder content: () -> [AnyView])
 	{
 		self.layout = layout
-		sections = [Section(id: 0,
-		                    content: content)]
+		sections = [
+			Section(
+				id: 0,
+				content: content)
+		]
 	}
 }
 
@@ -59,7 +60,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 {
 	public typealias Section = ASCollectionViewSection<SectionID>
 	public typealias Layout = ASCollectionViewLayout<SectionID>
-	public var layout: Layout
+	public var layout: Layout = .default
 	public var sections: [Section]
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
 
@@ -78,9 +79,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	 	- layout: The layout to use for the collection view
 	 	- sections: An array of sections (ASSection)
 	 */
-	@inlinable public init(layout: Layout = .default, selectedItems: Binding<[SectionID: IndexSet]>? = nil, sections: [Section])
+	@inlinable public init(selectedItems: Binding<[SectionID: IndexSet]>? = nil, sections: [Section])
 	{
-		self.layout = layout
 		self.selectedItems = selectedItems
 		self.sections = sections
 	}
@@ -218,8 +218,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 				cell.selfSizeHorizontal = self.delegate?.collectionView(cellShouldSelfSizeHorizontallyForItemAt: indexPath) ?? true
 				cell.selfSizeVertical = self.delegate?.collectionView(cellShouldSelfSizeVerticallyForItemAt: indexPath) ?? true
-				cell.setupFor(id: itemID,
-				              hostingController: hostController)
+				cell.setupFor(
+					id: itemID,
+					hostingController: hostController)
 				return cell
 			}
 			dataSource?.supplementaryViewProvider = { (cv, kind, indexPath) -> UICollectionReusableView? in
@@ -232,8 +233,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				else { return nil }
 				if let supplementaryView = self.parent.sections[indexPath.section].supplementary(ofKind: kind)
 				{
-					reusableView.setupFor(id: indexPath.section,
-					                      view: supplementaryView)
+					reusableView.setupFor(
+						id: indexPath.section,
+						view: supplementaryView)
 				}
 				return reusableView
 			}
@@ -626,10 +628,12 @@ public class AS_CollectionViewController: UIViewController
 		collectionView.backgroundColor = .clear
 
 		collectionView.translatesAutoresizingMaskIntoConstraints = false
-		NSLayoutConstraint.activate([collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
-		                             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
-		                             collectionView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
-		                             collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)])
+		NSLayoutConstraint.activate([
+			collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
+			collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
+			collectionView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
+			collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
+		])
 	}
 
 	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
@@ -647,5 +651,48 @@ public class AS_CollectionViewController: UIViewController
 	{
 		super.viewSafeAreaInsetsDidChange()
 		collectionViewLayout.invalidateLayout()
+	}
+}
+
+public extension ASCollectionView
+{
+	func layoutCompositional(_ layout: ASCollectionViewLayout<SectionID>) -> Self
+	{
+		var this = self
+		this.layout = layout
+		return this
+	}
+
+	func layoutCompositional(
+		scrollDirection: UICollectionView.ScrollDirection = .vertical,
+		interSectionSpacing: CGFloat = 10,
+		layoutPerSection: @escaping ((_ sectionID: SectionID) -> ASCollectionViewLayoutSection)) -> Self
+	{
+		var this = self
+		this.layout = ASCollectionViewLayout(
+			scrollDirection: scrollDirection,
+			interSectionSpacing: interSectionSpacing,
+			layoutPerSection: layoutPerSection)
+		return this
+	}
+
+	func layoutCompositional(
+		scrollDirection: UICollectionView.ScrollDirection = .vertical,
+		interSectionSpacing: CGFloat = 10,
+		layout: @escaping (() -> ASCollectionViewLayoutSection)) -> Self
+	{
+		var this = self
+		this.layout = ASCollectionViewLayout(
+			scrollDirection: scrollDirection,
+			interSectionSpacing: interSectionSpacing,
+			layout: layout)
+		return this
+	}
+
+	func layoutCustom(customLayout: @escaping (() -> UICollectionViewLayout)) -> Self
+	{
+		var this = self
+		this.layout = ASCollectionViewLayout(customLayout: customLayout)
+		return this
 	}
 }

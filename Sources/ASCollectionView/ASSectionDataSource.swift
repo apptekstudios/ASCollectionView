@@ -43,7 +43,7 @@ public enum DragDrop<Data>
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
 public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
 
-public struct ExtraInfo
+public struct CellContext
 {
 	public var isSelected: Bool
 	public var isFirstInSection: Bool
@@ -56,22 +56,23 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 	var dataIDKeyPath: KeyPath<Data, DataID>
 	var onCellEvent: OnCellEvent<Data>?
 	var onDragDrop: OnDragDrop<Data>?
-	var content: (Data, ExtraInfo) -> Content
+	var content: (Data, CellContext) -> Content
 
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
 
-	func info(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ExtraInfo
+	func cellContext(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> CellContext
 	{
-		return ExtraInfo(isSelected: isSelected,
-		                 isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
-		                 isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
+		return CellContext(
+			isSelected: isSelected,
+			isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
+			isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
 	}
 
 	func configureHostingController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
 	{
 		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
-		let view = content(item, info(forItemID: itemID, isSelected: isSelected))
+		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
 
 		if let existingHC = reusingController as? ASHostingController<Content>
 		{

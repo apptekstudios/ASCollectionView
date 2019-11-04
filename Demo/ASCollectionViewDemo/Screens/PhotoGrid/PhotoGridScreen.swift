@@ -19,70 +19,76 @@ struct PhotoGridScreen: View
 
 	var layout: ASCollectionViewLayout<Int>
 	{
-		ASCollectionViewLayout(scrollDirection: .vertical, interSectionSpacing: 0, layout: ASCollectionViewLayoutCustomCompositionalSection(sectionLayout: { (layoutEnvironment, _) -> NSCollectionLayoutSection in
-			let isWide = layoutEnvironment.container.effectiveContentSize.width > 500
-			let gridBlockSize = layoutEnvironment.container.effectiveContentSize.width / (isWide ? 5 : 3)
-			let gridItemInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
-			let itemSize = NSCollectionLayoutSize(widthDimension: .absolute(gridBlockSize), heightDimension: .absolute(gridBlockSize))
-			let item = NSCollectionLayoutItem(layoutSize: itemSize)
-			item.contentInsets = gridItemInsets
-			let verticalGroupSize = NSCollectionLayoutSize(widthDimension: .absolute(gridBlockSize), heightDimension: .absolute(gridBlockSize * 2))
-			let verticalGroup = NSCollectionLayoutGroup.vertical(layoutSize: verticalGroupSize, subitem: item, count: 2)
+		ASCollectionViewLayout(
+			scrollDirection: .vertical,
+			interSectionSpacing: 0)
+		{
+			ASCollectionViewLayoutCustomCompositionalSection(sectionLayout: { (layoutEnvironment, _) -> NSCollectionLayoutSection in
+				let isWide = layoutEnvironment.container.effectiveContentSize.width > 500
+				let gridBlockSize = layoutEnvironment.container.effectiveContentSize.width / (isWide ? 5 : 3)
+				let gridItemInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
+				let itemSize = NSCollectionLayoutSize(widthDimension: .absolute(gridBlockSize), heightDimension: .absolute(gridBlockSize))
+				let item = NSCollectionLayoutItem(layoutSize: itemSize)
+				item.contentInsets = gridItemInsets
+				let verticalGroupSize = NSCollectionLayoutSize(widthDimension: .absolute(gridBlockSize), heightDimension: .absolute(gridBlockSize * 2))
+				let verticalGroup = NSCollectionLayoutGroup.vertical(layoutSize: verticalGroupSize, subitem: item, count: 2)
 
-			let featureItemSize = NSCollectionLayoutSize(widthDimension: .absolute(gridBlockSize * 2), heightDimension: .absolute(gridBlockSize * 2))
-			let featureItem = NSCollectionLayoutItem(layoutSize: featureItemSize)
-			featureItem.contentInsets = gridItemInsets
+				let featureItemSize = NSCollectionLayoutSize(widthDimension: .absolute(gridBlockSize * 2), heightDimension: .absolute(gridBlockSize * 2))
+				let featureItem = NSCollectionLayoutItem(layoutSize: featureItemSize)
+				featureItem.contentInsets = gridItemInsets
 
-			let fullWidthItemSize = NSCollectionLayoutSize(widthDimension: .absolute(layoutEnvironment.container.effectiveContentSize.width), heightDimension: .absolute(gridBlockSize * 2))
-			let fullWidthItem = NSCollectionLayoutItem(layoutSize: fullWidthItemSize)
-			fullWidthItem.contentInsets = gridItemInsets
+				let fullWidthItemSize = NSCollectionLayoutSize(widthDimension: .absolute(layoutEnvironment.container.effectiveContentSize.width), heightDimension: .absolute(gridBlockSize * 2))
+				let fullWidthItem = NSCollectionLayoutItem(layoutSize: fullWidthItemSize)
+				fullWidthItem.contentInsets = gridItemInsets
 
-			let verticalAndFeatureGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize * 2))
-			let verticalAndFeatureGroupA = NSCollectionLayoutGroup.horizontal(layoutSize: verticalAndFeatureGroupSize, subitems: isWide ? [verticalGroup, verticalGroup, featureItem, verticalGroup] : [verticalGroup, featureItem])
-			let verticalAndFeatureGroupB = NSCollectionLayoutGroup.horizontal(layoutSize: verticalAndFeatureGroupSize, subitems: isWide ? [verticalGroup, featureItem, verticalGroup, verticalGroup] : [featureItem, verticalGroup])
+				let verticalAndFeatureGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize * 2))
+				let verticalAndFeatureGroupA = NSCollectionLayoutGroup.horizontal(layoutSize: verticalAndFeatureGroupSize, subitems: isWide ? [verticalGroup, verticalGroup, featureItem, verticalGroup] : [verticalGroup, featureItem])
+				let verticalAndFeatureGroupB = NSCollectionLayoutGroup.horizontal(layoutSize: verticalAndFeatureGroupSize, subitems: isWide ? [verticalGroup, featureItem, verticalGroup, verticalGroup] : [featureItem, verticalGroup])
 
-			let rowGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize))
-			let rowGroup = NSCollectionLayoutGroup.horizontal(layoutSize: rowGroupSize, subitem: item, count: isWide ? 5 : 3)
+				let rowGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize))
+				let rowGroup = NSCollectionLayoutGroup.horizontal(layoutSize: rowGroupSize, subitem: item, count: isWide ? 5 : 3)
 
-			let outerGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize * 8))
-			let outerGroup = NSCollectionLayoutGroup.vertical(layoutSize: outerGroupSize, subitems: [verticalAndFeatureGroupA, rowGroup, fullWidthItem, verticalAndFeatureGroupB, rowGroup])
+				let outerGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize * 8))
+				let outerGroup = NSCollectionLayoutGroup.vertical(layoutSize: outerGroupSize, subitems: [verticalAndFeatureGroupA, rowGroup, fullWidthItem, verticalAndFeatureGroupB, rowGroup])
 
-			let section = NSCollectionLayoutSection(group: outerGroup)
-			return section
-		}))
+				let section = NSCollectionLayoutSection(group: outerGroup)
+				return section
+			})
+		}
 	}
 
 	var section: ASCollectionViewSection<SectionID>
 	{
-		ASCollectionViewSection(id: 0,
-		                        data: data,
-		                        onCellEvent: { event in
-		                        	switch event
-		                        	{
-		                        	case let .onAppear(item):
-		                        		ASRemoteImageManager.shared.load(item.squareThumbURL)
-		                        	case let .onDisappear(item):
-		                        		ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-		                        	case let .prefetchForData(data):
-		                        		for item in data
-		                        		{
-		                        			ASRemoteImageManager.shared.load(item.squareThumbURL)
-		                        		}
-		                        	case let .cancelPrefetchForData(data):
-		                        		for item in data
-		                        		{
-		                        			ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-		                        		}
-		                        	}
-		                        },
-		                        onDragDrop: { event in
-		                        	switch event
-		                        	{
-		                        	case let .onRemoveItem(indexPath):
-		                        		self.data.remove(at: indexPath.item)
-		                        	case let .onAddItems(items, indexPath):
-		                        		self.data.insert(contentsOf: items, at: indexPath.item)
-		                        	}
+		ASCollectionViewSection(
+			id: 0,
+			data: data,
+			onCellEvent: { event in
+				switch event
+				{
+				case let .onAppear(item):
+					ASRemoteImageManager.shared.load(item.squareThumbURL)
+				case let .onDisappear(item):
+					ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+				case let .prefetchForData(data):
+					for item in data
+					{
+						ASRemoteImageManager.shared.load(item.squareThumbURL)
+					}
+				case let .cancelPrefetchForData(data):
+					for item in data
+					{
+						ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+					}
+				}
+			},
+			onDragDrop: { event in
+				switch event
+				{
+				case let .onRemoveItem(indexPath):
+					self.data.remove(at: indexPath.item)
+				case let .onAddItems(items, indexPath):
+					self.data.insert(contentsOf: items, at: indexPath.item)
+				}
 		})
 		{ item, state in
 			ZStack(alignment: .bottomTrailing)
@@ -117,11 +123,13 @@ struct PhotoGridScreen: View
 
 	var body: some View
 	{
-		ASCollectionView(layout: self.layout,
-		                 selectedItems: $selectedItems,
-		                 sections: [section])
+		ASCollectionView(
+			selectedItems: $selectedItems,
+			sections: [section])
+			.layoutCompositional(self.layout)
 			.navigationBarTitle("Explore", displayMode: .inline)
-			.navigationBarItems(trailing:
+			.navigationBarItems(
+				trailing:
 				HStack(spacing: 20)
 				{
 					if self.isEditing
