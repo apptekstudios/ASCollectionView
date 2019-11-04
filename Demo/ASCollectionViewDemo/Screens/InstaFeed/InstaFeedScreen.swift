@@ -85,7 +85,7 @@ struct InstaFeedScreen: View
 	{
 		ASTableView(sections: sections)
 		.tableViewSeparatorsEnabled(false)
-		.tableViewReachedBottom
+		.onTableViewReachedBottom
 		{
 			self.loadMoreContent() // REACHED BOTTOM, LOADING MORE CONTENT
 		}

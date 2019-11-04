@@ -100,7 +100,7 @@ public extension View
 		environment(\.tableViewSeparatorsEnabled, enabled)
 	}
 
-	func tableViewReachedBottom(_ onReachedBottom: @escaping (() -> Void)) -> some View
+	func onTableViewReachedBottom(_ onReachedBottom: @escaping (() -> Void)) -> some View
 	{
 		environment(\.tableViewOnReachedBottom, onReachedBottom)
 	}
