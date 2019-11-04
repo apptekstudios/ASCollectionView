@@ -16,16 +16,16 @@ struct GroupSmall: View
 				.foregroundColor(.white)
 				.background(
 					Circle().fill(model.color)
-			)
-			
+				)
+
 			Text(model.title)
 				.multilineTextAlignment(.leading)
 				.foregroundColor(Color(.label))
-			
+
 			Spacer()
 			model.contentCount.map
-				{
-					Text("\($0)")
+			{
+				Text("\($0)")
 			}
 		}
 		.padding(10)

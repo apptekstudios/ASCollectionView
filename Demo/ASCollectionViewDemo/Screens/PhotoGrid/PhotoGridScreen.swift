@@ -8,14 +8,15 @@ struct PhotoGridScreen: View
 {
 	@State var data: [Post] = DataSource.postsForSection(1, number: 1000)
 	@State var selectedItems: [SectionID: IndexSet] = [:]
-	
+
 	@Environment(\.editMode) private var editMode
-	var isEditing: Bool {
+	var isEditing: Bool
+	{
 		editMode?.wrappedValue.isEditing ?? false
 	}
-	
+
 	typealias SectionID = Int
-	
+
 	var layout: ASCollectionViewLayout<Int>
 	{
 		ASCollectionViewLayout(scrollDirection: .vertical, interSectionSpacing: 0, layout: ASCollectionViewLayoutCustomCompositionalSection(sectionLayout: { (layoutEnvironment, _) -> NSCollectionLayoutSection in
@@ -31,8 +32,7 @@ struct PhotoGridScreen: View
 			let featureItemSize = NSCollectionLayoutSize(widthDimension: .absolute(gridBlockSize * 2), heightDimension: .absolute(gridBlockSize * 2))
 			let featureItem = NSCollectionLayoutItem(layoutSize: featureItemSize)
 			featureItem.contentInsets = gridItemInsets
-			
-			
+
 			let fullWidthItemSize = NSCollectionLayoutSize(widthDimension: .absolute(layoutEnvironment.container.effectiveContentSize.width), heightDimension: .absolute(gridBlockSize * 2))
 			let fullWidthItem = NSCollectionLayoutItem(layoutSize: fullWidthItemSize)
 			fullWidthItem.contentInsets = gridItemInsets
@@ -51,50 +51,55 @@ struct PhotoGridScreen: View
 			return section
 		}))
 	}
-	
-	var section: ASCollectionViewSection<SectionID> {
+
+	var section: ASCollectionViewSection<SectionID>
+	{
 		ASCollectionViewSection(id: 0,
-								data: data,
-								onCellEvent: { event in
-									switch event
-									{
-									case let .onAppear(item):
-										ASRemoteImageManager.shared.load(item.squareThumbURL)
-									case let .onDisappear(item):
-										ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-									case let .prefetchForData(data):
-										for item in data
-										{
-											ASRemoteImageManager.shared.load(item.squareThumbURL)
-										}
-									case let .cancelPrefetchForData(data):
-										for item in data
-										{
-											ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-										}
-									}
-		},
-								onDragDrop: { event in
-									switch event
-									{
-									case let .onRemoveItem(indexPath):
-										self.data.remove(at: indexPath.item)
-									case let .onAddItems(items, indexPath):
-										self.data.insert(contentsOf: items, at: indexPath.item)
-									}
+		                        data: data,
+		                        onCellEvent: { event in
+		                        	switch event
+		                        	{
+		                        	case let .onAppear(item):
+		                        		ASRemoteImageManager.shared.load(item.squareThumbURL)
+		                        	case let .onDisappear(item):
+		                        		ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+		                        	case let .prefetchForData(data):
+		                        		for item in data
+		                        		{
+		                        			ASRemoteImageManager.shared.load(item.squareThumbURL)
+		                        		}
+		                        	case let .cancelPrefetchForData(data):
+		                        		for item in data
+		                        		{
+		                        			ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+		                        		}
+		                        	}
+		                        },
+		                        onDragDrop: { event in
+		                        	switch event
+		                        	{
+		                        	case let .onRemoveItem(indexPath):
+		                        		self.data.remove(at: indexPath.item)
+		                        	case let .onAddItems(items, indexPath):
+		                        		self.data.insert(contentsOf: items, at: indexPath.item)
+		                        	}
 		})
 		{ item, state in
-			ZStack(alignment: .bottomTrailing) {
-				GeometryReader { geom in
+			ZStack(alignment: .bottomTrailing)
+			{
+				GeometryReader
+				{ geom in
 					ASRemoteImageView(item.squareThumbURL)
 						.aspectRatio(1, contentMode: .fill)
 						.frame(width: geom.size.width, height: geom.size.height)
 						.clipped()
 						.opacity(state.isSelected ? 0.7 : 1.0)
 				}
-				
-				if state.isSelected {
-					ZStack {
+
+				if state.isSelected
+				{
+					ZStack
+					{
 						Circle()
 							.fill(Color.blue)
 						Circle()
@@ -110,25 +115,28 @@ struct PhotoGridScreen: View
 		}
 	}
 
-
 	var body: some View
 	{
 		ASCollectionView(layout: self.layout,
-						 selectedItems: $selectedItems,
+		                 selectedItems: $selectedItems,
 		                 sections: [section])
 			.navigationBarTitle("Explore", displayMode: .inline)
 			.navigationBarItems(trailing:
-				HStack(spacing: 20) {
-					if self.isEditing {
+				HStack(spacing: 20)
+				{
+					if self.isEditing
+					{
 						Button(action: {
-							if let (_, indexSet) = self.selectedItems.first {
+							if let (_, indexSet) = self.selectedItems.first
+							{
 								self.data.remove(atOffsets: indexSet)
 							}
-						}) {
+						})
+						{
 							Image(systemName: "trash")
 						}
 					}
-					
+
 					EditButton()
 			})
 	}

@@ -42,12 +42,12 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		self.sections = sections
 	}
 
-	//Disabled until functionBuilder working correctly
+	// Disabled until functionBuilder working correctly
 	/*@inlinable public init(mode: UITableView.Style = .plain, @SectionArrayBuilder <SectionID> sections: () -> [Section])
-	{
-		self.mode = mode
-		self.sections = sections()
-	}*/
+	 {
+	 	self.mode = mode
+	 	self.sections = sections()
+	 }*/
 
 	public func makeUIViewController(context: Context) -> UITableViewController
 	{
@@ -173,7 +173,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 						let cell = cell as? Cell,
 						let itemID = cell.id
 					else { return }
-					
+
 					self.configureHostingController(forItemID: itemID, isSelected: cell.isSelected)
 				}
 				/* tv.indexPathsForVisibleSupplementaryElements(ofKind: UICollectionView.elementKindSectionHeader).forEach {
@@ -245,21 +245,23 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				parent.sections[$0.key].dataSource.cancelPrefetch($0.value)
 			}
 		}
-		
-		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+
+		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
+		{
 			guard
 				let cell = tableView.cellForRow(at: indexPath) as? Cell,
 				let itemID = cell.id
-				else { return }
-			self.configureHostingController(forItemID: itemID, isSelected: true)
+			else { return }
+			configureHostingController(forItemID: itemID, isSelected: true)
 		}
-		
-		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
+
+		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath)
+		{
 			guard
 				let cell = tableView.cellForRow(at: indexPath) as? Cell,
 				let itemID = cell.id
-				else { return }
-			self.configureHostingController(forItemID: itemID, isSelected: false)
+			else { return }
+			configureHostingController(forItemID: itemID, isSelected: false)
 		}
 
 		public func scrollViewDidScroll(_ scrollView: UIScrollView)

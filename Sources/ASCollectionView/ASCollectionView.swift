@@ -12,8 +12,8 @@ extension ASCollectionView where SectionID == Int
 	 	- data: The data to display in the collection view
 	 	- id: The keypath to a hashable identifier of each data item
 	 	- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
-		- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
-		- onDragDrop: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
+	 - onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
+	 - onDragDrop: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- layout: The layout to use for the collection view
 	 	- content: A closure returning a SwiftUI view for the given data item
 	 */
@@ -30,7 +30,7 @@ extension ASCollectionView where SectionID == Int
 	 	- data: The data to display in the collection view. This initialiser expects data that conforms to 'Identifiable'
 	 	- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
 	 	- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
-		- onDragDrop: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
+	 - onDragDrop: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- layout: The layout to use for the collection view
 	 	- content: A closure returning a SwiftUI view for the given data item
 	 */
@@ -93,12 +93,12 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	 	- layout: The layout to use for the collection view
 	 	- sections: A closure providing sections to display in the collection view (ASSection)
 	 */
-	/*public init(layout: Layout = .default, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sections: () -> [Section])
-	{
-		self.layout = layout
-		self.selectedItems = selectedItems
-		self.sections = sections()
-	}*/
+	/* public init(layout: Layout = .default, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sections: () -> [Section])
+	 {
+	 	self.layout = layout
+	 	self.selectedItems = selectedItems
+	 	self.sections = sections()
+	 } */
 
 	public func makeUIViewController(context: Context) -> AS_CollectionViewController
 	{
@@ -139,7 +139,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		collectionView.alwaysBounceHorizontal = alwaysBounceHorizontal
 		collectionView.showsVerticalScrollIndicator = scrollIndicatorsEnabled
 		collectionView.showsHorizontalScrollIndicator = scrollIndicatorsEnabled
-		
+
 		let isEditing = editMode?.wrappedValue.isEditing ?? false
 		collectionView.allowsSelection = isEditing
 		collectionView.allowsMultipleSelection = isEditing
@@ -261,7 +261,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						let cell = cell as? Cell,
 						let itemID = cell.id
 					else { return }
-					
+
 					self.configureHostingController(forItemID: itemID, isSelected: cell.isSelected)
 				}
 
@@ -304,36 +304,41 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			(view as? ASCollectionViewSupplementaryView)?.didDisappear()
 		}
-		
-		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+
+		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
+		{
 			guard
 				let cell = collectionView.cellForItem(at: indexPath) as? Cell,
 				let itemID = cell.id
-				else { return }
+			else { return }
 			updateSelectionBindings(collectionView)
-			self.configureHostingController(forItemID: itemID, isSelected: true)
-			
+			configureHostingController(forItemID: itemID, isSelected: true)
 		}
-		
-		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+
+		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
+		{
 			guard
 				let cell = collectionView.cellForItem(at: indexPath) as? Cell,
 				let itemID = cell.id
-				else { return }
+			else { return }
 			updateSelectionBindings(collectionView)
-			self.configureHostingController(forItemID: itemID, isSelected: false)
+			configureHostingController(forItemID: itemID, isSelected: false)
 		}
-		
-		func updateSelectionBindings(_ collectionView: UICollectionView) {
+
+		func updateSelectionBindings(_ collectionView: UICollectionView)
+		{
 			guard let selectedItemsBinding = parent.selectedItems else { return }
 			let selected = collectionView.indexPathsForSelectedItems ?? []
 			let selectedSafe = selected.filter { $0.section < parent.sections.endIndex }
-			let selectedBySection = Dictionary(grouping: selectedSafe) {
+			let selectedBySection = Dictionary(grouping: selectedSafe)
+			{
 				parent.sections[$0.section].id
-			}.mapValues {
+			}.mapValues
+			{
 				IndexSet($0.map { $0.item })
 			}
-			DispatchQueue.main.async {
+			DispatchQueue.main.async
+			{
 				selectedItemsBinding.wrappedValue = selectedBySection
 			}
 		}
@@ -430,12 +435,14 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 	{
 		coordinator?.collectionView(collectionView, didEndDisplayingSupplementaryView: view, forElementOfKind: elementKind, at: indexPath)
 	}
-	
-	public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+
+	public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
+	{
 		coordinator?.collectionView(collectionView, didSelectItemAt: indexPath)
 	}
-	
-	public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+
+	public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
+	{
 		coordinator?.collectionView(collectionView, didDeselectItemAt: indexPath)
 	}
 
@@ -464,7 +471,8 @@ extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionVi
 		{
 			if let destination = destinationIndexPath
 			{
-				guard coordinator?.canDrop(at: destination) ?? false else {
+				guard coordinator?.canDrop(at: destination) ?? false else
+				{
 					return UICollectionViewDropProposal(operation: .cancel)
 				}
 			}
@@ -500,17 +508,16 @@ extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionVi
 					self.coordinator?.removeItem(from: sourceIndex)
 				}
 			}
-			
+
 			self.coordinator?.insertItems(coordinator.items.map { $0.dragItem }, at: destinationIndexPath)
-			/*self.coordinator?.afterNextUpdate = {
-				coordinator.items.forEach { (item) in
-					coordinator.drop(item.dragItem, toItemAt: destinationIndexPath) // This assumption is flawed if dropping multiple items
-				}
-			}*/
+			/* self.coordinator?.afterNextUpdate = {
+			 	coordinator.items.forEach { (item) in
+			 		coordinator.drop(item.dragItem, toItemAt: destinationIndexPath) // This assumption is flawed if dropping multiple items
+			 	}
+			 } */
 
 		case .copy:
 			self.coordinator?.insertItems(coordinator.items.map { $0.dragItem }, at: destinationIndexPath)
-			break
 
 		default:
 			return

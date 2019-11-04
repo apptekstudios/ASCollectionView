@@ -43,8 +43,8 @@ public enum DragDrop<Data>
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
 public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
 
-
-public struct ExtraInfo {
+public struct ExtraInfo
+{
 	public var isSelected: Bool
 	public var isFirstInSection: Bool
 	public var isLastInSection: Bool
@@ -54,19 +54,20 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 {
 	var data: [Data]
 	var dataIDKeyPath: KeyPath<Data, DataID>
-	var onCellEvent: OnCellEvent<Data>? = nil
-	var onDragDrop: OnDragDrop<Data>? = nil
+	var onCellEvent: OnCellEvent<Data>?
+	var onDragDrop: OnDragDrop<Data>?
 	var content: (Data, ExtraInfo) -> Content
 
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
 
-	func info(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ExtraInfo {
+	func info(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ExtraInfo
+	{
 		return ExtraInfo(isSelected: isSelected,
-						 isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
-						 isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
+		                 isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
+		                 isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
 	}
-	
+
 	func configureHostingController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
 	{
 		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
