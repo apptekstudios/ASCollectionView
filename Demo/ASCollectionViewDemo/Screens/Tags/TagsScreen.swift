@@ -21,8 +21,7 @@ struct TagsScreen: View
 			}
 			Text("Tags:")
 				.font(.title)
-			ASCollectionView(
-				section:
+			ASCollectionView(section:
 				ASCollectionViewSection(id: 0, data: store.items)
 				{ item, _ in
 					Text(item.displayString)
@@ -30,7 +29,8 @@ struct TagsScreen: View
 						.padding(5)
 						.background(Color(.systemGray))
 						.cornerRadius(5)
-			})
+				}
+			)
 				.layoutCustom
 			{
 				let fl = AlignedFlowLayout()

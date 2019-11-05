@@ -8,8 +8,9 @@
 # ASCollectionView
 A SwiftUI implementation of UICollectionView & UITableView. Here's some of its useful features:
  * supports **preloading** and **onAppear/onDisappear**.
+ * supports **cell selection**, with automatic support for SwiftUI editing mode.
+ * supports **autosizing** of cells.
  * supports **removing separators** (for tableview).
- * supports **autosizing** of cells
  * supports the new **UICollectionViewCompositionalLayout**, and **any other UICollectionViewLayout**
 
 ### Pull requests and suggestions welcome :)
@@ -43,6 +44,49 @@ struct ExampleView: View {
     
     typealias SectionID = Int
     
+    var body: some View
+    {
+        ASCollectionView
+		{
+			ASCollectionViewSection(
+				id: 0,
+				data: dataExampleA,
+				dataID: \.self)
+			{ item, _ in
+				Color.blue
+					.overlay(
+						Text("\(item)")
+					)
+			}
+			ASCollectionViewSection(
+				id: 1,
+				data: dataExampleB,
+				dataID: \.self)
+			{ item, _ in
+				Color.blue
+					.overlay(
+						Text("Complex layout - \(item)")
+					)
+			}
+			.sectionHeader
+			{
+				HStack
+				{
+					Text("Section header")
+						.padding()
+					Spacer()
+				}
+				.background(Color.yellow)
+			}
+			.sectionFooter
+			{
+				Text("This is a section footer!")
+					.padding()
+			}
+		}
+    }
+    
+    
     var layout: ASCollectionViewLayout<SectionID> {
         ASCollectionViewLayout { sectionID -> ASCollectionViewLayoutSection in
             switch sectionID {
@@ -51,40 +95,6 @@ struct ExampleView: View {
                 return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 100), itemSpacing: 5, lineSpacing: 5, itemSize: .absolute(50))
             default:
                 return self.customSectionLayout
-            }
-        }
-    }
-    
-    var body: some View
-    {
-        ASCollectionView(layout: self.layout) {
-            ASCollectionViewSection(id: 0,
-                                    data: dataExampleA,
-                                    dataID: \.self) { item in
-                                        Color.blue
-                                            .overlay(
-                                                Text("\(item)")
-                                        )
-            }
-            ASCollectionViewSection(id: 1,
-                                    data: dataExampleB,
-                                    dataID: \.self) { item in
-                                        Color.blue
-                                            .overlay(
-                                                Text("Complex layout - \(item)")
-                                        )
-            }
-            .sectionHeader {
-                HStack {
-                    Text("Section header")
-                        .padding()
-                    Spacer()
-                }
-                .background(Color.yellow)
-            }
-            .sectionFooter {
-                Text("This is a section footer!")
-                    .padding()
             }
         }
     }

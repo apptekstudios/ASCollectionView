@@ -16,7 +16,7 @@ extension ASCollectionView where SectionID == Int
 		self.selectedItems = selectedItems.map
 		{ selectedItems in
 			Binding(
-				get: { [0: selectedItems.wrappedValue] },
+				get: { [:] },
 				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
 		}
 		sections = [section]
@@ -50,7 +50,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		self.selectedItems = selectedItems
 		self.sections = sections
 	}
-
+	
+	@inlinable public init(selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder<SectionID> sections: (() -> [Section]))
+	{
+		self.selectedItems = selectedItems
+		self.sections = sections()
+	}
+	
 	public func makeUIViewController(context: Context) -> AS_CollectionViewController
 	{
 		context.coordinator.parent = self

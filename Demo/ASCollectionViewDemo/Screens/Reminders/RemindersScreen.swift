@@ -29,12 +29,13 @@ struct RemindersScreen: View
 
 	var body: some View
 	{
-		ASCollectionView<Section>(sections: [
-			ASCollectionViewSection(id: .upper, data: self.upperData)
+		ASCollectionView {
+			ASCollectionViewSection(id: Section.upper, data: self.upperData)
 			{ model, _ in
 				GroupLarge(model: model)
-			},
-			ASCollectionViewSection(id: .list, data: self.lowerData)
+			}
+			
+			ASCollectionViewSection(id: Section.list, data: self.lowerData)
 			{ model, info in
 				VStack(spacing: 0)
 				{
@@ -55,9 +56,9 @@ struct RemindersScreen: View
 						.padding(.bottom, 5)
 					Spacer()
 				}
-			},
-			ASCollectionViewSection(
-				id: .addNew)
+			}
+			
+			ASCollectionViewSection(id: Section.addNew)
 			{
 				GroupSmall(model: self.addNewModel)
 			}
@@ -73,7 +74,7 @@ struct RemindersScreen: View
 				}
 				.padding(.top)
 			}
-		])
+		}
 			.layoutCompositional(self.layout)
 			.contentInsets(.init(top: 20, left: 0, bottom: 20, right: 0))
 			.alwaysBounceVertical()
