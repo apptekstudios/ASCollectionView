@@ -17,7 +17,7 @@ A SwiftUI implementation of UICollectionView & UITableView. Here's some of its u
 <a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>  ·  <a href="https://github.com/apptekstudios/ASCollectionView/issues">Suggest a feature</a>
 
 ### Screenshots from demo app
-<img src="/readmeAssets/demo1.PNG" width="300">    <img src="/readmeAssets/demo2.PNG" width="300">    <img src="/readmeAssets/demo3.PNG" width="300">    <img src="/readmeAssets/demo4.PNG" width="300">    <img src="/readmeAssets/demo5.PNG" width="300">    <img src="/readmeAssets/demo6.PNG" width="300">
+<img src="/readmeAssets/demo1.jpeg" width="300">    <img src="/readmeAssets/demo2.jpeg" width="300">    <img src="/readmeAssets/demo3.jpeg" width="300">    <img src="/readmeAssets/demo4.jpeg" width="300">    <img src="/readmeAssets/demo5.jpeg" width="300">    <img src="/readmeAssets/demo6.jpeg" width="300">
 
 ## Table of Contents
 * [Getting Started](#getting-started)
@@ -138,4 +138,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 [issues-url]: https://github.com/apptekstudios/ASCollectionView/issues
 [license-shield]: https://img.shields.io/github/license/apptekstudios/ASCollectionView.svg?style=flat-square
 [license-url]: https://github.com/apptekstudios/ASCollectionView/blob/master/LICENSE
-[product-screenshot]: images/screenshot.png
+[product-screenshot]: images/screenshot.jpeg
