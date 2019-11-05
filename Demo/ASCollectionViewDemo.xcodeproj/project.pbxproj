@@ -35,6 +35,7 @@
 		B8A95E3923607F850017A7EA /* CustomDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A95E3823607F850017A7EA /* CustomDelegate.swift */; };
 		B8A95E3C2360800D0017A7EA /* MagazineLayout in Frameworks */ = {isa = PBXBuildFile; productRef = B8A95E3B2360800D0017A7EA /* MagazineLayout */; };
 		B8A95E3E236081500017A7EA /* MagazineLayoutScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A95E3D236081500017A7EA /* MagazineLayoutScreen.swift */; };
+		B8D8292E2371077800D3F0AE /* SampleUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D8292D2371077400D3F0AE /* SampleUsage.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +68,7 @@
 		B89129FD235DB71900D8BA90 /* TagStore.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TagStore.swift; sourceTree = "<group>"; };
 		B8A95E3823607F850017A7EA /* CustomDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomDelegate.swift; sourceTree = "<group>"; };
 		B8A95E3D236081500017A7EA /* MagazineLayoutScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagazineLayoutScreen.swift; sourceTree = "<group>"; };
+		B8D8292D2371077400D3F0AE /* SampleUsage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SampleUsage.swift; path = ../readmeAssets/SampleUsage.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -96,6 +98,7 @@
 		B86C6F0A234B078600522AEF = {
 			isa = PBXGroup;
 			children = (
+				B8D8292D2371077400D3F0AE /* SampleUsage.swift */,
 				B86C6F15234B078600522AEF /* ASCollectionViewDemo */,
 				B86C6F14234B078600522AEF /* Products */,
 				B86C6F2C234B0B7D00522AEF /* ASCollectionView */,
@@ -318,6 +321,7 @@
 				B86C6F4C234B0B9D00522AEF /* PostView.swift in Sources */,
 				B8384F542366E9FD0049CA47 /* TagStore.swift in Sources */,
 				B86C6F4F234B0B9D00522AEF /* MainView.swift in Sources */,
+				B8D8292E2371077800D3F0AE /* SampleUsage.swift in Sources */,
 				B86C6F19234B078600522AEF /* SceneDelegate.swift in Sources */,
 				B8A95E3E236081500017A7EA /* MagazineLayoutScreen.swift in Sources */,
 				B8A95E3923607F850017A7EA /* CustomDelegate.swift in Sources */,

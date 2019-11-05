@@ -10,29 +10,15 @@ struct ExampleView: View
 
 	typealias SectionID = Int
 
-	var layout: ASCollectionViewLayout<SectionID>
-	{
-		ASCollectionViewLayout
-		{ sectionID -> ASCollectionViewLayoutSection in
-			switch sectionID
-			{
-			case 0:
-				return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 100), itemSpacing: 5, lineSpacing: 5, itemSize: .absolute(50))
-			default:
-				return self.customSectionLayout
-			}
-		}
-	}
-
 	var body: some View
 	{
-		ASCollectionView(layout: self.layout)
+		ASCollectionView
 		{
 			ASCollectionViewSection(
 				id: 0,
 				data: dataExampleA,
 				dataID: \.self)
-			{ item in
+			{ item, _ in
 				Color.blue
 					.overlay(
 						Text("\(item)")
@@ -42,7 +28,7 @@ struct ExampleView: View
 				id: 1,
 				data: dataExampleB,
 				dataID: \.self)
-			{ item in
+			{ item, _ in
 				Color.blue
 					.overlay(
 						Text("Complex layout - \(item)")
@@ -64,8 +50,23 @@ struct ExampleView: View
 					.padding()
 			}
 		}
+		.layoutCompositional(self.layout)
 	}
 
+	var layout: ASCollectionViewLayout<SectionID>
+	{
+		ASCollectionViewLayout
+			{ sectionID -> ASCollectionViewLayoutSection in
+				switch sectionID
+				{
+				case 0:
+					return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 100), itemSpacing: 5, lineSpacing: 5, itemSize: .absolute(50))
+				default:
+					return self.customSectionLayout
+				}
+		}
+	}
+	
 	let customSectionLayout = ASCollectionViewLayoutCustomCompositionalSection
 	{ (layoutEnvironment, _) -> NSCollectionLayoutSection in
 		let isWide = layoutEnvironment.container.effectiveContentSize.width > 500

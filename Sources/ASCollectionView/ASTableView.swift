@@ -17,7 +17,7 @@ extension ASTableView where SectionID == Int
 		self.selectedItems = selectedItems.map
 		{ selectedItems in
 			Binding(
-				get: { [0: selectedItems.wrappedValue] },
+				get: { [:] },
 				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
 		}
 		sections = [section]
@@ -51,6 +51,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		self.mode = mode
 		self.selectedItems = selectedItems
 		self.sections = sections
+	}
+	
+	@inlinable public init(mode: UITableView.Style = .plain, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder<SectionID> sections: (() -> [Section]))
+	{
+		self.mode = mode
+		self.selectedItems = selectedItems
+		self.sections = sections()
 	}
 
 	public func makeUIViewController(context: Context) -> UITableViewController
