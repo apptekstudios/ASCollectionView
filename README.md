@@ -84,6 +84,7 @@ struct ExampleView: View {
 					.padding()
 			}
 		}
+		.layoutCompositional(self.layout)
     }
     
     
