@@ -44,7 +44,7 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 	 	- dataID: The keypath to a hashable identifier of each data item
 	 	- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
 	 	- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
-	 - onDragDrop: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
+	 - onDragDropEvent: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
 	 */
 	public init<Data, DataID: Hashable, Content: View>(
@@ -53,7 +53,7 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 		dataID dataIDKeyPath: KeyPath<Data, DataID>,
 		estimatedItemSize: CGSize? = nil,
 		onCellEvent: OnCellEvent<Data>? = nil,
-		onDragDrop: OnDragDrop<Data>? = nil,
+		onDragDropEvent: OnDragDrop<Data>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
 	{
 		self.id = id
@@ -62,7 +62,7 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 			data: data,
 			dataIDKeyPath: dataIDKeyPath,
 			onCellEvent: onCellEvent,
-			onDragDrop: onDragDrop,
+			onDragDrop: onDragDropEvent,
 			content: contentBuilder)
 	}
 
@@ -191,7 +191,7 @@ public extension ASCollectionViewSection
 	 	- data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'
 	 	- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
 	 	- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
-	 - onDragDrop: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
+	 - onDragDropEvent: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
 	 */
 	@inlinable init<Content: View, Data: Identifiable>(
@@ -199,9 +199,9 @@ public extension ASCollectionViewSection
 		data: [Data],
 		estimatedItemSize: CGSize? = nil,
 		onCellEvent: OnCellEvent<Data>? = nil,
-		onDragDrop: OnDragDrop<Data>? = nil,
+		onDragDropEvent: OnDragDrop<Data>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
 	{
-		self.init(id: id, data: data, dataID: \.id, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDrop: onDragDrop, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: \.id, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, contentBuilder: contentBuilder)
 	}
 }

@@ -21,15 +21,17 @@ struct TagsScreen: View
 			}
 			Text("Tags:")
 				.font(.title)
-			ASCollectionView(data: store.items)
-			{ item, _ in
-				Text(item.displayString)
-					.fixedSize()
-					.padding(5)
-					.background(Color(.systemGray))
-					.cornerRadius(5)
-			}
-			.layoutCustom
+			ASCollectionView(
+				section:
+				ASCollectionViewSection(id: 0, data: store.items)
+				{ item, _ in
+					Text(item.displayString)
+						.fixedSize()
+						.padding(5)
+						.background(Color(.systemGray))
+						.cornerRadius(5)
+			})
+				.layoutCustom
 			{
 				let fl = AlignedFlowLayout()
 				fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize

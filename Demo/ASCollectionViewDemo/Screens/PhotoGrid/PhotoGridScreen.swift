@@ -62,34 +62,8 @@ struct PhotoGridScreen: View
 		ASCollectionViewSection(
 			id: 0,
 			data: data,
-			onCellEvent: { event in
-				switch event
-				{
-				case let .onAppear(item):
-					ASRemoteImageManager.shared.load(item.squareThumbURL)
-				case let .onDisappear(item):
-					ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-				case let .prefetchForData(data):
-					for item in data
-					{
-						ASRemoteImageManager.shared.load(item.squareThumbURL)
-					}
-				case let .cancelPrefetchForData(data):
-					for item in data
-					{
-						ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-					}
-				}
-			},
-			onDragDrop: { event in
-				switch event
-				{
-				case let .onRemoveItem(indexPath):
-					self.data.remove(at: indexPath.item)
-				case let .onAddItems(items, indexPath):
-					self.data.insert(contentsOf: items, at: indexPath.item)
-				}
-		})
+			onCellEvent: onCellEvent,
+			onDragDropEvent: onDragDropEvent)
 		{ item, state in
 			ZStack(alignment: .bottomTrailing)
 			{
@@ -147,6 +121,38 @@ struct PhotoGridScreen: View
 
 					EditButton()
 			})
+	}
+
+	func onCellEvent(_ event: CellEvent<Post>)
+	{
+		switch event
+		{
+		case let .onAppear(item):
+			ASRemoteImageManager.shared.load(item.squareThumbURL)
+		case let .onDisappear(item):
+			ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+		case let .prefetchForData(data):
+			for item in data
+			{
+				ASRemoteImageManager.shared.load(item.squareThumbURL)
+			}
+		case let .cancelPrefetchForData(data):
+			for item in data
+			{
+				ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+			}
+		}
+	}
+
+	func onDragDropEvent(_ event: DragDrop<Post>)
+	{
+		switch event
+		{
+		case let .onRemoveItem(indexPath):
+			data.remove(at: indexPath.item)
+		case let .onAddItems(items, indexPath):
+			data.insert(contentsOf: items, at: indexPath.item)
+		}
 	}
 }
 

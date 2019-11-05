@@ -9,50 +9,17 @@ extension ASCollectionView where SectionID == Int
 	 Initializes a  collection view with a single section.
 
 	 - Parameters:
-	 	- data: The data to display in the collection view
-	 	- id: The keypath to a hashable identifier of each data item
-	 	- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
-	 - onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
-	 - onDragDrop: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
-	 	- layout: The layout to use for the collection view
-	 	- content: A closure returning a SwiftUI view for the given data item
+	 	- section: A single section (ASCollectionViewSection)
 	 */
-	@inlinable public init<Data, DataID: Hashable, Content: View>(data: [Data], id idKeyPath: KeyPath<Data, DataID>, estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, @ViewBuilder content: @escaping ((Data, CellContext) -> Content))
+	public init(selectedItems: Binding<IndexSet>? = nil, section: Section)
 	{
-		sections = [Section(id: 0, data: data, dataID: idKeyPath, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDrop: onDragDrop, contentBuilder: content)]
-	}
-
-	/**
-	 Initializes a  collection view with a single section.
-
-	 - Parameters:
-	 	- data: The data to display in the collection view. This initialiser expects data that conforms to 'Identifiable'
-	 	- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
-	 	- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
-	 - onDragDrop: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
-	 	- layout: The layout to use for the collection view
-	 	- content: A closure returning a SwiftUI view for the given data item
-	 */
-	@inlinable public init<Data, Content: View>(data: [Data], estimatedItemSize: CGSize? = nil, onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, @ViewBuilder content: @escaping ((Data, CellContext) -> Content)) where Data: Identifiable
-	{
-		sections = [Section(id: 0, data: data, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDrop: onDragDrop, contentBuilder: content)]
-	}
-
-	/**
-	 Initializes a  collection view with a single section and static content.
-
-	 - Parameters:
-	 	- layout: The layout to use for the collection view
-	 	- content: A closure returning a number of SwiftUI views to display in the collection view
-	 */
-	init(layout: Layout = .default, @ViewArrayBuilder content: () -> [AnyView])
-	{
-		self.layout = layout
-		sections = [
-			Section(
-				id: 0,
-				content: content)
-		]
+		self.selectedItems = selectedItems.map
+		{ selectedItems in
+			Binding(
+				get: { [0: selectedItems.wrappedValue] },
+				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
+		}
+		sections = [section]
 	}
 }
 
@@ -76,29 +43,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	 Initializes a  collection view with the given sections
 
 	 - Parameters:
-	 	- layout: The layout to use for the collection view
-	 	- sections: An array of sections (ASSection)
+	 	- sections: An array of sections (ASCollectionViewSection)
 	 */
 	@inlinable public init(selectedItems: Binding<[SectionID: IndexSet]>? = nil, sections: [Section])
 	{
 		self.selectedItems = selectedItems
 		self.sections = sections
 	}
-
-	/**
-	 /////Disabled until function builders fully functional
-	 Initializes a  collection view with the given sections
-
-	 - Parameters:
-	 	- layout: The layout to use for the collection view
-	 	- sections: A closure providing sections to display in the collection view (ASSection)
-	 */
-	/* public init(layout: Layout = .default, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sections: () -> [Section])
-	 {
-	 	self.layout = layout
-	 	self.selectedItems = selectedItems
-	 	self.sections = sections()
-	 } */
 
 	public func makeUIViewController(context: Context) -> AS_CollectionViewController
 	{

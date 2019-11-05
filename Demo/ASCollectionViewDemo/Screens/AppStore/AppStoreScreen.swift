@@ -137,48 +137,8 @@ struct AppStoreScreen: View
 			ASCollectionViewSection(
 				id: sectionID,
 				data: sectionData.apps,
-				onCellEvent: { event in
-					switch event
-					{
-					case let .onAppear(item):
-						switch sectionID
-						{
-						case 0:
-							ASRemoteImageManager.shared.load(item.featureImageURL)
-						default:
-							ASRemoteImageManager.shared.load(item.squareThumbURL)
-						}
-					case let .onDisappear(item):
-						switch sectionID
-						{
-						case 0:
-							ASRemoteImageManager.shared.cancelLoad(for: item.featureImageURL)
-						default:
-							ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-						}
-					case let .prefetchForData(data):
-						for item in data
-						{
-							switch sectionID
-							{
-							case 0:
-								ASRemoteImageManager.shared.load(item.featureImageURL)
-							default:
-								ASRemoteImageManager.shared.load(item.squareThumbURL)
-							}
-						}
-					case let .cancelPrefetchForData(data):
-						for item in data
-						{
-							switch sectionID
-							{
-							case 0:
-								ASRemoteImageManager.shared.cancelLoad(for: item.featureImageURL)
-							default:
-								ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-							}
-						}
-					}
+				onCellEvent: {
+					self.onCellEvent($0, sectionID: sectionID)
 			})
 			{ item, _ in
 				if sectionID == 0 {
@@ -205,6 +165,51 @@ struct AppStoreScreen: View
 			.layoutCompositional(self.layout)
 			.edgesIgnoringSafeArea(.all)
 			.navigationBarTitle("Apps", displayMode: .inline)
+	}
+
+	func onCellEvent(_ event: CellEvent<App>, sectionID: Int)
+	{
+		switch event
+		{
+		case let .onAppear(item):
+			switch sectionID
+			{
+			case 0:
+				ASRemoteImageManager.shared.load(item.featureImageURL)
+			default:
+				ASRemoteImageManager.shared.load(item.squareThumbURL)
+			}
+		case let .onDisappear(item):
+			switch sectionID
+			{
+			case 0:
+				ASRemoteImageManager.shared.cancelLoad(for: item.featureImageURL)
+			default:
+				ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+			}
+		case let .prefetchForData(data):
+			for item in data
+			{
+				switch sectionID
+				{
+				case 0:
+					ASRemoteImageManager.shared.load(item.featureImageURL)
+				default:
+					ASRemoteImageManager.shared.load(item.squareThumbURL)
+				}
+			}
+		case let .cancelPrefetchForData(data):
+			for item in data
+			{
+				switch sectionID
+				{
+				case 0:
+					ASRemoteImageManager.shared.cancelLoad(for: item.featureImageURL)
+				default:
+					ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+				}
+			}
+		}
 	}
 }
 
