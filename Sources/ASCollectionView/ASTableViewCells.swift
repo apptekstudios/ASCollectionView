@@ -70,9 +70,10 @@ class ASTableViewCell: UITableViewCell
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
 		guard let hc = hostingController else { return .zero }
-		let size = hc.sizeThatFits(in: targetSize,
-		                           selfSizeHorizontal: false,
-		                           selfSizeVertical: selfSizeVertical)
+		let size = hc.sizeThatFits(
+			in: targetSize,
+			selfSizeHorizontal: false,
+			selfSizeVertical: selfSizeVertical)
 		return size
 	}
 
@@ -142,9 +143,10 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
 		guard let hc = hostingController else { return CGSize(width: 1, height: 1) }
-		let size = hc.sizeThatFits(in: targetSize,
-		                           selfSizeHorizontal: true,
-		                           selfSizeVertical: true)
+		let size = hc.sizeThatFits(
+			in: targetSize,
+			selfSizeHorizontal: true,
+			selfSizeVertical: true)
 		return size
 	}
 

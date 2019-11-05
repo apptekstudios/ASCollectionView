@@ -16,26 +16,8 @@ struct MagazineLayoutScreen: View
 	{
 		data.enumerated().map
 		{ (offset, sectionData) -> ASCollectionViewSection<Int> in
-			ASCollectionViewSection(id: offset, data: sectionData, onCellEvent: { event in
-				switch event
-				{
-				case let .onAppear(item):
-					ASRemoteImageManager.shared.load(item.squareThumbURL)
-				case let .onDisappear(item):
-					ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-				case let .prefetchForData(data):
-					for item in data
-					{
-						ASRemoteImageManager.shared.load(item.squareThumbURL)
-					}
-				case let .cancelPrefetchForData(data):
-					for item in data
-					{
-						ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
-					}
-				}
-			})
-			{ item in
+			ASCollectionViewSection(id: offset, data: sectionData, onCellEvent: onCellEvent)
+			{ item, _ in
 				ASRemoteImageView(item.squareThumbURL)
 					.aspectRatio(1, contentMode: .fit)
 					.contextMenu
@@ -59,11 +41,32 @@ struct MagazineLayoutScreen: View
 
 	var body: some View
 	{
-		ASCollectionView(layout: .init(customLayout: { MagazineLayout() }),
-		                 sections: self.sections)
+		ASCollectionView(sections: self.sections)
+			.layoutCustom { MagazineLayout() }
 			.customDelegate(ASCollectionViewMagazineLayoutDelegate.init)
 			.edgesIgnoringSafeArea(.all)
 			.navigationBarTitle("Magazine Layout (custom delegate)", displayMode: .inline)
+	}
+
+	func onCellEvent(_ event: CellEvent<Post>)
+	{
+		switch event
+		{
+		case let .onAppear(item):
+			ASRemoteImageManager.shared.load(item.squareThumbURL)
+		case let .onDisappear(item):
+			ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+		case let .prefetchForData(data):
+			for item in data
+			{
+				ASRemoteImageManager.shared.load(item.squareThumbURL)
+			}
+		case let .cancelPrefetchForData(data):
+			for item in data
+			{
+				ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+			}
+		}
 	}
 }
 

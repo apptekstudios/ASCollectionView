@@ -27,6 +27,7 @@ struct ASRemoteImageView: View
 					.resizable()
 			}.transition(AnyTransition.opacity.animation(Animation.default))
 		}
+		.compositingGroup()
 	}
 
 	var body: some View

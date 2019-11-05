@@ -25,9 +25,10 @@ public final class Lorem
 	/// - Returns: The generated words joined by a space character.
 	public static func words(_ count: Int) -> String
 	{
-		return _compose(word,
-		                count: count,
-		                joinBy: .space)
+		return _compose(
+			word,
+			count: count,
+			joinBy: .space)
 	}
 
 	/// Generates multiple words whose count is randomly selected from within the given range.
@@ -53,11 +54,12 @@ public final class Lorem
 	{
 		let numberOfWords = Int.random(in: minWordsCountInSentence...maxWordsCountInSentence)
 
-		return _compose(word,
-		                count: numberOfWords,
-		                joinBy: .space,
-		                endWith: .dot,
-		                decorate: { $0.firstLetterCapitalized })
+		return _compose(
+			word,
+			count: numberOfWords,
+			joinBy: .space,
+			endWith: .dot,
+			decorate: { $0.firstLetterCapitalized })
 	}
 
 	/// Generates multiple sentences whose count is defined by the given value.
@@ -66,9 +68,10 @@ public final class Lorem
 	/// - Returns: The generated sentences joined by a space character.
 	public static func sentences(_ count: Int) -> String
 	{
-		return _compose(sentence,
-		                count: count,
-		                joinBy: .space)
+		return _compose(
+			sentence,
+			count: count,
+			joinBy: .space)
 	}
 
 	/// Generates multiple sentences whose count is selected from within the given range.
@@ -94,9 +97,10 @@ public final class Lorem
 	{
 		let numberOfSentences = Int.random(in: minSentencesCountInParagraph...maxSentencesCountInParagraph)
 
-		return _compose(sentence,
-		                count: numberOfSentences,
-		                joinBy: .space)
+		return _compose(
+			sentence,
+			count: numberOfSentences,
+			joinBy: .space)
 	}
 
 	/// Generates multiple paragraphs whose count is defined by the given value.
@@ -105,9 +109,10 @@ public final class Lorem
 	/// - Returns: The generated paragraphs joined by a new line character.
 	public static func paragraphs(_ count: Int) -> String
 	{
-		return _compose(paragraph,
-		                count: count,
-		                joinBy: .newLine)
+		return _compose(
+			paragraph,
+			count: count,
+			joinBy: .newLine)
 	}
 
 	/// Generates multiple paragraphs whose count is selected from within the given range.
@@ -116,9 +121,10 @@ public final class Lorem
 	/// - Returns: The generated paragraphs joined by a new line character.
 	public static func paragraphs(_ range: Range<Int>) -> String
 	{
-		return _compose(paragraph,
-		                count: Int.random(in: range),
-		                joinBy: .newLine)
+		return _compose(
+			paragraph,
+			count: Int.random(in: range),
+			joinBy: .newLine)
 	}
 
 	/// Generates multiple paragraphs whose count is selected from within the given closed range.
@@ -127,9 +133,10 @@ public final class Lorem
 	/// - Returns: The generated paragraphs joined by a new line character.
 	public static func paragraphs(_ range: ClosedRange<Int>) -> String
 	{
-		return _compose(paragraph,
-		                count: Int.random(in: range),
-		                joinBy: .newLine)
+		return _compose(
+			paragraph,
+			count: Int.random(in: range),
+			joinBy: .newLine)
 	}
 
 	/// Generates a capitalized title.
@@ -137,10 +144,11 @@ public final class Lorem
 	{
 		let numberOfWords = Int.random(in: minWordsCountInTitle...maxWordsCountInTitle)
 
-		return _compose(word,
-		                count: numberOfWords,
-		                joinBy: .space,
-		                decorate: { $0.capitalized })
+		return _compose(
+			word,
+			count: numberOfWords,
+			joinBy: .space,
+			decorate: { $0.capitalized })
 	}
 
 	// ======================================================= //
@@ -211,11 +219,12 @@ public final class Lorem
 	public static var caption: String
 	{
 		let numberOfWords = Int.random(in: 2...4)
-		return _compose(word,
-		                count: numberOfWords,
-		                joinBy: .space,
-		                endWith: .dot,
-		                decorate: { $0.firstLetterCapitalized })
+		return _compose(
+			word,
+			count: numberOfWords,
+			joinBy: .space,
+			endWith: .dot,
+			decorate: { $0.firstLetterCapitalized })
 	}
 }
 
@@ -229,11 +238,12 @@ extension Lorem
 		case newLine = "\n"
 	}
 
-	fileprivate static func _compose(_ provider: @autoclosure () -> String,
-	                                 count: Int,
-	                                 joinBy middleSeparator: Separator,
-	                                 endWith endSeparator: Separator = .none,
-	                                 decorate decorator: ((String) -> String)? = nil) -> String
+	fileprivate static func _compose(
+		_ provider: @autoclosure () -> String,
+		count: Int,
+		joinBy middleSeparator: Separator,
+		endWith endSeparator: Separator = .none,
+		decorate decorator: ((String) -> String)? = nil) -> String
 	{
 		var string = ""
 

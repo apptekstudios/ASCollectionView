@@ -21,18 +21,21 @@ struct TagsScreen: View
 			}
 			Text("Tags:")
 				.font(.title)
-			ASCollectionView(data: store.items,
-			                 layout: ASCollectionViewLayout(customLayout: {
-			                 	let fl = AlignedFlowLayout()
-			                 	fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
-			                 	return fl
-			}))
-			{ item in
-				Text(item.displayString)
-					.fixedSize()
-					.padding(5)
-					.background(Color(.systemGray))
-					.cornerRadius(5)
+			ASCollectionView(
+				section:
+				ASCollectionViewSection(id: 0, data: store.items)
+				{ item, _ in
+					Text(item.displayString)
+						.fixedSize()
+						.padding(5)
+						.background(Color(.systemGray))
+						.cornerRadius(5)
+			})
+				.layoutCustom
+			{
+				let fl = AlignedFlowLayout()
+				fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
+				return fl
 			}
 		}
 		.padding()
@@ -98,10 +101,11 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 			return false
 		}
 		let firstItemFrame = firstItemAttributes.frame
-		let lineFrame = CGRect(x: leftEdge,
-		                       y: firstItemFrame.origin.y,
-		                       width: lineWidth,
-		                       height: firstItemFrame.size.height)
+		let lineFrame = CGRect(
+			x: leftEdge,
+			y: firstItemFrame.origin.y,
+			width: lineWidth,
+			height: firstItemFrame.size.height)
 		return lineFrame.intersects(secondItemAttributes.frame)
 	}
 

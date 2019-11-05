@@ -13,8 +13,9 @@ struct GroupLarge: View
 			HStack(alignment: .center)
 			{
 				Image(systemName: model.icon)
+					.font(.system(size: 16, weight: .regular))
+					.padding(14)
 					.foregroundColor(.white)
-					.padding(10)
 					.background(
 						Circle().fill(model.color)
 					)
@@ -33,7 +34,7 @@ struct GroupLarge: View
 		}
 		.padding()
 		.background(Color(.secondarySystemGroupedBackground))
-		.clipShape(RoundedRectangle(cornerRadius: 5))
+		.clipShape(RoundedRectangle(cornerRadius: 12))
 	}
 }
 

@@ -58,8 +58,9 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 
 	func sizeThatFits(in size: CGSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize
 	{
-		let fittingSize = CGSize(width: selfSizeHorizontal ? .infinity : size.width,
-		                         height: selfSizeVertical ? .infinity : size.height)
+		let fittingSize = CGSize(
+			width: selfSizeHorizontal ? .infinity : size.width,
+			height: selfSizeVertical ? .infinity : size.height)
 		// Find the desired size
 		var desiredSize = uiHostingController.sizeThatFits(in: fittingSize)
 

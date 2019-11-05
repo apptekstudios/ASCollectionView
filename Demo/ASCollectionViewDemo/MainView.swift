@@ -13,12 +13,12 @@ struct MainView: View
 				NavigationLink(destination: PhotoGridScreen())
 				{
 					Image(systemName: "1.square.fill")
-					Text("Photo grid (with drag and drop)")
+					Text("Photo grid (with edit mode, selection)")
 				}
 				NavigationLink(destination: AppStoreScreen())
 				{
 					Image(systemName: "2.square.fill")
-					Text("App Store")
+					Text("App Store Layout")
 				}
 				NavigationLink(destination: TagsScreen())
 				{
@@ -28,7 +28,7 @@ struct MainView: View
 				NavigationLink(destination: RemindersScreen())
 				{
 					Image(systemName: "4.square.fill")
-					Text("Reminders")
+					Text("Reminders Layout")
 				}
 				NavigationLink(destination: InstaFeedScreen())
 				{

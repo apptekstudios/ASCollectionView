@@ -31,10 +31,11 @@ struct Post: Identifiable
 
 	static func randomPost(_ randomNumber: Int, aspectRatio: CGFloat) -> Post
 	{
-		Post(username: Lorem.fullName,
-		     location: Lorem.words(Int.random(in: 1...3)),
-		     caption: Lorem.sentences(1...3),
-		     aspectRatio: aspectRatio,
-		     randomNumberForImage: randomNumber)
+		Post(
+			username: Lorem.fullName,
+			location: Lorem.words(Int.random(in: 1...3)),
+			caption: Lorem.sentences(1...3),
+			aspectRatio: aspectRatio,
+			randomNumberForImage: randomNumber)
 	}
 }

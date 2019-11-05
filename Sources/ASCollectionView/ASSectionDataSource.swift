@@ -7,7 +7,7 @@ internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func hostController(reusingController: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
+	func configureHostingController(reusingController: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
 	func prefetch(_ indexPaths: [IndexPath])
@@ -43,21 +43,36 @@ public enum DragDrop<Data>
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
 public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
 
+public struct CellContext
+{
+	public var isSelected: Bool
+	public var isFirstInSection: Bool
+	public var isLastInSection: Bool
+}
+
 internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View
 {
 	var data: [Data]
 	var dataIDKeyPath: KeyPath<Data, DataID>
 	var onCellEvent: OnCellEvent<Data>?
 	var onDragDrop: OnDragDrop<Data>?
-	var content: (Data) -> Content
+	var content: (Data, CellContext) -> Content
 
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
 
-	func hostController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
+	func cellContext(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> CellContext
+	{
+		return CellContext(
+			isSelected: isSelected,
+			isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
+			isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
+	}
+
+	func configureHostingController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
 	{
 		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
-		let view = content(item)
+		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
 
 		if let existingHC = reusingController as? ASHostingController<Content>
 		{
@@ -142,13 +157,5 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 			return item
 		}
 		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: index))
-	}
-}
-
-extension ASSectionDataSource where Data: Identifiable, DataID == Data.ID
-{
-	init(data: [Data], onCellEvent: OnCellEvent<Data>? = nil, onDragDrop: OnDragDrop<Data>? = nil, content: @escaping ((Data) -> Content))
-	{
-		self.init(data: data, dataIDKeyPath: \.id, onCellEvent: onCellEvent, onDragDrop: onDragDrop, content: content)
 	}
 }

@@ -3,25 +3,27 @@
 import Combine
 import SwiftUI
 
-/* extension ASTableView where SectionID == Int {
- @inlinable public init<Data, DataID: Hashable, Content: View>(data: [Data], id idKeyPath: KeyPath<Data, DataID>, onCellEvent: ASTableViewSectionDataSource<Data, DataID, Content>.OnCellEvent? = nil, mode: UITableView.Style = .plain, @ViewBuilder content: @escaping ((Data) -> Content)) {
- self.mode = mode
- self.sections = [Section(id: 0, data: data, dataID: idKeyPath, onCellEvent: onCellEvent, contentBuilder: content)]
- }
+extension ASTableView where SectionID == Int
+{
+	/**
+	 Initializes a  table view with a single section.
 
- @inlinable init<Data, Content: View>(data: [Data], onCellEvent: ASTableViewSectionDataSource<Data, Data.ID, Content>.OnCellEvent? = nil, mode: UITableView.Style = .plain, @ViewBuilder content: @escaping ((Data) -> Content)) where Data: Identifiable {
- self.mode = mode
- self.sections = [Section(id: 0, data: data, onCellEvent: onCellEvent, contentBuilder: content)]
- }
+	 - Parameters:
+	 - section: A single section (ASTableViewSection)
+	 */
+	public init(mode: UITableView.Style = .plain, selectedItems: Binding<IndexSet>? = nil, section: Section)
+	{
+		self.mode = mode
+		self.selectedItems = selectedItems.map
+		{ selectedItems in
+			Binding(
+				get: { [0: selectedItems.wrappedValue] },
+				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
+		}
+		sections = [section]
+	}
+}
 
- init(mode: UITableView.Style = .plain, @ViewArrayBuilder content: (() -> [AnyView])) {
- self.mode = mode
- self.sections = [
- Section(id: 0,
- content: content)
- ]
- }
- } */
 public typealias ASTableViewSection<SectionID: Hashable> = ASCollectionViewSection<SectionID>
 
 public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
@@ -29,23 +31,26 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	public typealias Section = ASTableViewSection<SectionID>
 	public var sections: [Section]
 	public var mode: UITableView.Style
+	public var selectedItems: Binding<[SectionID: IndexSet]>?
 
 	@Environment(\.tableViewSeparatorsEnabled) private var separatorsEnabled
 	@Environment(\.tableViewOnReachedBottom) private var onReachedBottom
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
+	@Environment(\.editMode) private var editMode
 
-	@inlinable public init(mode: UITableView.Style = .plain, sections: [Section])
+	/**
+	 Initializes a  table view with the given sections
+
+	 - Parameters:
+	 - sections: An array of sections (ASTableViewSection)
+	 */
+	@inlinable public init(mode: UITableView.Style = .plain, selectedItems: Binding<[SectionID: IndexSet]>? = nil, sections: [Section])
 	{
 		self.mode = mode
+		self.selectedItems = selectedItems
 		self.sections = sections
-	}
-
-	@inlinable public init(mode: UITableView.Style = .plain, @SectionArrayBuilder <SectionID> sections: () -> [Section])
-	{
-		self.mode = mode
-		self.sections = sections()
 	}
 
 	public func makeUIViewController(context: Context) -> UITableViewController
@@ -76,6 +81,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		tableView.alwaysBounceVertical = alwaysBounceVertical
 		tableView.showsVerticalScrollIndicator = scrollIndicatorsEnabled
 		tableView.showsHorizontalScrollIndicator = scrollIndicatorsEnabled
+
+		let isEditing = editMode?.wrappedValue.isEditing ?? false
+		tableView.allowsSelection = isEditing
+		tableView.allowsMultipleSelection = isEditing
 	}
 
 	public func makeCoordinator() -> Coordinator
@@ -114,9 +123,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		}
 
 		@discardableResult
-		func configureHostingController(forItemID itemID: ASCollectionViewItemUniqueID) -> ASHostingControllerProtocol?
+		func configureHostingController(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
 		{
-			let controller = section(forItemID: itemID)?.configureHostingController(reusingController: hostingControllerCache[itemID], forItemID: itemID)
+			let controller = section(forItemID: itemID)?.dataSource.configureHostingController(reusingController: hostingControllerCache[itemID], forItemID: itemID, isSelected: isSelected)
 			hostingControllerCache[itemID] = controller
 			return controller
 		}
@@ -130,16 +139,18 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 			dataSource = .init(tableView: tv)
 			{ (tableView, indexPath, itemID) -> UITableViewCell? in
+				let isSelected = tableView.indexPathsForSelectedRows?.contains(indexPath) ?? false
 				guard
 					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell,
-					let hostController = self.configureHostingController(forItemID: itemID)
+					let hostController = self.configureHostingController(forItemID: itemID, isSelected: isSelected)
 				else { return nil }
 				cell.invalidateLayout = {
 					tv.beginUpdates()
 					tv.endUpdates()
 				}
-				cell.setupFor(id: itemID,
-				              hostingController: hostController)
+				cell.setupFor(
+					id: itemID,
+					hostingController: hostController)
 				return cell
 			}
 			dataSource?.defaultRowAnimation = .fade
@@ -171,7 +182,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 						let cell = cell as? Cell,
 						let itemID = cell.id
 					else { return }
-					self.configureHostingController(forItemID: itemID)
+
+					self.configureHostingController(forItemID: itemID, isSelected: cell.isSelected)
 				}
 				/* tv.indexPathsForVisibleSupplementaryElements(ofKind: UICollectionView.elementKindSectionHeader).forEach {
 				     guard let header = parent.sections[$0.section].header else { return }
@@ -181,7 +193,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			}
 			// APPLY CHANGES (ADD/REMOVE CELLS) AFTER REFRESHING CELLS
 			dataSource?.apply(snapshot, animatingDifferences: refreshExistingCells)
-
+			updateSelectionBindings(tv)
+			
 			DispatchQueue.main.async
 			{
 				self.checkIfReachedBottom(tv)
@@ -196,13 +209,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
 			(cell as? Cell)?.willAppear(in: tableViewController)
-			parent.sections[indexPath.section].onAppear(indexPath)
+			parent.sections[indexPath.section].dataSource.onAppear(indexPath)
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplaying cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
 			(cell as? Cell)?.didDisappear()
-			parent.sections[indexPath.section].onDisappear(indexPath)
+			parent.sections[indexPath.section].dataSource.onDisappear(indexPath)
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
@@ -230,7 +243,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			let itemIDsToPrefetchBySection: [Int: [IndexPath]] = Dictionary(grouping: indexPaths) { $0.section }
 			itemIDsToPrefetchBySection.forEach
 			{
-				parent.sections[$0.key].prefetch($0.value)
+				parent.sections[$0.key].dataSource.prefetch($0.value)
 			}
 		}
 
@@ -239,7 +252,45 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			let itemIDsToCancelPrefetchBySection: [Int: [IndexPath]] = Dictionary(grouping: indexPaths) { $0.section }
 			itemIDsToCancelPrefetchBySection.forEach
 			{
-				parent.sections[$0.key].cancelPrefetch($0.value)
+				parent.sections[$0.key].dataSource.cancelPrefetch($0.value)
+			}
+		}
+
+		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
+		{
+			guard
+				let cell = tableView.cellForRow(at: indexPath) as? Cell,
+				let itemID = cell.id
+			else { return }
+			updateSelectionBindings(tableView)
+			configureHostingController(forItemID: itemID, isSelected: true)
+		}
+
+		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath)
+		{
+			guard
+				let cell = tableView.cellForRow(at: indexPath) as? Cell,
+				let itemID = cell.id
+			else { return }
+			updateSelectionBindings(tableView)
+			configureHostingController(forItemID: itemID, isSelected: false)
+		}
+
+		func updateSelectionBindings(_ tableView: UITableView)
+		{
+			guard let selectedItemsBinding = parent.selectedItems else { return }
+			let selected = tableView.indexPathsForSelectedRows ?? []
+			let selectedSafe = selected.filter { $0.section < parent.sections.endIndex }
+			let selectedBySection = Dictionary(grouping: selectedSafe)
+			{
+				parent.sections[$0.section].id
+			}.mapValues
+			{
+				IndexSet($0.map { $0.item })
+			}
+			DispatchQueue.main.async
+			{
+				selectedItemsBinding.wrappedValue = selectedBySection
 			}
 		}
 

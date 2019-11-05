@@ -49,6 +49,7 @@ class ASCollectionViewCell: UICollectionViewCell
 
 	override func prepareForReuse()
 	{
+		isSelected = false
 		hostingController = nil
 		contentView.subviews.forEach { $0.removeFromSuperview() }
 	}
@@ -71,9 +72,10 @@ class ASCollectionViewCell: UICollectionViewCell
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
 		guard let hc = hostingController else { return .zero }
-		let size = hc.sizeThatFits(in: targetSize,
-		                           selfSizeHorizontal: selfSizeHorizontal,
-		                           selfSizeVertical: selfSizeVertical)
+		let size = hc.sizeThatFits(
+			in: targetSize,
+			selfSizeHorizontal: selfSizeHorizontal,
+			selfSizeVertical: selfSizeVertical)
 		return size
 	}
 
@@ -142,9 +144,10 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
 		guard let hc = hostingController else { return CGSize(width: 1, height: 1) }
-		let size = hc.sizeThatFits(in: targetSize,
-		                           selfSizeHorizontal: true,
-		                           selfSizeVertical: true)
+		let size = hc.sizeThatFits(
+			in: targetSize,
+			selfSizeHorizontal: true,
+			selfSizeVertical: true)
 		return size
 	}
 

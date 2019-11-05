@@ -11,8 +11,9 @@ struct GroupSmall: View
 		HStack(alignment: .center)
 		{
 			Image(systemName: model.icon)
+				.font(.system(size: 16, weight: .regular))
+				.padding(14)
 				.foregroundColor(.white)
-				.padding(10)
 				.background(
 					Circle().fill(model.color)
 				)
@@ -27,9 +28,7 @@ struct GroupSmall: View
 				Text("\($0)")
 			}
 		}
-		.padding()
-		.background(Color(.secondarySystemGroupedBackground))
-		.clipShape(RoundedRectangle(cornerRadius: 5))
+		.padding(10)
 	}
 }
 
