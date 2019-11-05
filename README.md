@@ -17,7 +17,7 @@ A SwiftUI implementation of UICollectionView & UITableView. Here's some of its u
 <a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>  ·  <a href="https://github.com/apptekstudios/ASCollectionView/issues">Suggest a feature</a>
 
 ### Screenshots from demo app
-<img src="/readmeAssets/demo2.PNG" width="200"><img src="/readmeAssets/demo1.PNG" width="400">
+<img src="/readmeAssets/demo1.PNG" width="300">    <img src="/readmeAssets/demo2.PNG" width="300">    <img src="/readmeAssets/demo3.PNG" width="300">    <img src="/readmeAssets/demo4.PNG" width="300">    <img src="/readmeAssets/demo5.PNG" width="300">    <img src="/readmeAssets/demo6.PNG" width="300">
 
 ## Table of Contents
 * [Getting Started](#getting-started)
