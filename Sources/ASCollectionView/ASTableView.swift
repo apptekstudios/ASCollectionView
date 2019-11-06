@@ -52,12 +52,12 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		self.selectedItems = selectedItems
 		self.sections = sections
 	}
-	
-	@inlinable public init(mode: UITableView.Style = .plain, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder<SectionID> sections: (() -> [Section]))
+
+	@inlinable public init(mode: UITableView.Style = .plain, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
 	{
 		self.mode = mode
 		self.selectedItems = selectedItems
-		self.sections = sections()
+		self.sections = sectionBuilder()
 	}
 
 	public func makeUIViewController(context: Context) -> UITableViewController
@@ -201,7 +201,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			// APPLY CHANGES (ADD/REMOVE CELLS) AFTER REFRESHING CELLS
 			dataSource?.apply(snapshot, animatingDifferences: refreshExistingCells)
 			updateSelectionBindings(tv)
-			
+
 			DispatchQueue.main.async
 			{
 				self.checkIfReachedBottom(tv)

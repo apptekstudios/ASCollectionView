@@ -24,9 +24,9 @@ struct InstaFeedScreen: View
 						{ item, _ in
 							StoryView(post: item)
 					})
-						.layoutCompositional(scrollDirection: .horizontal)
+						.layout(scrollDirection: .horizontal)
 					{
-						ASCollectionViewLayoutList(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
+						.list(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
 					}
 					.frame(height: 100)
 					.scrollIndicatorsEnabled(false)

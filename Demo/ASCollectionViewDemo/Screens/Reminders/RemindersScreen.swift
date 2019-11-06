@@ -29,12 +29,13 @@ struct RemindersScreen: View
 
 	var body: some View
 	{
-		ASCollectionView {
+		ASCollectionView
+		{
 			ASCollectionViewSection(id: Section.upper, data: self.upperData)
 			{ model, _ in
 				GroupLarge(model: model)
 			}
-			
+
 			ASCollectionViewSection(id: Section.list, data: self.lowerData)
 			{ model, info in
 				VStack(spacing: 0)
@@ -57,7 +58,7 @@ struct RemindersScreen: View
 					Spacer()
 				}
 			}
-			
+
 			ASCollectionViewSection(id: Section.addNew)
 			{
 				GroupSmall(model: self.addNewModel)
@@ -75,27 +76,31 @@ struct RemindersScreen: View
 				.padding(.top)
 			}
 		}
-			.layoutCompositional(self.layout)
-			.contentInsets(.init(top: 20, left: 0, bottom: 20, right: 0))
-			.alwaysBounceVertical()
-			.background(Color(.systemGroupedBackground))
-			.edgesIgnoringSafeArea(.all)
-			.navigationBarTitle("Reminders", displayMode: .inline)
+		.layout(self.layout)
+		.contentInsets(.init(top: 20, left: 0, bottom: 20, right: 0))
+		.alwaysBounceVertical()
+		.background(Color(.systemGroupedBackground))
+		.edgesIgnoringSafeArea(.all)
+		.navigationBarTitle("Reminders", displayMode: .inline)
 	}
 
 	let groupBackgroundElementID = UUID().uuidString
 
-	var layout: ASCollectionViewLayout<Section>
+	var layout: ASCollectionLayout<Section>
 	{
-		ASCollectionViewLayout(interSectionSpacing: 20)
-		{ section -> ASCollectionViewLayoutSection in
-			switch section
+		ASCollectionLayout<Section>(interSectionSpacing: 20)
+		{ sectionID in
+			switch sectionID
 			{
 			case .upper:
-				return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 165), itemSpacing: 20, lineSpacing: 20, itemSize: .estimated(90))
+				return .grid(
+					layoutMode: .adaptive(withMinItemSize: 165),
+					itemSpacing: 20,
+					lineSpacing: 20,
+					itemSize: .estimated(90))
 			case .list, .addNew:
-				return ASCollectionViewLayoutCustomCompositionalSection
-				{ (_, _) -> NSCollectionLayoutSection in
+				return ASCollectionLayoutSection
+				{
 					let itemSize = NSCollectionLayoutSize(
 						widthDimension: .fractionalWidth(1.0),
 						heightDimension: .estimated(60))
@@ -115,7 +120,6 @@ struct RemindersScreen: View
 
 					return section
 				}
-				// return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 220), itemSpacing: 20, lineSpacing: 0, itemSize: .absolute(65))
 			}
 		}
 		.decorationView(GroupBackground.self, forDecorationViewOfKind: groupBackgroundElementID)
