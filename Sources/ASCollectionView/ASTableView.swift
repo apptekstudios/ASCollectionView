@@ -20,7 +20,43 @@ extension ASTableView where SectionID == Int
 				get: { [:] },
 				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
 		}
-		sections = [section]
+		self.sections = [section]
+	}
+
+	/**
+	 Initializes a  table view with a single section.
+	 */
+	public init<Data, DataID: Hashable, Content: View>(
+		mode: UITableView.Style = .plain,
+		data: [Data],
+		dataID dataIDKeyPath: KeyPath<Data, DataID>,
+		selectedItems: Binding<IndexSet>? = nil,
+		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
+	{
+		self.mode = mode
+		let section = ASTableViewSection(
+			id: 0,
+			data: data,
+			dataID: dataIDKeyPath,
+			contentBuilder: contentBuilder)
+		self.sections = [section]
+		self.selectedItems = selectedItems.map
+		{ selectedItems in
+			Binding(
+				get: { [:] },
+				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
+		}
+	}
+
+	/**
+	 Initializes a  table view with a single section of static content
+	 */
+	init(@ViewArrayBuilder content: () -> [AnyView])
+	{
+		self.mode = .plain
+		self.sections = [
+			ASTableViewSection(id: 0, content: content)
+		]
 	}
 }
 
@@ -57,7 +93,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	{
 		self.mode = mode
 		self.selectedItems = selectedItems
-		self.sections = sectionBuilder()
+		sections = sectionBuilder()
 	}
 
 	public func makeUIViewController(context: Context) -> UITableViewController

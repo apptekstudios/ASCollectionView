@@ -32,6 +32,32 @@ ASCollectionView is a swift package.
  * When asked, use this repository's url: https://github.com/apptekstudios/ASCollectionView
 
 ## Usage
+
+### Basic example - single section:
+```swift
+import ASCollectionView
+import SwiftUI
+
+struct SingleSectionExampleView: View {
+	@State var dataExample = (0 ..< 30).map { $0 }
+	
+	var body: some View
+	{
+		ASCollectionView(data: dataExample, dataID: \.self) { item, _ in
+			Color.blue
+				.overlay(Text("\(item)"))
+		}
+		.layout {
+			.grid(layoutMode: .adaptive(withMinItemSize: 100),
+				  itemSpacing: 5,
+				  lineSpacing: 5,
+				  itemSize: .absolute(50))
+		}
+	}
+}
+```
+
+### Multiple sections with unique data sources
 Below is an example of how to include a collection view with two sections (each with their own data source). For an extended example with a custom compositional layout [see here](/readmeAssets/SampleUsage.swift). Or for more in-depth examples download the [demo project](/Demo/) included in this repo.
 
 ```swift
