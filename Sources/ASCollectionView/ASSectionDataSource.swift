@@ -86,8 +86,9 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 			return newHC
 		}
 	}
-	
-	func getTypeErasedData(for indexPath: IndexPath) -> Any? {
+
+	func getTypeErasedData(for indexPath: IndexPath) -> Any?
+	{
 		guard indexPath.item < data.endIndex else { return nil }
 		return data[indexPath.item]
 	}

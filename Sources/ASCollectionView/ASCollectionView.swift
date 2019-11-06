@@ -3,7 +3,8 @@
 import Combine
 import SwiftUI
 
-//MARK: Init for single-section CV
+// MARK: Init for single-section CV
+
 extension ASCollectionView where SectionID == Int
 {
 	/**
@@ -40,7 +41,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.editMode) private var editMode
 
-	//MARK: Init for multi-section CVs
+	// MARK: Init for multi-section CVs
+
 	/**
 	 Initializes a  collection view with the given sections
 
@@ -52,13 +54,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		self.selectedItems = selectedItems
 		self.sections = sections
 	}
-	
-	@inlinable public init(selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder<SectionID> sections: (() -> [Section]))
+
+	@inlinable public init(selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
 	{
 		self.selectedItems = selectedItems
-		self.sections = sections()
+		self.sections = sectionBuilder()
 	}
-	
+
 	public func makeUIViewController(context: Context) -> AS_CollectionViewController
 	{
 		context.coordinator.parent = self
@@ -109,8 +111,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		Coordinator(self)
 	}
 
-	
-	//MARK: Coordinator Class
+	// MARK: Coordinator Class
+
 	public class Coordinator: ASCollectionViewCoordinator
 	{
 		var parent: ASCollectionView
@@ -329,9 +331,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
 			parent.sections[indexPath.section].dataSource.insertDragItems(items, at: indexPath)
 		}
-		
-		
-		func typeErasedDataForItem(at indexPath: IndexPath) -> Any? {
+
+		func typeErasedDataForItem(at indexPath: IndexPath) -> Any?
+		{
 			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return nil }
 			return parent.sections[indexPath.section].dataSource.getTypeErasedData(for: indexPath)
 		}
@@ -342,7 +344,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	}
 }
 
-//MARK: Modifer: Custom Delegate
+// MARK: Modifer: Custom Delegate
+
 public extension ASCollectionView
 {
 	/// Use this modifier to assign a custom delegate type (subclass of ASCollectionViewDelegate). This allows support for old UICollectionViewLayouts that require a delegate.
@@ -369,7 +372,8 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
 }
 
-//MARK: Custom Prefetching Implementation
+// MARK: Custom Prefetching Implementation
+
 extension ASCollectionView.Coordinator
 {
 	func setupPrefetching()
@@ -482,7 +486,7 @@ public class AS_CollectionViewController: UIViewController
 	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
 	{
 		super.viewWillTransition(to: size, with: coordinator)
-		//The following is a workaround to fix the interface rotation animation under SwiftUI
+		// The following is a workaround to fix the interface rotation animation under SwiftUI
 		view.frame = CGRect(origin: view.frame.origin, size: size)
 		coordinator.animate(alongsideTransition: { _ in
 			self.view.setNeedsLayout()
@@ -494,7 +498,7 @@ public class AS_CollectionViewController: UIViewController
 	public override func viewSafeAreaInsetsDidChange()
 	{
 		super.viewSafeAreaInsetsDidChange()
-		//The following is a workaround to fix the interface rotation animation under SwiftUI
+		// The following is a workaround to fix the interface rotation animation under SwiftUI
 		collectionViewLayout.invalidateLayout()
 	}
 }
@@ -507,7 +511,7 @@ public extension ASCollectionView
 		this.layout = layout
 		return this
 	}
-	
+
 	func layout(
 		scrollDirection: UICollectionView.ScrollDirection = .vertical,
 		interSectionSpacing: CGFloat = 10,

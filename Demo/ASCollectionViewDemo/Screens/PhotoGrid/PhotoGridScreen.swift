@@ -17,8 +17,10 @@ struct PhotoGridScreen: View
 
 	typealias SectionID = Int
 
-	var layout = ASCollectionLayout<Int>(scrollDirection: .vertical, interSectionSpacing: 0) {
-		ASCollectionLayoutSection { environment in
+	var layout = ASCollectionLayout<Int>(scrollDirection: .vertical, interSectionSpacing: 0)
+	{
+		ASCollectionLayoutSection
+		{ environment in
 			let isWide = environment.container.effectiveContentSize.width > 500
 			let gridBlockSize = environment.container.effectiveContentSize.width / (isWide ? 5 : 3)
 			let gridItemInsets = NSDirectionalEdgeInsets(top: 5, leading: 5, bottom: 5, trailing: 5)
@@ -27,25 +29,25 @@ struct PhotoGridScreen: View
 			item.contentInsets = gridItemInsets
 			let verticalGroupSize = NSCollectionLayoutSize(widthDimension: .absolute(gridBlockSize), heightDimension: .absolute(gridBlockSize * 2))
 			let verticalGroup = NSCollectionLayoutGroup.vertical(layoutSize: verticalGroupSize, subitem: item, count: 2)
-			
+
 			let featureItemSize = NSCollectionLayoutSize(widthDimension: .absolute(gridBlockSize * 2), heightDimension: .absolute(gridBlockSize * 2))
 			let featureItem = NSCollectionLayoutItem(layoutSize: featureItemSize)
 			featureItem.contentInsets = gridItemInsets
-			
+
 			let fullWidthItemSize = NSCollectionLayoutSize(widthDimension: .absolute(environment.container.effectiveContentSize.width), heightDimension: .absolute(gridBlockSize * 2))
 			let fullWidthItem = NSCollectionLayoutItem(layoutSize: fullWidthItemSize)
 			fullWidthItem.contentInsets = gridItemInsets
-			
+
 			let verticalAndFeatureGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize * 2))
 			let verticalAndFeatureGroupA = NSCollectionLayoutGroup.horizontal(layoutSize: verticalAndFeatureGroupSize, subitems: isWide ? [verticalGroup, verticalGroup, featureItem, verticalGroup] : [verticalGroup, featureItem])
 			let verticalAndFeatureGroupB = NSCollectionLayoutGroup.horizontal(layoutSize: verticalAndFeatureGroupSize, subitems: isWide ? [verticalGroup, featureItem, verticalGroup, verticalGroup] : [featureItem, verticalGroup])
-			
+
 			let rowGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize))
 			let rowGroup = NSCollectionLayoutGroup.horizontal(layoutSize: rowGroupSize, subitem: item, count: isWide ? 5 : 3)
-			
+
 			let outerGroupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .absolute(gridBlockSize * 8))
 			let outerGroup = NSCollectionLayoutGroup.vertical(layoutSize: outerGroupSize, subitems: [verticalAndFeatureGroupA, rowGroup, fullWidthItem, verticalAndFeatureGroupB, rowGroup])
-			
+
 			let section = NSCollectionLayoutSection(group: outerGroup)
 			return section
 		}

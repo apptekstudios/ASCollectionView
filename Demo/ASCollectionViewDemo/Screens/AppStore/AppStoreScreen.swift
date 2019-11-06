@@ -109,51 +109,56 @@ struct AppStoreScreen: View
 	}
 }
 
-extension AppStoreScreen {
-	var layout: ASCollectionLayout<Int> {
-		ASCollectionLayout(scrollDirection: .vertical, interSectionSpacing: 20) { sectionID in
+extension AppStoreScreen
+{
+	var layout: ASCollectionLayout<Int>
+	{
+		ASCollectionLayout(scrollDirection: .vertical, interSectionSpacing: 20)
+		{ sectionID in
 			switch sectionID
 			{
 			case 0:
-				return ASCollectionLayoutSection { environment in
+				return ASCollectionLayoutSection
+				{ environment in
 					let columnsToFit = floor(environment.container.effectiveContentSize.width / 320)
 					let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
 						widthDimension: .fractionalWidth(1.0),
 						heightDimension: .fractionalHeight(1.0)))
-					
+
 					let itemsGroup = NSCollectionLayoutGroup.horizontal(
 						layoutSize: NSCollectionLayoutSize(
 							widthDimension: .fractionalWidth(0.9 / columnsToFit),
 							heightDimension: .absolute(280)),
 						subitems: [item])
 					itemsGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
-					
+
 					let section = NSCollectionLayoutSection(group: itemsGroup)
 					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
 					section.orthogonalScrollingBehavior = .groupPaging
 					return section
 				}
 			case 1:
-				return ASCollectionLayoutSection { environment in
+				return ASCollectionLayoutSection
+				{ environment in
 					let columnsToFit = floor(environment.container.effectiveContentSize.width / 320)
 					let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
 						widthDimension: .fractionalWidth(1.0),
 						heightDimension: .fractionalHeight(1.0)))
-					
+
 					let itemsGroup = NSCollectionLayoutGroup.vertical(
 						layoutSize: NSCollectionLayoutSize(
 							widthDimension: .fractionalWidth(1.0),
 							heightDimension: .fractionalHeight(1.0)),
 						subitem: item, count: 2)
 					itemsGroup.interItemSpacing = .fixed(10)
-					
+
 					let nestedGroup = NSCollectionLayoutGroup.horizontal(
 						layoutSize: NSCollectionLayoutSize(
 							widthDimension: .fractionalWidth(0.9 / columnsToFit),
 							heightDimension: .absolute(180)),
 						subitems: [itemsGroup])
 					nestedGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
-					
+
 					let header = NSCollectionLayoutBoundarySupplementaryItem(
 						layoutSize: NSCollectionLayoutSize(
 							widthDimension: .fractionalWidth(1.0),
@@ -162,7 +167,7 @@ extension AppStoreScreen {
 						alignment: .top)
 					header.contentInsets.leading = nestedGroup.contentInsets.leading
 					header.contentInsets.trailing = nestedGroup.contentInsets.trailing
-					
+
 					let section = NSCollectionLayoutSection(group: nestedGroup)
 					section.boundarySupplementaryItems = [header]
 					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
@@ -170,26 +175,27 @@ extension AppStoreScreen {
 					return section
 				}
 			default:
-				return ASCollectionLayoutSection { environment in
+				return ASCollectionLayoutSection
+				{ environment in
 					let columnsToFit = floor(environment.container.effectiveContentSize.width / 320)
 					let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
 						widthDimension: .fractionalWidth(1.0),
 						heightDimension: .fractionalHeight(1.0)))
-					
+
 					let itemsGroup = NSCollectionLayoutGroup.vertical(
 						layoutSize: NSCollectionLayoutSize(
 							widthDimension: .fractionalWidth(1.0),
 							heightDimension: .fractionalHeight(1.0)),
 						subitem: item, count: 3)
 					itemsGroup.interItemSpacing = .fixed(10)
-					
+
 					let nestedGroup = NSCollectionLayoutGroup.horizontal(
 						layoutSize: NSCollectionLayoutSize(
 							widthDimension: .fractionalWidth(0.9 / columnsToFit),
 							heightDimension: .absolute(240)),
 						subitems: [itemsGroup])
 					nestedGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
-					
+
 					let header = NSCollectionLayoutBoundarySupplementaryItem(
 						layoutSize: NSCollectionLayoutSize(
 							widthDimension: .fractionalWidth(1.0),
@@ -198,7 +204,7 @@ extension AppStoreScreen {
 						alignment: .top)
 					header.contentInsets.leading = nestedGroup.contentInsets.leading
 					header.contentInsets.trailing = nestedGroup.contentInsets.trailing
-					
+
 					let section = NSCollectionLayoutSection(group: nestedGroup)
 					section.boundarySupplementaryItems = [header]
 					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
