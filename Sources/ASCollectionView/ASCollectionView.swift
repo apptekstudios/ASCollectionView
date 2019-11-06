@@ -15,13 +15,46 @@ extension ASCollectionView where SectionID == Int
 	 */
 	public init(selectedItems: Binding<IndexSet>? = nil, section: Section)
 	{
+		self.sections = [section]
 		self.selectedItems = selectedItems.map
 		{ selectedItems in
 			Binding(
 				get: { [:] },
 				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
 		}
-		sections = [section]
+	}
+
+	/**
+	 Initializes a  collection view with a single section.
+	 */
+	public init<Data, DataID: Hashable, Content: View>(
+		data: [Data],
+		dataID dataIDKeyPath: KeyPath<Data, DataID>,
+		selectedItems: Binding<IndexSet>? = nil,
+		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
+	{
+		let section = ASCollectionViewSection(
+			id: 0,
+			data: data,
+			dataID: dataIDKeyPath,
+			contentBuilder: contentBuilder)
+		self.sections = [section]
+		self.selectedItems = selectedItems.map
+		{ selectedItems in
+			Binding(
+				get: { [:] },
+				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
+		}
+	}
+
+	/**
+	 Initializes a  collection view with a single section of static content
+	 */
+	init(@ViewArrayBuilder content: () -> [AnyView])
+	{
+		sections = [
+			ASCollectionViewSection(id: 0, content: content)
+		]
 	}
 }
 
@@ -58,7 +91,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	@inlinable public init(selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
 	{
 		self.selectedItems = selectedItems
-		self.sections = sectionBuilder()
+		sections = sectionBuilder()
 	}
 
 	public func makeUIViewController(context: Context) -> AS_CollectionViewController
