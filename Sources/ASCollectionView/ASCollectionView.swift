@@ -3,6 +3,7 @@
 import Combine
 import SwiftUI
 
+//MARK: Init for single-section CV
 extension ASCollectionView where SectionID == Int
 {
 	/**
@@ -26,7 +27,7 @@ extension ASCollectionView where SectionID == Int
 public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentable
 {
 	public typealias Section = ASCollectionViewSection<SectionID>
-	public typealias Layout = ASCollectionViewLayout<SectionID>
+	public typealias Layout = ASCollectionLayout<SectionID>
 	public var layout: Layout = .default
 	public var sections: [Section]
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
@@ -39,6 +40,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.editMode) private var editMode
 
+	//MARK: Init for multi-section CVs
 	/**
 	 Initializes a  collection view with the given sections
 
@@ -107,6 +109,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		Coordinator(self)
 	}
 
+	
+	//MARK: Coordinator Class
 	public class Coordinator: ASCollectionViewCoordinator
 	{
 		var parent: ASCollectionView
@@ -325,6 +329,12 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
 			parent.sections[indexPath.section].dataSource.insertDragItems(items, at: indexPath)
 		}
+		
+		
+		func typeErasedDataForItem(at indexPath: IndexPath) -> Any? {
+			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return nil }
+			return parent.sections[indexPath.section].dataSource.getTypeErasedData(for: indexPath)
+		}
 
 		private let queuePrefetch = PassthroughSubject<Void, Never>()
 		private var prefetchSubscription: AnyCancellable?
@@ -332,8 +342,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	}
 }
 
+//MARK: Modifer: Custom Delegate
 public extension ASCollectionView
 {
+	/// Use this modifier to assign a custom delegate type (subclass of ASCollectionViewDelegate). This allows support for old UICollectionViewLayouts that require a delegate.
 	func customDelegate(_ delegateInitialiser: @escaping (() -> ASCollectionViewDelegate)) -> Self
 	{
 		var cv = self
@@ -344,6 +356,7 @@ public extension ASCollectionView
 
 internal protocol ASCollectionViewCoordinator: AnyObject
 {
+	func typeErasedDataForItem(at indexPath: IndexPath) -> Any?
 	func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
@@ -356,134 +369,7 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
 }
 
-open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout
-{
-	weak var coordinator: ASCollectionViewCoordinator?
-
-	open func collectionView(cellShouldSelfSizeHorizontallyForItemAt indexPath: IndexPath) -> Bool
-	{
-		return true
-	}
-
-	open func collectionView(cellShouldSelfSizeVerticallyForItemAt indexPath: IndexPath) -> Bool
-	{
-		return true
-	}
-
-	open var collectionViewContentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior
-	{
-		.scrollableAxes
-	}
-
-	public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
-	{
-		coordinator?.collectionView(collectionView, willDisplay: cell, forItemAt: indexPath)
-	}
-
-	public func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
-	{
-		coordinator?.collectionView(collectionView, didEndDisplaying: cell, forItemAt: indexPath)
-	}
-
-	public func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
-	{
-		coordinator?.collectionView(collectionView, willDisplaySupplementaryView: view, forElementKind: elementKind, at: indexPath)
-	}
-
-	public func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
-	{
-		coordinator?.collectionView(collectionView, didEndDisplayingSupplementaryView: view, forElementOfKind: elementKind, at: indexPath)
-	}
-
-	public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
-	{
-		coordinator?.collectionView(collectionView, didSelectItemAt: indexPath)
-	}
-
-	public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
-	{
-		coordinator?.collectionView(collectionView, didDeselectItemAt: indexPath)
-	}
-
-	/*
-	 //REPLACED WITH CUSTOM PREFETCH SOLUTION AS PREFETCH API WAS NOT WORKING FOR COMPOSITIONAL LAYOUT
-	 public func collectionView(_ collectionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath])
-	 public func collectionView(_ collectionView: UICollectionView, cancelPrefetchingForItemsAt indexPaths: [IndexPath])
-	 */
-}
-
-extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionViewDropDelegate
-{
-	public func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
-	{
-		guard let dragItem = self.coordinator?.dragItem(for: indexPath) else { return [] }
-		return [dragItem]
-	}
-
-	public func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal
-	{
-		guard session.localDragSession != nil else
-		{
-			return UICollectionViewDropProposal(operation: .forbidden)
-		}
-		if collectionView.hasActiveDrag
-		{
-			if let destination = destinationIndexPath
-			{
-				guard coordinator?.canDrop(at: destination) ?? false else
-				{
-					return UICollectionViewDropProposal(operation: .cancel)
-				}
-			}
-			return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
-		}
-		else
-		{
-			return UICollectionViewDropProposal(operation: .copy, intent: .insertAtDestinationIndexPath)
-		}
-	}
-
-	public func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator)
-	{
-		var proposedDestinationIndexPath: IndexPath? = coordinator.destinationIndexPath
-
-		if proposedDestinationIndexPath == nil, collectionView.numberOfSections != 0
-		{
-			// Get last index path of collection view.
-			let section = collectionView.numberOfSections - 1
-			let row = collectionView.numberOfItems(inSection: section)
-			proposedDestinationIndexPath = IndexPath(row: row, section: section)
-		}
-
-		guard let destinationIndexPath = proposedDestinationIndexPath else { return }
-
-		switch coordinator.proposal.operation
-		{
-		case .move:
-			coordinator.items.forEach
-			{ item in
-				if let sourceIndex = item.sourceIndexPath
-				{
-					self.coordinator?.removeItem(from: sourceIndex)
-				}
-			}
-
-			self.coordinator?.insertItems(coordinator.items.map { $0.dragItem }, at: destinationIndexPath)
-			/* self.coordinator?.afterNextUpdate = {
-			 	coordinator.items.forEach { (item) in
-			 		coordinator.drop(item.dragItem, toItemAt: destinationIndexPath) // This assumption is flawed if dropping multiple items
-			 	}
-			 } */
-
-		case .copy:
-			self.coordinator?.insertItems(coordinator.items.map { $0.dragItem }, at: destinationIndexPath)
-
-		default:
-			return
-		}
-	}
-}
-
+//MARK: Custom Prefetching Implementation
 extension ASCollectionView.Coordinator
 {
 	func setupPrefetching()
@@ -596,6 +482,7 @@ public class AS_CollectionViewController: UIViewController
 	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
 	{
 		super.viewWillTransition(to: size, with: coordinator)
+		//The following is a workaround to fix the interface rotation animation under SwiftUI
 		view.frame = CGRect(origin: view.frame.origin, size: size)
 		coordinator.animate(alongsideTransition: { _ in
 			self.view.setNeedsLayout()
@@ -607,49 +494,50 @@ public class AS_CollectionViewController: UIViewController
 	public override func viewSafeAreaInsetsDidChange()
 	{
 		super.viewSafeAreaInsetsDidChange()
+		//The following is a workaround to fix the interface rotation animation under SwiftUI
 		collectionViewLayout.invalidateLayout()
 	}
 }
 
 public extension ASCollectionView
 {
-	func layoutCompositional(_ layout: ASCollectionViewLayout<SectionID>) -> Self
+	func layout(_ layout: Layout) -> Self
 	{
 		var this = self
 		this.layout = layout
 		return this
 	}
-
-	func layoutCompositional(
+	
+	func layout(
 		scrollDirection: UICollectionView.ScrollDirection = .vertical,
 		interSectionSpacing: CGFloat = 10,
-		layoutPerSection: @escaping ((_ sectionID: SectionID) -> ASCollectionViewLayoutSection)) -> Self
+		layoutPerSection: @escaping CompositionalLayout<SectionID>) -> Self
 	{
 		var this = self
-		this.layout = ASCollectionViewLayout(
+		this.layout = Layout(
 			scrollDirection: scrollDirection,
 			interSectionSpacing: interSectionSpacing,
 			layoutPerSection: layoutPerSection)
 		return this
 	}
 
-	func layoutCompositional(
+	func layout(
 		scrollDirection: UICollectionView.ScrollDirection = .vertical,
 		interSectionSpacing: CGFloat = 10,
-		layout: @escaping (() -> ASCollectionViewLayoutSection)) -> Self
+		layout: @escaping CompositionalLayoutIgnoringSections) -> Self
 	{
 		var this = self
-		this.layout = ASCollectionViewLayout(
+		this.layout = Layout(
 			scrollDirection: scrollDirection,
 			interSectionSpacing: interSectionSpacing,
 			layout: layout)
 		return this
 	}
 
-	func layoutCustom(customLayout: @escaping (() -> UICollectionViewLayout)) -> Self
+	func layout(customLayout: @escaping (() -> UICollectionViewLayout)) -> Self
 	{
 		var this = self
-		this.layout = ASCollectionViewLayout(customLayout: customLayout)
+		this.layout = Layout(customLayout: customLayout)
 		return this
 	}
 }

@@ -8,6 +8,7 @@ internal protocol ASSectionDataSourceProtocol
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
 	func configureHostingController(reusingController: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
+	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
 	func prefetch(_ indexPaths: [IndexPath])
@@ -84,6 +85,11 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 			let newHC = ASHostingController<Content>(view)
 			return newHC
 		}
+	}
+	
+	func getTypeErasedData(for indexPath: IndexPath) -> Any? {
+		guard indexPath.item < data.endIndex else { return nil }
+		return data[indexPath.item]
 	}
 
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]

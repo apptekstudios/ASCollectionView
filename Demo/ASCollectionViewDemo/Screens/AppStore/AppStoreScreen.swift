@@ -10,110 +10,6 @@ struct AppStoreScreen: View
 		(Lorem.title, DataSource.appsForSection($0))
 	}
 
-	var layout: ASCollectionViewLayout<Int>
-	{
-		ASCollectionViewLayout<Int>(scrollDirection: .vertical, interSectionSpacing: 20)
-		{ sectionID -> ASCollectionViewLayoutSection in
-			switch sectionID
-			{
-			case 0:
-				return ASCollectionViewLayoutCustomCompositionalSection
-				{ (environment, _) -> NSCollectionLayoutSection in
-					let columnsToFit = floor(environment.container.effectiveContentSize.width / 320)
-					let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-						widthDimension: .fractionalWidth(1.0),
-						heightDimension: .fractionalHeight(1.0)))
-
-					let itemsGroup = NSCollectionLayoutGroup.horizontal(
-						layoutSize: NSCollectionLayoutSize(
-							widthDimension: .fractionalWidth(0.9 / columnsToFit),
-							heightDimension: .absolute(280)),
-						subitems: [item])
-					itemsGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
-
-					let section = NSCollectionLayoutSection(group: itemsGroup)
-					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
-					section.orthogonalScrollingBehavior = .groupPaging
-					return section
-				}
-			case 1:
-				return ASCollectionViewLayoutCustomCompositionalSection
-				{ (environment, _) -> NSCollectionLayoutSection in
-					let columnsToFit = floor(environment.container.effectiveContentSize.width / 320)
-					let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-						widthDimension: .fractionalWidth(1.0),
-						heightDimension: .fractionalHeight(1.0)))
-
-					let itemsGroup = NSCollectionLayoutGroup.vertical(
-						layoutSize: NSCollectionLayoutSize(
-							widthDimension: .fractionalWidth(1.0),
-							heightDimension: .fractionalHeight(1.0)),
-						subitem: item, count: 2)
-					itemsGroup.interItemSpacing = .fixed(10)
-
-					let nestedGroup = NSCollectionLayoutGroup.horizontal(
-						layoutSize: NSCollectionLayoutSize(
-							widthDimension: .fractionalWidth(0.9 / columnsToFit),
-							heightDimension: .absolute(180)),
-						subitems: [itemsGroup])
-					nestedGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
-
-					let header = NSCollectionLayoutBoundarySupplementaryItem(
-						layoutSize: NSCollectionLayoutSize(
-							widthDimension: .fractionalWidth(1.0),
-							heightDimension: .estimated(34)),
-						elementKind: UICollectionView.elementKindSectionHeader,
-						alignment: .top)
-					header.contentInsets.leading = nestedGroup.contentInsets.leading
-					header.contentInsets.trailing = nestedGroup.contentInsets.trailing
-
-					let section = NSCollectionLayoutSection(group: nestedGroup)
-					section.boundarySupplementaryItems = [header]
-					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
-					section.orthogonalScrollingBehavior = .groupPaging
-					return section
-				}
-			default:
-				return ASCollectionViewLayoutCustomCompositionalSection
-				{ (environment, _) -> NSCollectionLayoutSection in
-					let columnsToFit = floor(environment.container.effectiveContentSize.width / 320)
-					let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
-						widthDimension: .fractionalWidth(1.0),
-						heightDimension: .fractionalHeight(1.0)))
-
-					let itemsGroup = NSCollectionLayoutGroup.vertical(
-						layoutSize: NSCollectionLayoutSize(
-							widthDimension: .fractionalWidth(1.0),
-							heightDimension: .fractionalHeight(1.0)),
-						subitem: item, count: 3)
-					itemsGroup.interItemSpacing = .fixed(10)
-
-					let nestedGroup = NSCollectionLayoutGroup.horizontal(
-						layoutSize: NSCollectionLayoutSize(
-							widthDimension: .fractionalWidth(0.9 / columnsToFit),
-							heightDimension: .absolute(240)),
-						subitems: [itemsGroup])
-					nestedGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
-
-					let header = NSCollectionLayoutBoundarySupplementaryItem(
-						layoutSize: NSCollectionLayoutSize(
-							widthDimension: .fractionalWidth(1.0),
-							heightDimension: .estimated(34)),
-						elementKind: UICollectionView.elementKindSectionHeader,
-						alignment: .top)
-					header.contentInsets.leading = nestedGroup.contentInsets.leading
-					header.contentInsets.trailing = nestedGroup.contentInsets.trailing
-
-					let section = NSCollectionLayoutSection(group: nestedGroup)
-					section.boundarySupplementaryItems = [header]
-					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
-					section.orthogonalScrollingBehavior = .groupPaging
-					return section
-				}
-			}
-		}
-	}
-
 	func header(withTitle title: String) -> some View
 	{
 		HStack
@@ -162,7 +58,7 @@ struct AppStoreScreen: View
 	var body: some View
 	{
 		ASCollectionView(sections: self.sections)
-			.layoutCompositional(self.layout)
+			.layout(self.layout)
 			.edgesIgnoringSafeArea(.all)
 			.navigationBarTitle("Apps", displayMode: .inline)
 	}
@@ -213,7 +109,108 @@ struct AppStoreScreen: View
 	}
 }
 
-struct OrthoView_Previews: PreviewProvider
+extension AppStoreScreen {
+	var layout: ASCollectionLayout<Int> {
+		ASCollectionLayout(scrollDirection: .vertical, interSectionSpacing: 20) { sectionID in
+			switch sectionID
+			{
+			case 0:
+				return ASCollectionLayoutSection { environment in
+					let columnsToFit = floor(environment.container.effectiveContentSize.width / 320)
+					let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+						widthDimension: .fractionalWidth(1.0),
+						heightDimension: .fractionalHeight(1.0)))
+					
+					let itemsGroup = NSCollectionLayoutGroup.horizontal(
+						layoutSize: NSCollectionLayoutSize(
+							widthDimension: .fractionalWidth(0.9 / columnsToFit),
+							heightDimension: .absolute(280)),
+						subitems: [item])
+					itemsGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
+					
+					let section = NSCollectionLayoutSection(group: itemsGroup)
+					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
+					section.orthogonalScrollingBehavior = .groupPaging
+					return section
+				}
+			case 1:
+				return ASCollectionLayoutSection { environment in
+					let columnsToFit = floor(environment.container.effectiveContentSize.width / 320)
+					let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+						widthDimension: .fractionalWidth(1.0),
+						heightDimension: .fractionalHeight(1.0)))
+					
+					let itemsGroup = NSCollectionLayoutGroup.vertical(
+						layoutSize: NSCollectionLayoutSize(
+							widthDimension: .fractionalWidth(1.0),
+							heightDimension: .fractionalHeight(1.0)),
+						subitem: item, count: 2)
+					itemsGroup.interItemSpacing = .fixed(10)
+					
+					let nestedGroup = NSCollectionLayoutGroup.horizontal(
+						layoutSize: NSCollectionLayoutSize(
+							widthDimension: .fractionalWidth(0.9 / columnsToFit),
+							heightDimension: .absolute(180)),
+						subitems: [itemsGroup])
+					nestedGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
+					
+					let header = NSCollectionLayoutBoundarySupplementaryItem(
+						layoutSize: NSCollectionLayoutSize(
+							widthDimension: .fractionalWidth(1.0),
+							heightDimension: .estimated(34)),
+						elementKind: UICollectionView.elementKindSectionHeader,
+						alignment: .top)
+					header.contentInsets.leading = nestedGroup.contentInsets.leading
+					header.contentInsets.trailing = nestedGroup.contentInsets.trailing
+					
+					let section = NSCollectionLayoutSection(group: nestedGroup)
+					section.boundarySupplementaryItems = [header]
+					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
+					section.orthogonalScrollingBehavior = .groupPaging
+					return section
+				}
+			default:
+				return ASCollectionLayoutSection { environment in
+					let columnsToFit = floor(environment.container.effectiveContentSize.width / 320)
+					let item = NSCollectionLayoutItem(layoutSize: NSCollectionLayoutSize(
+						widthDimension: .fractionalWidth(1.0),
+						heightDimension: .fractionalHeight(1.0)))
+					
+					let itemsGroup = NSCollectionLayoutGroup.vertical(
+						layoutSize: NSCollectionLayoutSize(
+							widthDimension: .fractionalWidth(1.0),
+							heightDimension: .fractionalHeight(1.0)),
+						subitem: item, count: 3)
+					itemsGroup.interItemSpacing = .fixed(10)
+					
+					let nestedGroup = NSCollectionLayoutGroup.horizontal(
+						layoutSize: NSCollectionLayoutSize(
+							widthDimension: .fractionalWidth(0.9 / columnsToFit),
+							heightDimension: .absolute(240)),
+						subitems: [itemsGroup])
+					nestedGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
+					
+					let header = NSCollectionLayoutBoundarySupplementaryItem(
+						layoutSize: NSCollectionLayoutSize(
+							widthDimension: .fractionalWidth(1.0),
+							heightDimension: .estimated(34)),
+						elementKind: UICollectionView.elementKindSectionHeader,
+						alignment: .top)
+					header.contentInsets.leading = nestedGroup.contentInsets.leading
+					header.contentInsets.trailing = nestedGroup.contentInsets.trailing
+					
+					let section = NSCollectionLayoutSection(group: nestedGroup)
+					section.boundarySupplementaryItems = [header]
+					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
+					section.orthogonalScrollingBehavior = .groupPaging
+					return section
+				}
+			}
+		}
+	}
+}
+
+struct AppStoreScreen_Previews: PreviewProvider
 {
 	static var previews: some View
 	{

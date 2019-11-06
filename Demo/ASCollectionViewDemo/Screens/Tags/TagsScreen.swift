@@ -31,7 +31,7 @@ struct TagsScreen: View
 						.cornerRadius(5)
 				}
 			)
-				.layoutCustom
+				.layout
 			{
 				let fl = AlignedFlowLayout()
 				fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize

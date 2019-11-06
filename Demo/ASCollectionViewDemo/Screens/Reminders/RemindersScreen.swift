@@ -75,7 +75,7 @@ struct RemindersScreen: View
 				.padding(.top)
 			}
 		}
-			.layoutCompositional(self.layout)
+			.layout(self.layout)
 			.contentInsets(.init(top: 20, left: 0, bottom: 20, right: 0))
 			.alwaysBounceVertical()
 			.background(Color(.systemGroupedBackground))
@@ -85,37 +85,36 @@ struct RemindersScreen: View
 
 	let groupBackgroundElementID = UUID().uuidString
 
-	var layout: ASCollectionViewLayout<Section>
-	{
-		ASCollectionViewLayout(interSectionSpacing: 20)
-		{ section -> ASCollectionViewLayoutSection in
-			switch section
+	var layout: ASCollectionLayout<Section> {
+		ASCollectionLayout<Section>(interSectionSpacing: 20) { sectionID in
+			switch sectionID
 			{
 			case .upper:
-				return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 165), itemSpacing: 20, lineSpacing: 20, itemSize: .estimated(90))
+				return .grid(layoutMode: .adaptive(withMinItemSize: 165),
+							 itemSpacing: 20,
+							 lineSpacing: 20,
+							 itemSize: .estimated(90))
 			case .list, .addNew:
-				return ASCollectionViewLayoutCustomCompositionalSection
-				{ (_, _) -> NSCollectionLayoutSection in
+				return ASCollectionLayoutSection {
 					let itemSize = NSCollectionLayoutSize(
 						widthDimension: .fractionalWidth(1.0),
 						heightDimension: .estimated(60))
 					let item = NSCollectionLayoutItem(layoutSize: itemSize)
-
+					
 					let groupSize = NSCollectionLayoutSize(
 						widthDimension: .fractionalWidth(1.0),
 						heightDimension: .estimated(60))
 					let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitems: [item])
-
+					
 					let section = NSCollectionLayoutSection(group: group)
 					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
-
+					
 					let sectionBackgroundDecoration = NSCollectionLayoutDecorationItem.background(elementKind: self.groupBackgroundElementID)
 					sectionBackgroundDecoration.contentInsets = section.contentInsets
 					section.decorationItems = [sectionBackgroundDecoration]
-
+					
 					return section
 				}
-				// return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 220), itemSpacing: 20, lineSpacing: 0, itemSize: .absolute(65))
 			}
 		}
 		.decorationView(GroupBackground.self, forDecorationViewOfKind: groupBackgroundElementID)

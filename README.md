@@ -42,8 +42,6 @@ struct ExampleView: View {
     @State var dataExampleA = (0 ..< 21).map { $0 }
     @State var dataExampleB = (0 ..< 15).map { "ITEM \($0)" }
     
-    typealias SectionID = Int
-    
     var body: some View
     {
         ASCollectionView
@@ -63,7 +61,7 @@ struct ExampleView: View {
 				data: dataExampleB,
 				dataID: \.self)
 			{ item, _ in
-				Color.blue
+				Color.green
 					.overlay(
 						Text("Complex layout - \(item)")
 					)
@@ -84,28 +82,23 @@ struct ExampleView: View {
 					.padding()
 			}
 		}
-		.layoutCompositional(self.layout)
-    }
-    
-    
-    var layout: ASCollectionViewLayout<SectionID> {
-        ASCollectionViewLayout { sectionID -> ASCollectionViewLayoutSection in
-            switch sectionID {
-            case 0:
-                // Here we use one of the predefined convenience layouts
-                return ASCollectionViewLayoutGrid(layoutMode: .adaptive(withMinItemSize: 100), itemSpacing: 5, lineSpacing: 5, itemSize: .absolute(50))
-            default:
-                return self.customSectionLayout
-            }
-        }
-    }
-    
-    let customSectionLayout = ASCollectionViewLayoutCustomCompositionalSection { (layoutEnvironment, _) -> NSCollectionLayoutSection in
-        // ...
-        // Your custom compositional layout section here. For an example see this file: /readmeAssets/SampleUsage.swift
-        // ...
-        return section
-    }
+		.layout { sectionID in
+			switch sectionID {
+				case 0:
+				// Here we use one of the provided convenience layouts
+				return .grid(layoutMode: .adaptive(withMinItemSize: 100),
+							 itemSpacing: 5,
+							 lineSpacing: 5,
+							 itemSize: .absolute(50))
+				default:
+				return ASCollectionLayoutSection { environment in
+					// ...
+					// You could return any custom NSCollectionLayoutSection here. For an example see this file: /readmeAssets/SampleUsage.swift
+					// ...
+				}
+			}
+		}
+	}
 }
 ```
 
