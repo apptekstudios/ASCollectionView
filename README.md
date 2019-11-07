@@ -10,14 +10,12 @@ A SwiftUI implementation of UICollectionView & UITableView. Here's some of its u
  * supports **preloading** and **onAppear/onDisappear**.
  * supports **cell selection**, with automatic support for SwiftUI editing mode.
  * supports **autosizing** of cells.
- * supports **removing separators** (for tableview).
+ * supports **removing separators** for ASTableView.
  * supports the new **UICollectionViewCompositionalLayout**, and **any other UICollectionViewLayout**
 
 ### Pull requests and suggestions welcome :)
 <a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>  ·  <a href="https://github.com/apptekstudios/ASCollectionView/issues">Suggest a feature</a>
 
-### Screenshots from demo app
-<img src="/readmeAssets/demo1.jpeg" width="300">    <img src="/readmeAssets/demo2.jpeg" width="300">    <img src="/readmeAssets/demo3.jpeg" width="300">    <img src="/readmeAssets/demo4.jpeg" width="300">    <img src="/readmeAssets/demo5.jpeg" width="300">    <img src="/readmeAssets/demo6.jpeg" width="300">
 
 ## Table of Contents
 * [Getting Started](#getting-started)
@@ -29,6 +27,9 @@ A SwiftUI implementation of UICollectionView & UITableView. Here's some of its u
 * [Todo](#todo)
 * [License](#license)
 
+
+### Screenshots from demo app
+<img src="/readmeAssets/demo1.jpeg" width="300">    <img src="/readmeAssets/demo2.jpeg" width="300">    <img src="/readmeAssets/demo3.jpeg" width="300">    <img src="/readmeAssets/demo4.jpeg" width="300">    <img src="/readmeAssets/demo5.jpeg" width="300">    <img src="/readmeAssets/demo6.jpeg" width="300">
 
 ## Getting Started
 ASCollectionView is a swift package.
