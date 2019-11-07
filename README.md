@@ -128,10 +128,107 @@ struct ExampleView: View {
 }
 ```
 
+### Supplementary Views
+ASCollectionView has support for supplementary views. To add a supplementary view, use the `sectionHeader`, `sectionFooter`, or `sectionSupplementary` modifiers on your ASCollectionViewSection.
+ * `sectionHeader` and `sectionFooter` set the supplementary for `UICollectionView.elementKindSectionHeader` and `UICollectionView.elementKindSectionHeader` respectively.
+ * `sectionSupplementary` lets you specify any supplementaryKind.
+
+```swift
+ASCollectionViewSection(...) { ... }
+	.sectionHeader
+	{
+		Text("Section header")
+		.background(Color.yellow)
+	}
+	.sectionFooter
+	{
+		Text("Section footer")
+		.background(Color.blue)
+	}
+        .sectionSupplementary(ofKind: "someOtherSupplementaryKindRequestedByYourLayout") {
+                Text("Section supplementary")
+		.background(Color.green)
+        }
+```
+
+
+### Decoration Views
+A UICollectionViewLayout can layout decoration views that do not relate to the data (eg. a section background). These cannot be configured so you must provide a View struct that can be initialised using .init().
+* To enforce this requirement, your view must conform to the `Decoration` protocol. The only requirement of this is an initialiser with no arguments.
+* You must register the view type with the layout.
+* See the Reminders screen of the Demo app for a working example.
+
+Declaring a swift view conforming to `Decoration`:
+```swift
+struct GroupBackground: View, Decoration
+{
+	let cornerRadius: CGFloat = 12
+	var body: some View
+	{
+		RoundedRectangle(cornerRadius: cornerRadius)
+			.fill(Color(.secondarySystemGroupedBackground))
+	}
+}
+```
+
+Registering the decoration type with the layout (ASCollectionLayout):
+```swift
+var layout: ASCollectionLayout<Section>
+{
+	ASCollectionLayout<Section>
+	{ 
+            // ... Here is an example of including a decoration in a compositional layout.
+            let sectionBackgroundDecoration = NSCollectionLayoutDecorationItem.background(elementKind: "groupBackground")
+            sectionBackgroundDecoration.contentInsets = section.contentInsets
+            section.decorationItems = [sectionBackgroundDecoration]
+            // ...
+}
+.decorationView(GroupBackground.self, forDecorationViewOfKind: "groupBackground") //REGISTER the decoration view type
+```
+
+
 ### Layout
  * There is inbuilt support for the new UICollectionViewCompositionalLayout.
    * You can define layout on a per-section basis, including the use of a switch statement if desired.
-   * There are some useful structs (starting with ASCollectionViewLayout...) that allow for easy definition of list and grid-based layouts (including orthogonal grids).
+   * *Work in progress*: There are some useful methods that allow for easy definition of list and grid-based layouts (including orthogonal grids).
+
+Define layout for all sections:
+```swift
+ASCollectionView(...) { ... }
+.layout {
+    ASCollectionLayoutSection { layoutEnvironment in
+    	//Construct and return a NSCollectionLayoutSection here
+    }
+}
+```
+
+Define layout per section:
+```swift
+ASCollectionView(...) { ... }
+.layout { sectionID in
+    switch sectionID {
+    case .userSection:
+        return ASCollectionLayoutSection { layoutEnvironment in
+            //Construct and return a NSCollectionLayoutSection here
+        }
+    }
+    case .postSection:
+        return ASCollectionLayoutSection { layoutEnvironment in
+            //Construct and return a NSCollectionLayoutSection here
+        }
+    }
+}
+```
+
+Use a custom UICollectionViewLayout:
+```swift
+ASCollectionView(...) { ... }
+.layout {
+    let someCustomLayout = CustomUICollectionViewLayout()
+    someCustomLayout.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
+    return someCustomLayout
+}
+```
 
 ### Other tips
  * You can use an enum as your SectionID (rather than just an Int), this lets you easily determine the layout of each section.
