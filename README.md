@@ -154,8 +154,8 @@ ASCollectionViewSection(...) { ... }
 
 ### Decoration Views
 A UICollectionViewLayout can layout decoration views that do not relate to the data (eg. a section background). These cannot be configured so you must provide a View struct that can be initialised using .init().
-* You register the view type with the layout.
 * To enforce this requirement, your view must conform to the `Decoration` protocol. The only requirement of this is an initialiser with no arguments.
+* You must register the view type with the layout.
 * See the Reminders screen of the Demo app for a working example.
 
 Declaring a swift view conforming to `Decoration`:
