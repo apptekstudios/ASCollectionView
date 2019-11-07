@@ -22,6 +22,10 @@ A SwiftUI implementation of UICollectionView & UITableView. Here's some of its u
 ## Table of Contents
 * [Getting Started](#getting-started)
 * [Usage](#usage)
+	* [Basic Examples](#usage)
+	* [Supplementary Views](#supplementary-views)
+	* [Decoration Views](#decoration-views)
+	* [Layout](#layout)
 * [Todo](#todo)
 * [License](#license)
 
