@@ -135,20 +135,20 @@ ASCollectionView has support for supplementary views. To add a supplementary vie
 
 ```swift
 ASCollectionViewSection(...) { ... }
-			.sectionHeader
-			{
-				Text("Section header")
-				    .background(Color.yellow)
-			}
-			.sectionFooter
-			{
-				Text("Section footer")
-				    .background(Color.blue)
-			}
-            .sectionSupplementary(ofKind: "someOtherSupplementaryKindRequestedByYourLayout") {
+	.sectionHeader
+	{
+		Text("Section header")
+		.background(Color.yellow)
+	}
+	.sectionFooter
+	{
+		Text("Section footer")
+		.background(Color.blue)
+	}
+        .sectionSupplementary(ofKind: "someOtherSupplementaryKindRequestedByYourLayout") {
                 Text("Section supplementary")
-				    .background(Color.green)
-            }
+		.background(Color.green)
+        }
 ```
 
 
@@ -174,16 +174,16 @@ struct GroupBackground: View, Decoration
 Registering the decoration type with the layout (ASCollectionLayout):
 ```swift
 var layout: ASCollectionLayout<Section>
-	{
-		ASCollectionLayout<Section>
-		{ 
-            ... //Here is an example of including a decoration in a compositional layout.
+{
+	ASCollectionLayout<Section>
+	{ 
+            // ... Here is an example of including a decoration in a compositional layout.
             let sectionBackgroundDecoration = NSCollectionLayoutDecorationItem.background(elementKind: "groupBackground")
             sectionBackgroundDecoration.contentInsets = section.contentInsets
             section.decorationItems = [sectionBackgroundDecoration]
-            ...
-        }
-		.decorationView(GroupBackground.self, forDecorationViewOfKind: "groupBackground") //REGISTER the decoration view type
+            // ...
+}
+.decorationView(GroupBackground.self, forDecorationViewOfKind: "groupBackground") //REGISTER the decoration view type
 ```
 
 
@@ -197,7 +197,7 @@ Define layout for all sections:
 ASCollectionView(...) { ... }
 .layout {
     ASCollectionLayoutSection { layoutEnvironment in
-     //Construct and return a NSCollectionLayoutSection here
+    	//Construct and return a NSCollectionLayoutSection here
     }
 }
 ```
