@@ -4,6 +4,13 @@ import Foundation
 import SwiftUI
 import UIKit
 
+
+/// If building a custom layout, you can conform to this protocol to tell ASCollectionLayout which dimensions should be self-sized (default is both)
+public protocol ASCollectionViewLayoutProtocol {
+	var selfSizeVertically: Bool { get }
+	var selfSizeHorizontally: Bool { get }
+}
+
 // MARK: Public Typealias for layout closures
 
 public typealias CompositionalLayout<SectionID: Hashable> = ((_ sectionID: SectionID) -> ASCollectionLayoutSection)

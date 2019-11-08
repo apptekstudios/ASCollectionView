@@ -16,7 +16,6 @@ A SwiftUI implementation of UICollectionView & UITableView. Here's some of its u
 ### Pull requests and suggestions welcome :)
 <a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>  ·  <a href="https://github.com/apptekstudios/ASCollectionView/issues">Suggest a feature</a>
 
-
 ## Table of Contents
 * [Getting Started](#getting-started)
 * [Usage](#usage)
@@ -29,7 +28,7 @@ A SwiftUI implementation of UICollectionView & UITableView. Here's some of its u
 
 
 ### Screenshots from demo app
-<img src="/readmeAssets/demo1.jpeg" width="300">    <img src="/readmeAssets/demo2.jpeg" width="300">    <img src="/readmeAssets/demo3.jpeg" width="300">    <img src="/readmeAssets/demo4.jpeg" width="300">    <img src="/readmeAssets/demo5.jpeg" width="300">    <img src="/readmeAssets/demo6.jpeg" width="300">
+<img src="/readmeAssets/demo1.jpeg" width="300">    <img src="/readmeAssets/demo2.jpeg" width="300">    <img src="/readmeAssets/demo3.jpeg" width="300">    <img src="/readmeAssets/demo4.jpeg" width="300">    <img src="/readmeAssets/demo5.jpeg" width="300">    <img src="/readmeAssets/demo6.jpeg" width="300">    <img src="/readmeAssets/demo7.jpeg" width="500">
 
 ## Getting Started
 ASCollectionView is a swift package.

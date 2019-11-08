@@ -8,8 +8,7 @@ struct MainView: View
 	{
 		NavigationView
 		{
-			List
-			{
+			List {
 				NavigationLink(destination: PhotoGridScreen())
 				{
 					Image(systemName: "1.square.fill")
@@ -39,6 +38,11 @@ struct MainView: View
 				{
 					Image(systemName: "6.square.fill")
 					Text("Magazine Layout (with context menu)")
+				}
+				NavigationLink(destination: WaterfallScreen())
+				{
+					Image(systemName: "7.square.fill")
+					Text("Waterfall (Work in progress)")
 				}
 			}
 			.navigationBarTitle("Demo App")

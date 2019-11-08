@@ -50,10 +50,10 @@ extension ASCollectionView where SectionID == Int
 	/**
 	 Initializes a  collection view with a single section of static content
 	 */
-	init(@ViewArrayBuilder content: () -> [AnyView])
+	init(@ViewArrayBuilder staticContent: (() -> [AnyView])) //Clashing with above functions in Swift 5.1, therefore internal for time being
 	{
 		sections = [
-			ASCollectionViewSection(id: 0, content: content)
+			ASCollectionViewSection(id: 0, content: staticContent)
 		]
 	}
 }
@@ -212,8 +212,14 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				cell.invalidateLayout = {
 					collectionView.collectionViewLayout.invalidateLayout()
 				}
-				cell.selfSizeHorizontal = self.delegate?.collectionView(cellShouldSelfSizeHorizontallyForItemAt: indexPath) ?? true
-				cell.selfSizeVertical = self.delegate?.collectionView(cellShouldSelfSizeVerticallyForItemAt: indexPath) ?? true
+				cell.selfSizeHorizontal =
+					self.delegate?.collectionView(cellShouldSelfSizeHorizontallyForItemAt: indexPath)
+					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizeHorizontally
+					?? true
+				cell.selfSizeVertical =
+					self.delegate?.collectionView(cellShouldSelfSizeVerticallyForItemAt: indexPath)
+					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizeVertically
+					?? true
 				cell.setupFor(
 					id: itemID,
 					hostingController: hostController)
@@ -411,6 +417,7 @@ extension ASCollectionView.Coordinator
 {
 	func setupPrefetching()
 	{
+		let numberToPreload = 10
 		prefetchSubscription = queuePrefetch
 			.collect(.byTime(DispatchQueue.main, 0.1)) // Wanted to use .throttle(for: 0.1, scheduler: DispatchQueue(label: "ASCollectionView PREFETCH"), latest: true) -> THIS CRASHES?? BUG??
 			.compactMap
@@ -430,11 +437,11 @@ extension ASCollectionView.Coordinator
 				let sectionIndexPaths = self.parent.sections[item.section].dataSource.getIndexPaths(withSectionIndex: item.section)
 				let nextItemsInSection: ArraySlice<IndexPath> = {
 					guard (item.last + 1) < sectionIndexPaths.endIndex else { return [] }
-					return sectionIndexPaths[(item.last + 1)..<min(item.last + 6, sectionIndexPaths.endIndex)]
+					return sectionIndexPaths[(item.last + 1)..<min(item.last + numberToPreload + 1, sectionIndexPaths.endIndex)]
 				}()
 				let previousItemsInSection: ArraySlice<IndexPath> = {
 					guard (item.first - 1) >= sectionIndexPaths.startIndex else { return [] }
-					return sectionIndexPaths[max(sectionIndexPaths.startIndex, item.first - 5)..<item.first]
+					return sectionIndexPaths[max(sectionIndexPaths.startIndex, item.first - numberToPreload)..<item.first]
 				}()
 				return Array(nextItemsInSection) + Array(previousItemsInSection)
 			}
@@ -442,10 +449,10 @@ extension ASCollectionView.Coordinator
 			if
 				let firstSection = toPrefetch.keys.min(), // FIND THE EARLIEST VISIBLE SECTION
 				(firstSection - 1) >= self.parent.sections.startIndex, // CHECK THERE IS A SECTION BEFORE THIS
-				let firstIndex = visibleIndexPathsBySection[firstSection]?.first, firstIndex < 5 // CHECK HOW CLOSE TO THIS SECTION WE ARE
+				let firstIndex = visibleIndexPathsBySection[firstSection]?.first, firstIndex < numberToPreload // CHECK HOW CLOSE TO THIS SECTION WE ARE
 			{
 				let precedingSection = firstSection - 1
-				toPrefetch[precedingSection] = self.parent.sections[precedingSection].dataSource.getIndexPaths(withSectionIndex: precedingSection).suffix(5)
+				toPrefetch[precedingSection] = self.parent.sections[precedingSection].dataSource.getIndexPaths(withSectionIndex: precedingSection).suffix(numberToPreload)
 			}
 			// CHECK IF THERES A LATER SECTION TO PRELOAD
 			if
@@ -453,10 +460,10 @@ extension ASCollectionView.Coordinator
 				(lastSection + 1) < self.parent.sections.endIndex, // CHECK THERE IS A SECTION AFTER THIS
 				let lastIndex = visibleIndexPathsBySection[lastSection]?.last,
 				let lastSectionEndIndex = self.parent.sections[lastSection].dataSource.getIndexPaths(withSectionIndex: lastSection).last?.item,
-				(lastSectionEndIndex - lastIndex) < 5 // CHECK HOW CLOSE TO THIS SECTION WE ARE
+				(lastSectionEndIndex - lastIndex) < numberToPreload // CHECK HOW CLOSE TO THIS SECTION WE ARE
 			{
 				let nextSection = lastSection + 1
-				toPrefetch[nextSection] = Array(self.parent.sections[nextSection].dataSource.getIndexPaths(withSectionIndex: nextSection).prefix(5))
+				toPrefetch[nextSection] = Array(self.parent.sections[nextSection].dataSource.getIndexPaths(withSectionIndex: nextSection).prefix(numberToPreload))
 			}
 			return toPrefetch
 		}
