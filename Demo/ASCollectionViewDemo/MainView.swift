@@ -40,6 +40,11 @@ struct MainView: View
 					Image(systemName: "6.square.fill")
 					Text("Magazine Layout (with context menu)")
 				}
+				NavigationLink(destination: WaterfallScreen())
+				{
+					Image(systemName: "7.square.fill")
+					Text("Waterfall Layout")
+				}
 			}
 			.navigationBarTitle("Demo App")
 		}

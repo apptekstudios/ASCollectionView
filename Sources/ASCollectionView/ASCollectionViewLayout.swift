@@ -4,6 +4,13 @@ import Foundation
 import SwiftUI
 import UIKit
 
+
+
+public protocol ASCollectionViewLayoutProtocol {
+	var selfSizeVertically: Bool { get }
+	var selfSizeHorizontally: Bool { get }
+}
+
 // MARK: Public Typealias for layout closures
 
 public typealias CompositionalLayout<SectionID: Hashable> = ((_ sectionID: SectionID) -> ASCollectionLayoutSection)

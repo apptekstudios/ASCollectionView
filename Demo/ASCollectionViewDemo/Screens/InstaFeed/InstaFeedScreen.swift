@@ -116,7 +116,7 @@ struct DataSource
 	{
 		(0..<number).map
 		{ b -> Post in
-			let aspect: CGFloat = [1.0, 1.5, 0.75].randomElement() ?? 1
+			let aspect: CGFloat = .random(in: 0.5 ... 1.5)
 			return Post.randomPost(sectionID * 10_000 + b, aspectRatio: aspect)
 		}
 	}

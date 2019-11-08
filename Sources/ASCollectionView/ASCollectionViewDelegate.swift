@@ -18,14 +18,14 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 		coordinator?.typeErasedDataForItem(at: indexPath) as? T
 	}
 
-	open func collectionView(cellShouldSelfSizeHorizontallyForItemAt indexPath: IndexPath) -> Bool
+	open func collectionView(cellShouldSelfSizeHorizontallyForItemAt indexPath: IndexPath) -> Bool?
 	{
-		return true
+		return nil
 	}
 
-	open func collectionView(cellShouldSelfSizeVerticallyForItemAt indexPath: IndexPath) -> Bool
+	open func collectionView(cellShouldSelfSizeVerticallyForItemAt indexPath: IndexPath) -> Bool?
 	{
-		return true
+		return nil
 	}
 
 	open var collectionViewContentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior

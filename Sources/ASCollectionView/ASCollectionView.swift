@@ -212,8 +212,14 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				cell.invalidateLayout = {
 					collectionView.collectionViewLayout.invalidateLayout()
 				}
-				cell.selfSizeHorizontal = self.delegate?.collectionView(cellShouldSelfSizeHorizontallyForItemAt: indexPath) ?? true
-				cell.selfSizeVertical = self.delegate?.collectionView(cellShouldSelfSizeVerticallyForItemAt: indexPath) ?? true
+				cell.selfSizeHorizontal =
+					self.delegate?.collectionView(cellShouldSelfSizeHorizontallyForItemAt: indexPath)
+					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizeHorizontally
+					?? true
+				cell.selfSizeVertical =
+					self.delegate?.collectionView(cellShouldSelfSizeVerticallyForItemAt: indexPath)
+					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizeVertically
+					?? true
 				cell.setupFor(
 					id: itemID,
 					hostingController: hostController)
