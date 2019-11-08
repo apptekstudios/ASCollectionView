@@ -1,56 +1,50 @@
-//
-//  ASWaterfallLayout.swift
-//  ASCollectionViewDemo
-//
-//  Created by Toby Brennan on 8/11/19.
-//  Copyright © 2019 Apptek Studios. All rights reserved.
-//
+// ASCollectionView. Created by Apptek Studios 2019
 
 import Foundation
 import UIKit
-import ASCollectionView
 
-class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol {
-	var estimatedItemHeight: CGFloat = 400
+///WORK IN PROGRESS
+public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol {
+	public var estimatedItemHeight: CGFloat = 400 //Only needed if using auto-sizing. SwiftUI seems to only return smaller sizes (so make this bigger than needed)
 	
-	struct CellLayoutContext {
-		var width: CGFloat
+	public struct CellLayoutContext {
+		public var width: CGFloat
 	}
 	
-	enum ColumnCount {
+	public enum ColumnCount {
 		case fixed(Int)
 		case adaptive(minWidth: CGFloat)
 	}
 	
-	var numberOfColumns: ColumnCount = .adaptive(minWidth: 150) {
+	public var numberOfColumns: ColumnCount = .adaptive(minWidth: 150) {
 		didSet {
 			invalidateLayout()
 		}
 	}
 	
-	var columnSpacing: CGFloat = 6 {
+	public var columnSpacing: CGFloat = 6 {
 		didSet {
 			invalidateLayout()
 		}
 	}
 	
-	var sectionSpacing: CGFloat = 20 {
+	public var sectionSpacing: CGFloat = 20 {
 		didSet {
 			invalidateLayout()
 		}
 	}
 	
-	var itemSpacing: CGFloat = 6 {
+	public var itemSpacing: CGFloat = 6 {
 		didSet {
 			invalidateLayout()
 		}
 	}
 	
-	var selfSizeVertically: Bool {
+	public var selfSizeVertically: Bool {
 		if hasDelegate { return false }
 		else { return true } //No delegate, use autosizing
 	}
-	let selfSizeHorizontally = false
+	public let selfSizeHorizontally = false
 	
 	
 	private var cachedHeight: [IndexPath: CGFloat] = [:]
@@ -66,7 +60,7 @@ class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol 
 		return collectionView.bounds.width - (insets.left + insets.right) - 0.0001
 	}
 	
-	override var collectionViewContentSize: CGSize {
+	override public var collectionViewContentSize: CGSize {
 		return CGSize(width: contentWidth, height: contentHeight)
 	}
 	
@@ -93,7 +87,7 @@ class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol 
 		return cachedHeight[indexPath] ?? estimatedItemHeight
 	}
 	
-	override func prepare() {
+	override public func prepare() {
 		guard let collectionView = collectionView else { return }
 		
 		// Reset cached information.
@@ -130,7 +124,7 @@ class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol 
 		contentHeight = cachedSectionHeight.reduce(into: collectionView.adjustedContentInset.top, { $0 += $1.value })
 	}
 	
-	override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
+	override public func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]? {
 		var attributesArray: [UICollectionViewLayoutAttributes] = []
 		
 		attributesArray = cachedAttributes.filter { $0.frame.intersects(rect) }
@@ -167,11 +161,11 @@ class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol 
 		return attributesArray
 	}
 	
-	override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
+	override public func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
 		return cachedAttributes[indexPath]
 	}
 	
-	override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
+	override public func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool {
 		if newBounds.width != collectionView?.bounds.width {
 			return true
 		}
@@ -202,6 +196,15 @@ class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol 
 		return context
 	}
 }
+
+//MARK: Delegate
+
+public protocol ASWaterfallLayoutDelegate {
+	func heightForCell(at indexPath: IndexPath, context: ASWaterfallLayout.CellLayoutContext) -> CGFloat
+}
+
+
+//MARK: Helpers
 
 extension UICollectionView {
 	var allSections: Range<Int>? {
