@@ -31,7 +31,7 @@ struct WaterfallScreen: View
 						.scaledToFill()
 						.frame(width: geom.size.width, height: geom.size.height)
 						.opacity(state.isSelected ? 0.7 : 1.0)
-
+					
 					if state.isSelected
 					{
 						ZStack
@@ -46,6 +46,14 @@ struct WaterfallScreen: View
 						}
 						.frame(width: 20, height: 20)
 						.padding(10)
+					} else {
+						Text("\(item.offset)")
+							.font(.title)
+							.bold()
+							.padding(2)
+							.background(Color(.systemBackground).opacity(0.5))
+							.cornerRadius(4)
+							.padding(10)
 					}
 				}
 				.frame(width: geom.size.width, height: geom.size.height)

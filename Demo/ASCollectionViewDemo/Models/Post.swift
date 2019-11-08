@@ -10,6 +10,7 @@ struct Post: Identifiable
 	var caption: String
 	var aspectRatio: CGFloat
 	var randomNumberForImage: Int
+	var offset: Int
 
 	var url: URL
 	{
@@ -29,13 +30,37 @@ struct Post: Identifiable
 		randomNumberForImage.hashValue
 	}
 
-	static func randomPost(_ randomNumber: Int, aspectRatio: CGFloat) -> Post
+	static func randomPost(_ randomNumber: Int, aspectRatio: CGFloat, offset: Int = 0) -> Post
 	{
 		Post(
 			username: Lorem.fullName,
 			location: Lorem.words(Int.random(in: 1...3)),
 			caption: Lorem.sentences(1...3),
 			aspectRatio: aspectRatio,
-			randomNumberForImage: randomNumber)
+			randomNumberForImage: randomNumber,
+			offset: offset
+		)
+	}
+}
+
+
+
+struct DataSource
+{
+	static func postsForSection(_ sectionID: Int, number: Int = 12) -> [Post]
+	{
+		(0..<number).map
+			{ b -> Post in
+				let aspect: CGFloat = .random(in: 0.3 ... 1.5)
+				return Post.randomPost(sectionID * 10_000 + b, aspectRatio: aspect, offset: b)
+		}
+	}
+	
+	static func appsForSection(_ sectionID: Int) -> [App]
+	{
+		(0...17).map
+			{ b -> App in
+				App.randomApp(sectionID * 10_000 + b)
+		}
 	}
 }

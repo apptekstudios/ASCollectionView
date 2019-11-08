@@ -110,25 +110,6 @@ struct InstaFeedScreen: View
 	}
 }
 
-struct DataSource
-{
-	static func postsForSection(_ sectionID: Int, number: Int = 12) -> [Post]
-	{
-		(0..<number).map
-		{ b -> Post in
-			let aspect: CGFloat = .random(in: 0.5 ... 1.5)
-			return Post.randomPost(sectionID * 10_000 + b, aspectRatio: aspect)
-		}
-	}
-
-	static func appsForSection(_ sectionID: Int) -> [App]
-	{
-		(0...17).map
-		{ b -> App in
-			App.randomApp(sectionID * 10_000 + b)
-		}
-	}
-}
 
 struct FeedView_Previews: PreviewProvider
 {

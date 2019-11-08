@@ -17,7 +17,12 @@ class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol 
 		var width: CGFloat
 	}
 	
-	var numberOfColumns: Int = 3 {
+	enum ColumnCount {
+		case fixed(Int)
+		case adaptive(minWidth: CGFloat)
+	}
+	
+	var numberOfColumns: ColumnCount = .adaptive(minWidth: 150) {
 		didSet {
 			invalidateLayout()
 		}
@@ -41,7 +46,10 @@ class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol 
 		}
 	}
 	
-	let selfSizeVertically = true
+	var selfSizeVertically: Bool {
+		if hasDelegate { return false }
+		else { return true } //No delegate, use autosizing
+	}
 	let selfSizeHorizontally = false
 	
 	
@@ -62,8 +70,16 @@ class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol 
 		return CGSize(width: contentWidth, height: contentHeight)
 	}
 	
+	var calculatedNumberOfColumns: Int {
+		switch numberOfColumns {
+		case .fixed(let num):
+			return num
+		case .adaptive(let minWidth):
+			return Int(floor((contentWidth + columnSpacing) / (minWidth + columnSpacing)))
+		}
+	}
 	var columnWidth: CGFloat {
-		(contentWidth - (columnSpacing * CGFloat(numberOfColumns - 1))) / CGFloat(numberOfColumns)
+		(contentWidth - (columnSpacing * CGFloat(calculatedNumberOfColumns - 1))) / CGFloat(calculatedNumberOfColumns)
 	}
 	
 	var hasDelegate: Bool {
@@ -86,7 +102,7 @@ class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol 
 		guard let sections = collectionView.allSections else { return }
 		for section in sections {
 			let sectionMinY = (0..<section).reduce(into: collectionView.adjustedContentInset.top) { $0 += cachedSectionHeight[$1] ?? 0 }
-			var columnHeights: [CGFloat] = .init(repeating: 0, count: numberOfColumns)
+			var columnHeights: [CGFloat] = .init(repeating: 0, count: calculatedNumberOfColumns)
 			
 			for indexPath in collectionView.allIndexPaths(inSection: section) {
 				let targetColumn = columnHeights.indexOfMin() ?? 0
