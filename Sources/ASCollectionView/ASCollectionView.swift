@@ -50,10 +50,10 @@ extension ASCollectionView where SectionID == Int
 	/**
 	 Initializes a  collection view with a single section of static content
 	 */
-	init(@ViewArrayBuilder content: () -> [AnyView])
+	init(@ViewArrayBuilder staticContent: (() -> [AnyView])) //Clashing with above functions in Swift 5.1, therefore internal for time being
 	{
 		sections = [
-			ASCollectionViewSection(id: 0, content: content)
+			ASCollectionViewSection(id: 0, content: staticContent)
 		]
 	}
 }

@@ -1,6 +1,7 @@
 // ASCollectionView. Created by Apptek Studios 2019
 
 import SwiftUI
+import ASCollectionView
 
 struct MainView: View
 {
@@ -8,8 +9,7 @@ struct MainView: View
 	{
 		NavigationView
 		{
-			List
-			{
+			List {
 				NavigationLink(destination: PhotoGridScreen())
 				{
 					Image(systemName: "1.square.fill")
@@ -43,7 +43,7 @@ struct MainView: View
 				NavigationLink(destination: WaterfallScreen())
 				{
 					Image(systemName: "7.square.fill")
-					Text("Waterfall Layout")
+					Text("Waterfall (Work in progress)")
 				}
 			}
 			.navigationBarTitle("Demo App")

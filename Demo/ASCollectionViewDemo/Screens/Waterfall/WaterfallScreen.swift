@@ -4,6 +4,8 @@ import ASCollectionView
 import SwiftUI
 import UIKit
 
+
+///THIS IS A WORK IN PROGRESS
 struct WaterfallScreen: View
 {
 	@State var data: [Post] = DataSource.postsForSection(1, number: 1000)
@@ -68,9 +70,9 @@ struct WaterfallScreen: View
 			selectedItems: $selectedItems,
 			sections: [section])
 			.layout(self.layout)
-			.customDelegate(LayoutDelegate.init)
-			.contentInsets(.init(top: 0, left: 10, bottom: 0, right: 10))
-			.navigationBarTitle("Waterfall", displayMode: .inline)
+			.customDelegate(WaterfallScreenLayoutDelegate.init)
+			.contentInsets(.init(top: 10, left: 10, bottom: 10, right: 10))
+			.navigationBarTitle("Waterfall (Work in progress)", displayMode: .inline)
 			.navigationBarItems(
 				trailing:
 				HStack(spacing: 20)
@@ -135,9 +137,10 @@ struct WaterfallScreen_Previews: PreviewProvider
 }
 
 
-class LayoutDelegate: ASCollectionViewDelegate, ASWaterfallLayoutDelegate {
+class WaterfallScreenLayoutDelegate: ASCollectionViewDelegate, ASWaterfallLayoutDelegate {
+	/// We explicitely provide a height here. If providing no delegate, this layout will use auto-sizing, however this causes problems if rotating the device (due to limitaitons in UICollecitonView and autosizing cells that are not visible)
 	func heightForCell(at indexPath: IndexPath, context: ASWaterfallLayout.CellLayoutContext) -> CGFloat {
-		guard let post: Post = getDataForItem(at: indexPath) else { return .zero }
+		guard let post: Post = getDataForItem(at: indexPath) else { return 100 }
 		return context.width / post.aspectRatio
 	}
 }
