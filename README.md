@@ -10,21 +10,25 @@ A SwiftUI implementation of UICollectionView & UITableView. Here's some of its u
  * supports **preloading** and **onAppear/onDisappear**.
  * supports **cell selection**, with automatic support for SwiftUI editing mode.
  * supports **autosizing** of cells.
- * supports **removing separators** (for tableview).
+ * supports **removing separators** for ASTableView.
  * supports the new **UICollectionViewCompositionalLayout**, and **any other UICollectionViewLayout**
 
 ### Pull requests and suggestions welcome :)
 <a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>  ·  <a href="https://github.com/apptekstudios/ASCollectionView/issues">Suggest a feature</a>
 
-### Screenshots from demo app
-<img src="/readmeAssets/demo1.jpeg" width="300">    <img src="/readmeAssets/demo2.jpeg" width="300">    <img src="/readmeAssets/demo3.jpeg" width="300">    <img src="/readmeAssets/demo4.jpeg" width="300">    <img src="/readmeAssets/demo5.jpeg" width="300">    <img src="/readmeAssets/demo6.jpeg" width="300">    <img src="/readmeAssets/demo7.jpeg" width="500">
-
 ## Table of Contents
 * [Getting Started](#getting-started)
 * [Usage](#usage)
+	* [Basic Examples](#usage)
+	* [Supplementary Views](#supplementary-views)
+	* [Decoration Views](#decoration-views)
+	* [Layout](#layout)
 * [Todo](#todo)
 * [License](#license)
 
+
+### Screenshots from demo app
+<img src="/readmeAssets/demo1.jpeg" width="300">    <img src="/readmeAssets/demo2.jpeg" width="300">    <img src="/readmeAssets/demo3.jpeg" width="300">    <img src="/readmeAssets/demo4.jpeg" width="300">    <img src="/readmeAssets/demo5.jpeg" width="300">    <img src="/readmeAssets/demo6.jpeg" width="300">    <img src="/readmeAssets/demo7.jpeg" width="500">
 
 ## Getting Started
 ASCollectionView is a swift package.
@@ -135,27 +139,27 @@ ASCollectionView has support for supplementary views. To add a supplementary vie
 
 ```swift
 ASCollectionViewSection(...) { ... }
-			.sectionHeader
-			{
-				Text("Section header")
-				    .background(Color.yellow)
-			}
-			.sectionFooter
-			{
-				Text("Section footer")
-				    .background(Color.blue)
-			}
-            .sectionSupplementary(ofKind: "someOtherSupplementaryKindRequestedByYourLayout") {
+	.sectionHeader
+	{
+		Text("Section header")
+		.background(Color.yellow)
+	}
+	.sectionFooter
+	{
+		Text("Section footer")
+		.background(Color.blue)
+	}
+        .sectionSupplementary(ofKind: "someOtherSupplementaryKindRequestedByYourLayout") {
                 Text("Section supplementary")
-				    .background(Color.green)
-            }
+		.background(Color.green)
+        }
 ```
 
 
 ### Decoration Views
 A UICollectionViewLayout can layout decoration views that do not relate to the data (eg. a section background). These cannot be configured so you must provide a View struct that can be initialised using .init().
-* You register the view type with the layout.
 * To enforce this requirement, your view must conform to the `Decoration` protocol. The only requirement of this is an initialiser with no arguments.
+* You must register the view type with the layout.
 * See the Reminders screen of the Demo app for a working example.
 
 Declaring a swift view conforming to `Decoration`:
@@ -174,16 +178,16 @@ struct GroupBackground: View, Decoration
 Registering the decoration type with the layout (ASCollectionLayout):
 ```swift
 var layout: ASCollectionLayout<Section>
-	{
-		ASCollectionLayout<Section>
-		{ 
-            ... //Here is an example of including a decoration in a compositional layout.
+{
+	ASCollectionLayout<Section>
+	{ 
+            // ... Here is an example of including a decoration in a compositional layout.
             let sectionBackgroundDecoration = NSCollectionLayoutDecorationItem.background(elementKind: "groupBackground")
             sectionBackgroundDecoration.contentInsets = section.contentInsets
             section.decorationItems = [sectionBackgroundDecoration]
-            ...
-        }
-		.decorationView(GroupBackground.self, forDecorationViewOfKind: "groupBackground") //REGISTER the decoration view type
+            // ...
+}
+.decorationView(GroupBackground.self, forDecorationViewOfKind: "groupBackground") //REGISTER the decoration view type
 ```
 
 
@@ -197,7 +201,7 @@ Define layout for all sections:
 ASCollectionView(...) { ... }
 .layout {
     ASCollectionLayoutSection { layoutEnvironment in
-     //Construct and return a NSCollectionLayoutSection here
+    	//Construct and return a NSCollectionLayoutSection here
     }
 }
 ```
