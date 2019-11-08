@@ -1,7 +1,6 @@
 // ASCollectionView. Created by Apptek Studios 2019
 
 import SwiftUI
-import ASCollectionView
 
 struct MainView: View
 {
