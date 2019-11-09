@@ -69,6 +69,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
 	
 	var shouldInvalidateLayoutOnStateChange: Bool = false
+	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
 
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
@@ -294,7 +295,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					collectionViewController.collectionViewLayout.invalidateLayout()
 					collectionViewController.collectionView.layoutIfNeeded()
 				}
-				if collectionViewController.parent != nil {
+				if shouldAnimateInvalidatedLayoutOnStateChange && collectionViewController.parent != nil {
 					UIView.animate(
 						withDuration: 0.4,
 						delay: 0.0,
@@ -615,10 +616,15 @@ public extension ASCollectionView
 
 public extension ASCollectionView
 {
-	func shouldInvalidateLayoutOnStateChange(_ shouldInvalidate: Bool) -> Self
+	/// For use in cases where you would like to change layout settings in response to a change in variables referenced by your layout closure.
+	/// Note: this ensures the layout is invalidated
+	/// - For UICollectionViewCompositionalLayout this means that your SectionLayout closure will be called again
+	/// - closures capture value types when created, therefore you must refer to a reference type in your layout closure if you want it to update.
+	func shouldInvalidateLayoutOnStateChange(_ shouldInvalidate: Bool, animated: Bool = true) -> Self
 	{
 		var this = self
 		this.shouldInvalidateLayoutOnStateChange = shouldInvalidate
+		this.shouldAnimateInvalidatedLayoutOnStateChange = animated
 		return this
 	}
 }
