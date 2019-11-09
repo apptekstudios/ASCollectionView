@@ -126,7 +126,24 @@ extension AdjustableGridScreen
 	{
 		ASCollectionLayout(scrollDirection: .vertical, interSectionSpacing: 0)
 		{
-			ASCollectionLayoutSection.grid(layoutMode: .fixedNumberOfColumns(self.layoutState.safeNumberOfColumns))
+			ASCollectionLayoutSection {
+				let gridBlockSize = NSCollectionLayoutDimension.fractionalWidth(1 / CGFloat(self.layoutState.safeNumberOfColumns))
+				let item = NSCollectionLayoutItem(
+					layoutSize: NSCollectionLayoutSize(
+						widthDimension: gridBlockSize,
+						heightDimension: .fractionalHeight(1.0)
+					)
+				)
+				
+				let itemsGroup = NSCollectionLayoutGroup.horizontal(
+					layoutSize: NSCollectionLayoutSize(
+						widthDimension: .fractionalWidth(1.0),
+						heightDimension: gridBlockSize),
+					subitems: [item])
+				
+				let section = NSCollectionLayoutSection(group: itemsGroup)
+				return section
+			}
 		}
 	}
 }
