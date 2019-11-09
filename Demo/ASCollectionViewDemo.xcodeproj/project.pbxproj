@@ -36,6 +36,7 @@
 		B8A95E3923607F850017A7EA /* CustomDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A95E3823607F850017A7EA /* CustomDelegate.swift */; };
 		B8A95E3C2360800D0017A7EA /* MagazineLayout in Frameworks */ = {isa = PBXBuildFile; productRef = B8A95E3B2360800D0017A7EA /* MagazineLayout */; };
 		B8A95E3E236081500017A7EA /* MagazineLayoutScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A95E3D236081500017A7EA /* MagazineLayoutScreen.swift */; };
+		B8C00A972376350B0066348C /* AdjustableGridScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C00A96237634E90066348C /* AdjustableGridScreen.swift */; };
 		B8D8292E2371077800D3F0AE /* SampleUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8D8292D2371077400D3F0AE /* SampleUsage.swift */; };
 /* End PBXBuildFile section */
 
@@ -70,6 +71,7 @@
 		B899D6FD23752BDE001BB5FA /* WaterfallScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaterfallScreen.swift; sourceTree = "<group>"; };
 		B8A95E3823607F850017A7EA /* CustomDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomDelegate.swift; sourceTree = "<group>"; };
 		B8A95E3D236081500017A7EA /* MagazineLayoutScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MagazineLayoutScreen.swift; sourceTree = "<group>"; };
+		B8C00A96237634E90066348C /* AdjustableGridScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdjustableGridScreen.swift; sourceTree = "<group>"; };
 		B8D8292D2371077400D3F0AE /* SampleUsage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SampleUsage.swift; path = ../readmeAssets/SampleUsage.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -177,6 +179,7 @@
 				B86C6F3B234B0B9D00522AEF /* AppStore */,
 				B86C6F3E234B0B9D00522AEF /* InstaFeed */,
 				B899D6FE23752BE2001BB5FA /* Waterfall */,
+				B8C00A95237634DB0066348C /* Experimental */,
 			);
 			path = Screens;
 			sourceTree = "<group>";
@@ -233,6 +236,14 @@
 				B8A95E3823607F850017A7EA /* CustomDelegate.swift */,
 			);
 			path = MagazineLayout;
+			sourceTree = "<group>";
+		};
+		B8C00A95237634DB0066348C /* Experimental */ = {
+			isa = PBXGroup;
+			children = (
+				B8C00A96237634E90066348C /* AdjustableGridScreen.swift */,
+			);
+			path = Experimental;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -313,6 +324,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B8C00A972376350B0066348C /* AdjustableGridScreen.swift in Sources */,
 				B8268B542363EF1B008C99A3 /* GroupLarge.swift in Sources */,
 				B86C6F44234B0B9D00522AEF /* ASCache.swift in Sources */,
 				B86C6F4B234B0B9D00522AEF /* AppViews.swift in Sources */,

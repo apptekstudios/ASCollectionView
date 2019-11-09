@@ -67,6 +67,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
 
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
+	
+	var shouldInvalidateLayoutOnStateChange: Bool = false
 
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
@@ -137,6 +139,21 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		let isEditing = editMode?.wrappedValue.isEditing ?? false
 		collectionView.allowsSelection = isEditing
 		collectionView.allowsMultipleSelection = isEditing
+		
+		if shouldInvalidateLayoutOnStateChange {
+			UIView.animate(
+				withDuration: 0.4,
+				delay: 0.0,
+				usingSpringWithDamping: 1.0,
+				initialSpringVelocity: 0.0,
+				options: UIView.AnimationOptions(),
+				animations: {
+					collectionView.collectionViewLayout.invalidateLayout()
+					collectionView.layoutIfNeeded()
+			},
+				completion: nil
+			)
+		}
 	}
 
 	public func makeCoordinator() -> Coordinator
@@ -582,6 +599,16 @@ public extension ASCollectionView
 	{
 		var this = self
 		this.layout = Layout(customLayout: customLayout)
+		return this
+	}
+}
+
+public extension ASCollectionView
+{
+	func shouldInvalidateLayoutOnStateChange(_ shouldInvalidate: Bool) -> Self
+	{
+		var this = self
+		this.shouldInvalidateLayoutOnStateChange = shouldInvalidate
 		return this
 	}
 }
