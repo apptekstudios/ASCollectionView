@@ -120,6 +120,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	{
 		context.coordinator.parent = self
 		updateCollectionViewSettings(collectionViewController.collectionView, delegate: context.coordinator.delegate)
+		context.coordinator.updateLayout()
 		context.coordinator.updateContent(collectionViewController.collectionView, animated: true, refreshExistingCells: true)
 	}
 
@@ -139,21 +140,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		let isEditing = editMode?.wrappedValue.isEditing ?? false
 		collectionView.allowsSelection = isEditing
 		collectionView.allowsMultipleSelection = isEditing
-		
-		if shouldInvalidateLayoutOnStateChange {
-			UIView.animate(
-				withDuration: 0.4,
-				delay: 0.0,
-				usingSpringWithDamping: 1.0,
-				initialSpringVelocity: 0.0,
-				options: UIView.AnimationOptions(),
-				animations: {
-					collectionView.collectionViewLayout.invalidateLayout()
-					collectionView.layoutIfNeeded()
-			},
-				completion: nil
-			)
-		}
 	}
 
 	public func makeCoordinator() -> Coordinator
@@ -298,6 +284,30 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 			populateDataSource(animated: collectionViewController?.parent != nil)
 			updateSelectionBindings(cv)
+		}
+		
+		func updateLayout()
+		{
+			guard let collectionViewController = collectionViewController else { return }
+			if parent.shouldInvalidateLayoutOnStateChange {
+				let changes = {
+					collectionViewController.collectionViewLayout.invalidateLayout()
+					collectionViewController.collectionView.layoutIfNeeded()
+				}
+				if collectionViewController.parent != nil {
+					UIView.animate(
+						withDuration: 0.4,
+						delay: 0.0,
+						usingSpringWithDamping: 1.0,
+						initialSpringVelocity: 0.0,
+						options: UIView.AnimationOptions(),
+						animations: changes,
+						completion: nil
+					)
+				} else {
+					changes()
+				}
+			}
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
