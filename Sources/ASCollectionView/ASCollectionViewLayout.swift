@@ -25,6 +25,7 @@ public struct ASCollectionLayout<SectionID: Hashable>
 	}
 
 	var layout: LayoutType
+	var configureLayout: ((UICollectionViewLayout) -> ())?
 	var decorationTypes: [(elementKind: String, ViewType: UICollectionReusableView.Type)] = []
 
 	public init(
@@ -43,9 +44,19 @@ public struct ASCollectionLayout<SectionID: Hashable>
 		self.layout = .compositional({ _ in layout() }, interSectionSpacing: interSectionSpacing, scrollDirection: scrollDirection)
 	}
 
-	public init(customLayout: () -> UICollectionViewLayout)
-	{
+	public init(customLayout: () -> UICollectionViewLayout) {
 		layout = .custom(customLayout())
+	}
+	
+	public init<LayoutClass: UICollectionViewLayout>(createCustomLayout: () -> LayoutClass, configureCustomLayout: ((LayoutClass) -> ())?)
+	{
+		layout = .custom(createCustomLayout())
+		configureLayout = configureCustomLayout.map { configuration in
+			{ layoutObject in
+				guard let layoutObject = layoutObject as? LayoutClass else { return }
+				configuration(layoutObject)
+			}
+		}
 	}
 
 	public func makeLayout(withCoordinator coordinator: ASCollectionView<SectionID>.Coordinator) -> UICollectionViewLayout
@@ -69,6 +80,11 @@ public struct ASCollectionLayout<SectionID: Hashable>
 			registerDecorationViews(cvLayout)
 			return cvLayout
 		}
+	}
+	
+	public func configureLayout(layoutObject: UICollectionViewLayout)
+	{
+		self.configureLayout?(layoutObject)
 	}
 
 	public static var `default`: ASCollectionLayout<SectionID>

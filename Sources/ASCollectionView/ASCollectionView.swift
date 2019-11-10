@@ -70,6 +70,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	
 	var shouldInvalidateLayoutOnStateChange: Bool = false
 	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
+	
+	var shouldRecreateLayoutOnStateChange: Bool = false
+	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
 
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
@@ -290,7 +293,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func updateLayout()
 		{
 			guard let collectionViewController = collectionViewController else { return }
-			if parent.shouldInvalidateLayoutOnStateChange {
+			//Configure any custom layout
+			parent.layout.configureLayout(layoutObject: collectionViewController.collectionView.collectionViewLayout)
+			
+			//If enabled, recreate the layout
+			if parent.shouldRecreateLayoutOnStateChange {
+				let newLayout = parent.layout.makeLayout(withCoordinator: self)
+				collectionViewController.collectionView.setCollectionViewLayout(newLayout, animated: parent.shouldAnimateRecreatedLayoutOnStateChange && collectionViewController.parent != nil)
+			}
+			//If enabled, invalidate the layout
+			else if parent.shouldInvalidateLayoutOnStateChange {
 				let changes = {
 					collectionViewController.collectionViewLayout.invalidateLayout()
 					collectionViewController.collectionView.layoutIfNeeded()
@@ -437,6 +449,16 @@ public extension ASCollectionView
 		var this = self
 		this.shouldInvalidateLayoutOnStateChange = shouldInvalidate
 		this.shouldAnimateInvalidatedLayoutOnStateChange = animated
+		return this
+	}
+	
+	/// For use in cases where you would like to recreate the layout object in response to a change in state. Eg. for changing layout types completely
+	/// If not changing the type of layout (eg. to a different class) t is preferable to invalidate the layout and update variables in the `configureCustomLayout` closure
+	func shouldRecreateLayoutOnStateChange(_ shouldRecreate: Bool, animated: Bool = true) -> Self
+	{
+		var this = self
+		this.shouldRecreateLayoutOnStateChange = shouldRecreate
+		this.shouldAnimateRecreatedLayoutOnStateChange = animated
 		return this
 	}
 }
@@ -628,6 +650,13 @@ public extension ASCollectionView
 	{
 		var this = self
 		this.layout = Layout(customLayout: customLayout)
+		return this
+	}
+	
+	func layout<LayoutClass: UICollectionViewLayout>(createCustomLayout: @escaping (() -> LayoutClass), configureCustomLayout: @escaping ((LayoutClass) -> ())) -> Self
+	{
+		var this = self
+		this.layout = Layout(createCustomLayout: createCustomLayout, configureCustomLayout: configureCustomLayout)
 		return this
 	}
 }
