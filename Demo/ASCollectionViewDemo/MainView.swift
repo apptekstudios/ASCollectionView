@@ -49,8 +49,8 @@ struct MainView: View
 
 				NavigationLink(destination: AdjustableGridScreen())
 				{
-					Image(systemName: "hammer")
-					Text("Experiment: adjustable layout")
+					Image(systemName: "8.square.fill")
+					Text("Adjustable layout")
 				}
 			}
 			.navigationBarTitle("Demo App")

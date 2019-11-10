@@ -8,23 +8,15 @@ class LayoutState: ObservableObject {
 	@Published
 	var numberOfColumns: Int = 3
 	
-	var safeNumberOfColumns: Int {
-		max(1, numberOfColumns)
-	}
+	@Published
+	var itemInset: Int = 0
 }
 
 struct AdjustableGridScreen: View
 {
 	@ObservedObject var layoutState = LayoutState()
-	@State var animateChange: Bool = true
+	@State var animateChange: Bool = false
 	@State var data: [Post] = DataSource.postsForSection(1, number: 1000)
-	@State var selectedItems: IndexSet = []
-
-	@Environment(\.editMode) private var editMode
-	var isEditing: Bool
-	{
-		editMode?.wrappedValue.isEditing ?? false
-	}
 
 	typealias SectionID = Int
 
@@ -68,32 +60,17 @@ struct AdjustableGridScreen: View
 	var body: some View
 	{
 		VStack {
-			Stepper("Number of columns", value: self.$layoutState.numberOfColumns)
+			Stepper("Number of columns", value: self.$layoutState.numberOfColumns, in: 0...10)
+				.padding()
+			Stepper("Item inset", value: self.$layoutState.itemInset, in: 0...5)
 				.padding()
 			Toggle(isOn: self.$animateChange) { Text("Animate layout change") }
 				.padding()
 			ASCollectionView(
-				selectedItems: $selectedItems,
 				section: section)
 				.layout(self.layout)
 				.shouldInvalidateLayoutOnStateChange(true, animated: self.animateChange) ///////////////////////// TELLS ASCOLLECTIONVIEW TO INVALIDATE THE LAYOUT WHEN THE VIEW IS UPDATED
-				.navigationBarTitle("Explore", displayMode: .inline)
-				.navigationBarItems(
-					trailing:
-					HStack(spacing: 20)
-					{
-						if self.isEditing
-						{
-							Button(action: {
-								self.data.remove(atOffsets: self.selectedItems)
-							})
-							{
-								Image(systemName: "trash")
-							}
-						}
-						
-						EditButton()
-				})
+				.navigationBarTitle("Adjustable Layout", displayMode: .inline)
 		}
 		
 	}
@@ -127,13 +104,15 @@ extension AdjustableGridScreen
 		ASCollectionLayout(scrollDirection: .vertical, interSectionSpacing: 0)
 		{
 			ASCollectionLayoutSection {
-				let gridBlockSize = NSCollectionLayoutDimension.fractionalWidth(1 / CGFloat(self.layoutState.safeNumberOfColumns))
+				let gridBlockSize = NSCollectionLayoutDimension.fractionalWidth(1 / CGFloat(self.layoutState.numberOfColumns))
 				let item = NSCollectionLayoutItem(
 					layoutSize: NSCollectionLayoutSize(
 						widthDimension: gridBlockSize,
 						heightDimension: .fractionalHeight(1.0)
 					)
 				)
+				let inset = CGFloat(self.layoutState.itemInset)
+				item.contentInsets = NSDirectionalEdgeInsets(top: inset, leading: inset, bottom: inset, trailing: inset)
 				
 				let itemsGroup = NSCollectionLayoutGroup.horizontal(
 					layoutSize: NSCollectionLayoutSize(
