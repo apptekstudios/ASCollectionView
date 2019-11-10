@@ -295,7 +295,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					collectionViewController.collectionViewLayout.invalidateLayout()
 					collectionViewController.collectionView.layoutIfNeeded()
 				}
-				if shouldAnimateInvalidatedLayoutOnStateChange && collectionViewController.parent != nil {
+				if parent.shouldAnimateInvalidatedLayoutOnStateChange && collectionViewController.parent != nil {
 					UIView.animate(
 						withDuration: 0.4,
 						delay: 0.0,
@@ -423,6 +423,24 @@ public extension ASCollectionView
 		return cv
 	}
 }
+
+
+// MARK: Modifer: Layout Invalidation
+public extension ASCollectionView
+{
+	/// For use in cases where you would like to change layout settings in response to a change in variables referenced by your layout closure.
+	/// Note: this ensures the layout is invalidated
+	/// - For UICollectionViewCompositionalLayout this means that your SectionLayout closure will be called again
+	/// - closures capture value types when created, therefore you must refer to a reference type in your layout closure if you want it to update.
+	func shouldInvalidateLayoutOnStateChange(_ shouldInvalidate: Bool, animated: Bool = true) -> Self
+	{
+		var this = self
+		this.shouldInvalidateLayoutOnStateChange = shouldInvalidate
+		this.shouldAnimateInvalidatedLayoutOnStateChange = animated
+		return this
+	}
+}
+
 
 internal protocol ASCollectionViewCoordinator: AnyObject
 {
@@ -610,21 +628,6 @@ public extension ASCollectionView
 	{
 		var this = self
 		this.layout = Layout(customLayout: customLayout)
-		return this
-	}
-}
-
-public extension ASCollectionView
-{
-	/// For use in cases where you would like to change layout settings in response to a change in variables referenced by your layout closure.
-	/// Note: this ensures the layout is invalidated
-	/// - For UICollectionViewCompositionalLayout this means that your SectionLayout closure will be called again
-	/// - closures capture value types when created, therefore you must refer to a reference type in your layout closure if you want it to update.
-	func shouldInvalidateLayoutOnStateChange(_ shouldInvalidate: Bool, animated: Bool = true) -> Self
-	{
-		var this = self
-		this.shouldInvalidateLayoutOnStateChange = shouldInvalidate
-		this.shouldAnimateInvalidatedLayoutOnStateChange = animated
 		return this
 	}
 }

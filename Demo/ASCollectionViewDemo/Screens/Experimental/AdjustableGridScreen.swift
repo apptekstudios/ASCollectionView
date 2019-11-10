@@ -16,8 +16,9 @@ class LayoutState: ObservableObject {
 struct AdjustableGridScreen: View
 {
 	@ObservedObject var layoutState = LayoutState()
+	@State var animateChange: Bool = true
 	@State var data: [Post] = DataSource.postsForSection(1, number: 1000)
-	@State var selectedItems: [SectionID: IndexSet] = [:]
+	@State var selectedItems: IndexSet = []
 
 	@Environment(\.editMode) private var editMode
 	var isEditing: Bool
@@ -69,11 +70,13 @@ struct AdjustableGridScreen: View
 		VStack {
 			Stepper("Number of columns", value: self.$layoutState.numberOfColumns)
 				.padding()
+			Toggle(isOn: self.$animateChange) { Text("Animate layout change") }
+				.padding()
 			ASCollectionView(
 				selectedItems: $selectedItems,
-				sections: [section])
+				section: section)
 				.layout(self.layout)
-				.shouldInvalidateLayoutOnStateChange(true)
+				.shouldInvalidateLayoutOnStateChange(true, animated: self.animateChange) ///////////////////////// TELLS ASCOLLECTIONVIEW TO INVALIDATE THE LAYOUT WHEN THE VIEW IS UPDATED
 				.navigationBarTitle("Explore", displayMode: .inline)
 				.navigationBarItems(
 					trailing:
@@ -82,10 +85,7 @@ struct AdjustableGridScreen: View
 						if self.isEditing
 						{
 							Button(action: {
-								if let (_, indexSet) = self.selectedItems.first
-								{
-									self.data.remove(atOffsets: indexSet)
-								}
+								self.data.remove(atOffsets: self.selectedItems)
 							})
 							{
 								Image(systemName: "trash")
