@@ -7,7 +7,7 @@ import UIKit
 struct PhotoGridScreen: View
 {
 	@State var data: [Post] = DataSource.postsForSection(1, number: 1000)
-	@State var selectedItems: [SectionID: IndexSet] = [:]
+	@State var selectedItems: IndexSet = []
 
 	@Environment(\.editMode) private var editMode
 	var isEditing: Bool
@@ -59,7 +59,7 @@ struct PhotoGridScreen: View
 	{
 		ASCollectionView(
 			selectedItems: $selectedItems,
-			sections: [section])
+			section: section)
 			.layout(self.layout)
 			.navigationBarTitle("Explore", displayMode: .inline)
 			.navigationBarItems(
@@ -69,10 +69,7 @@ struct PhotoGridScreen: View
 					if self.isEditing
 					{
 						Button(action: {
-							if let (_, indexSet) = self.selectedItems.first
-							{
-								self.data.remove(atOffsets: indexSet)
-							}
+							self.data.remove(atOffsets: self.selectedItems)
 						})
 						{
 							Image(systemName: "trash")

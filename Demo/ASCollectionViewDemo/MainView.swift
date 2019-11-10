@@ -44,6 +44,11 @@ struct MainView: View
 					Image(systemName: "7.square.fill")
 					Text("Waterfall (Work in progress)")
 				}
+				NavigationLink(destination: AdjustableGridScreen())
+				{
+					Image(systemName: "8.square.fill")
+					Text("Adjustable layout")
+				}
 			}
 			.navigationBarTitle("Demo App")
 		}

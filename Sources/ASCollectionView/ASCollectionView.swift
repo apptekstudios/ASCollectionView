@@ -67,6 +67,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
 
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
+	
+	var shouldInvalidateLayoutOnStateChange: Bool = false
+	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
 
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
@@ -118,6 +121,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	{
 		context.coordinator.parent = self
 		updateCollectionViewSettings(collectionViewController.collectionView, delegate: context.coordinator.delegate)
+		context.coordinator.updateLayout()
 		context.coordinator.updateContent(collectionViewController.collectionView, animated: true, refreshExistingCells: true)
 	}
 
@@ -282,6 +286,30 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			populateDataSource(animated: collectionViewController?.parent != nil)
 			updateSelectionBindings(cv)
 		}
+		
+		func updateLayout()
+		{
+			guard let collectionViewController = collectionViewController else { return }
+			if parent.shouldInvalidateLayoutOnStateChange {
+				let changes = {
+					collectionViewController.collectionViewLayout.invalidateLayout()
+					collectionViewController.collectionView.layoutIfNeeded()
+				}
+				if parent.shouldAnimateInvalidatedLayoutOnStateChange && collectionViewController.parent != nil {
+					UIView.animate(
+						withDuration: 0.4,
+						delay: 0.0,
+						usingSpringWithDamping: 1.0,
+						initialSpringVelocity: 0.0,
+						options: UIView.AnimationOptions(),
+						animations: changes,
+						completion: nil
+					)
+				} else {
+					changes()
+				}
+			}
+		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 		{
@@ -395,6 +423,24 @@ public extension ASCollectionView
 		return cv
 	}
 }
+
+
+// MARK: Modifer: Layout Invalidation
+public extension ASCollectionView
+{
+	/// For use in cases where you would like to change layout settings in response to a change in variables referenced by your layout closure.
+	/// Note: this ensures the layout is invalidated
+	/// - For UICollectionViewCompositionalLayout this means that your SectionLayout closure will be called again
+	/// - closures capture value types when created, therefore you must refer to a reference type in your layout closure if you want it to update.
+	func shouldInvalidateLayoutOnStateChange(_ shouldInvalidate: Bool, animated: Bool = true) -> Self
+	{
+		var this = self
+		this.shouldInvalidateLayoutOnStateChange = shouldInvalidate
+		this.shouldAnimateInvalidatedLayoutOnStateChange = animated
+		return this
+	}
+}
+
 
 internal protocol ASCollectionViewCoordinator: AnyObject
 {
