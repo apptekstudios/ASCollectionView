@@ -179,7 +179,7 @@
 				B86C6F3B234B0B9D00522AEF /* AppStore */,
 				B86C6F3E234B0B9D00522AEF /* InstaFeed */,
 				B899D6FE23752BE2001BB5FA /* Waterfall */,
-				B8C00A95237634DB0066348C /* Experimental */,
+				B8C00A95237634DB0066348C /* AdjustableLayout */,
 			);
 			path = Screens;
 			sourceTree = "<group>";
@@ -238,12 +238,12 @@
 			path = MagazineLayout;
 			sourceTree = "<group>";
 		};
-		B8C00A95237634DB0066348C /* Experimental */ = {
+		B8C00A95237634DB0066348C /* AdjustableLayout */ = {
 			isa = PBXGroup;
 			children = (
 				B8C00A96237634E90066348C /* AdjustableGridScreen.swift */,
 			);
-			path = Experimental;
+			path = AdjustableLayout;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
