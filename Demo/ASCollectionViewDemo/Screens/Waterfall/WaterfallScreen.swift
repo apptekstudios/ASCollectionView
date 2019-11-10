@@ -10,6 +10,7 @@ struct WaterfallScreen: View
 {
 	@State var data: [Post] = DataSource.postsForSection(1, number: 1000)
 	@State var selectedItems: [SectionID: IndexSet] = [:]
+	@State var columnMinSize: CGFloat = 150
 
 	@Environment(\.editMode) private var editMode
 	var isEditing: Bool
@@ -66,32 +67,41 @@ struct WaterfallScreen: View
 
 	var body: some View
 	{
-		ASCollectionView(
-			selectedItems: $selectedItems,
-			sections: [section])
-			.layout(self.layout)
-			.customDelegate(WaterfallScreenLayoutDelegate.init)
-			.contentInsets(.init(top: 10, left: 10, bottom: 10, right: 10))
-			.navigationBarTitle("Waterfall (Work in progress)", displayMode: .inline)
-			.navigationBarItems(
-				trailing:
-				HStack(spacing: 20)
-				{
-					if self.isEditing
+		VStack(spacing: 0) {
+			if self.isEditing {
+				HStack {
+					Text("Min. column size")
+					Slider(value: self.$columnMinSize, in: 60...200)
+				}.padding()
+			}
+			
+			ASCollectionView(
+				selectedItems: $selectedItems,
+				sections: [section])
+				.layout(self.layout)
+				.customDelegate(WaterfallScreenLayoutDelegate.init)
+				.contentInsets(.init(top: 0, left: 10, bottom: 10, right: 10))
+				.navigationBarTitle("Waterfall (Work in progress)", displayMode: .inline)
+				.navigationBarItems(
+					trailing:
+					HStack(spacing: 20)
 					{
-						Button(action: {
-							if let (_, indexSet) = self.selectedItems.first
-							{
-								self.data.remove(atOffsets: indexSet)
-							}
-						})
+						if self.isEditing
 						{
-							Image(systemName: "trash")
+							Button(action: {
+								if let (_, indexSet) = self.selectedItems.first
+								{
+									self.data.remove(atOffsets: indexSet)
+								}
+							})
+							{
+								Image(systemName: "trash")
+							}
 						}
-					}
-
-					EditButton()
-			})
+						
+						EditButton()
+				})
+		}
 	}
 
 	func onCellEvent(_ event: CellEvent<Post>)
@@ -120,11 +130,17 @@ extension WaterfallScreen
 {
 	var layout: ASCollectionLayout<Int>
 	{
+		ASCollectionLayout(createCustomLayout: ASWaterfallLayout.init) { layout in
+			layout.numberOfColumns = .adaptive(minWidth: self.columnMinSize)
+		}
+		// Can also initialise like this when no need to dynamically update values
+		/*
 		ASCollectionLayout
 		{
 			let layout = ASWaterfallLayout()
 			return layout
 		}
+		*/
 	}
 }
 

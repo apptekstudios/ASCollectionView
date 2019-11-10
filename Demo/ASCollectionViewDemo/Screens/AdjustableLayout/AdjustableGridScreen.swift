@@ -15,6 +15,7 @@ class LayoutState: ObservableObject {
 struct AdjustableGridScreen: View
 {
 	@ObservedObject var layoutState = LayoutState()
+	@State var showConfig: Bool = true
 	@State var animateChange: Bool = false
 	@State var data: [Post] = DataSource.postsForSection(1, number: 1000)
 
@@ -56,9 +57,8 @@ struct AdjustableGridScreen: View
 			}
 		}
 	}
-
-	var body: some View
-	{
+	
+	var config: some View {
 		VStack {
 			Stepper("Number of columns", value: self.$layoutState.numberOfColumns, in: 0...10)
 				.padding()
@@ -66,12 +66,28 @@ struct AdjustableGridScreen: View
 				.padding()
 			Toggle(isOn: self.$animateChange) { Text("Animate layout change") }
 				.padding()
+		}
+	}
+
+	var body: some View
+	{
+		VStack {
+			if showConfig {
+				config
+			}
 			ASCollectionView(
 				section: section)
 				.layout(self.layout)
 				.shouldInvalidateLayoutOnStateChange(true, animated: self.animateChange) ///////////////////////// TELLS ASCOLLECTIONVIEW TO INVALIDATE THE LAYOUT WHEN THE VIEW IS UPDATED
 				.navigationBarTitle("Adjustable Layout", displayMode: .inline)
 		}
+		.navigationBarItems(trailing:
+			Button(action: {
+				self.showConfig.toggle()
+			}) {
+				Text("Toggle config")
+			}
+		)
 		
 	}
 
