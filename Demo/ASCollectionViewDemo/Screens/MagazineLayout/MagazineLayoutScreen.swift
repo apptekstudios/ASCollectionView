@@ -9,7 +9,7 @@ struct MagazineLayoutScreen: View
 {
 	@State var data: [[Post]] = (0...5).map
 	{
-		DataSource.postsForSection($0, number: 10)
+		DataSource.postsForGridSection($0, number: 10)
 	}
 
 	var sections: [ASCollectionViewSection<Int>]

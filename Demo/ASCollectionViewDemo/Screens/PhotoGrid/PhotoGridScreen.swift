@@ -6,7 +6,7 @@ import UIKit
 
 struct PhotoGridScreen: View
 {
-	@State var data: [Post] = DataSource.postsForSection(1, number: 1000)
+	@State var data: [Post] = DataSource.postsForGridSection(1, number: 1000)
 	@State var selectedItems: IndexSet = []
 
 	@Environment(\.editMode) private var editMode

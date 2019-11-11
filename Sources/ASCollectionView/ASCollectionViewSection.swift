@@ -33,7 +33,10 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 		dataSource.getUniqueItemIDs(withSectionID: id)
 	}
 
-	var estimatedItemSize: CGSize?
+	//Only relevant for ASTableView
+	var estimatedRowHeight: CGFloat?
+	var estimatedHeaderHeight: CGFloat?
+	var estimatedFooterHeight: CGFloat?
 
 	/**
 	 Initializes a  section with data
@@ -42,7 +45,6 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 	 	- id: The id for this section
 	 	- data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'
 	 	- dataID: The keypath to a hashable identifier of each data item
-	 	- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
 	 	- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
 	 - onDragDropEvent: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
@@ -51,13 +53,11 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 		id: SectionID,
 		data: [Data],
 		dataID dataIDKeyPath: KeyPath<Data, DataID>,
-		estimatedItemSize: CGSize? = nil,
 		onCellEvent: OnCellEvent<Data>? = nil,
 		onDragDropEvent: OnDragDrop<Data>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
 	{
 		self.id = id
-		self.estimatedItemSize = estimatedItemSize
 		dataSource = ASSectionDataSource<Data, DataID, Content>(
 			data: data,
 			dataIDKeyPath: dataIDKeyPath,
@@ -137,6 +137,15 @@ public extension ASCollectionViewSection
 		section.setSupplementaryView(content(), ofKind: kind)
 		return section
 	}
+	
+	func tableViewSetEstimatedSizes(rowHeight: CGFloat? = nil, headerHeight: CGFloat? = nil, footerHeight: CGFloat? = nil) -> Self
+	{
+		var section = self
+		section.estimatedRowHeight = rowHeight
+		section.estimatedHeaderHeight = headerHeight
+		section.estimatedFooterHeight = footerHeight
+		return section
+	}
 }
 
 // MARK: STATIC CONTENT SECTION
@@ -189,7 +198,6 @@ public extension ASCollectionViewSection
 	 - Parameters:
 	 	- id: The id for this section
 	 	- data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'
-	 	- estimatedItemSize: (Optional) Provide an estimated item size to aid in calculating the layout
 	 	- onCellEvent: Use this to respond to cell appearance/disappearance, and preloading events.
 	 - onDragDropEvent: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
@@ -197,11 +205,10 @@ public extension ASCollectionViewSection
 	@inlinable init<Content: View, Data: Identifiable>(
 		id: SectionID,
 		data: [Data],
-		estimatedItemSize: CGSize? = nil,
 		onCellEvent: OnCellEvent<Data>? = nil,
 		onDragDropEvent: OnDragDrop<Data>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
 	{
-		self.init(id: id, data: data, dataID: \.id, estimatedItemSize: estimatedItemSize, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: \.id, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, contentBuilder: contentBuilder)
 	}
 }
