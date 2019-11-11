@@ -17,7 +17,7 @@ struct AdjustableGridScreen: View
 	@ObservedObject var layoutState = LayoutState()
 	@State var showConfig: Bool = true
 	@State var animateChange: Bool = false
-	@State var data: [Post] = DataSource.postsForSection(1, number: 1000)
+	@State var data: [Post] = DataSource.postsForGridSection(1, number: 1000)
 
 	typealias SectionID = Int
 

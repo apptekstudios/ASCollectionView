@@ -8,7 +8,7 @@ import UIKit
 ///THIS IS A WORK IN PROGRESS
 struct WaterfallScreen: View
 {
-	@State var data: [Post] = DataSource.postsForSection(1, number: 1000)
+	@State var data: [Post] = DataSource.postsForWaterfallSection(1, number: 1000)
 	@State var selectedItems: [SectionID: IndexSet] = [:]
 	@State var columnMinSize: CGFloat = 150
 

@@ -88,7 +88,16 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	var hostingController: ASHostingControllerProtocol?
 
 	private(set) var id: Int?
-
+	
+	override init(reuseIdentifier: String?) {
+		super.init(reuseIdentifier: reuseIdentifier)
+		backgroundView = UIView()
+	}
+	
+	required init?(coder: NSCoder) {
+		fatalError("init(coder:) has not been implemented")
+	}
+	
 	func setupFor<Content: View>(id: Int, view: Content?)
 	{
 		self.id = id
@@ -99,7 +108,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		else
 		{
 			hostingController = nil
-			subviews.forEach { $0.removeFromSuperview() }
+			contentView.subviews.forEach { $0.removeFromSuperview() }
 		}
 	}
 
@@ -115,7 +124,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		{
 			$0.viewController.removeFromParent()
 			vc?.addChild($0.viewController)
-			addSubview($0.viewController.view)
+			contentView.addSubview($0.viewController.view)
 
 			setNeedsLayout()
 
@@ -131,13 +140,13 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	override func prepareForReuse()
 	{
 		hostingController = nil
-		subviews.forEach { $0.removeFromSuperview() }
+		contentView.subviews.forEach { $0.removeFromSuperview() }
 	}
 
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
-		hostingController?.viewController.view.frame = bounds
+		hostingController?.viewController.view.frame = contentView.bounds
 	}
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize

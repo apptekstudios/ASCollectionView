@@ -6,7 +6,7 @@ import UIKit
 
 struct InstaFeedScreen: View
 {
-	@State var data: [[Post]] = (0...3).map { DataSource.postsForSection($0) }
+	@State var data: [[Post]] = (0...3).map { DataSource.postsForInstaSection($0) }
 
 	var sections: [ASTableViewSection<Int>]
 	{
@@ -37,10 +37,21 @@ struct InstaFeedScreen: View
 				return ASTableViewSection(
 					id: i,
 					data: sectionData,
-					estimatedItemSize: CGSize(width: 0, height: 500),
 					onCellEvent: onCellEventPosts)
 				{ item, _ in
 					PostView(post: item)
+				}
+				.tableViewSetEstimatedSizes(rowHeight: 500, headerHeight: 50) //Optional: Provide reasonable estimated heights for this section
+				.sectionHeader {
+					VStack(spacing: 0) {
+						HStack {
+							Text("Demo sticky header view")
+								.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+							Spacer()
+						}
+						Divider()
+					}
+					.background(Color(.secondarySystemBackground))
 				}
 			}
 		}
@@ -60,7 +71,7 @@ struct InstaFeedScreen: View
 	func loadMoreContent()
 	{
 		let a = data.count
-		data.append(DataSource.postsForSection(a))
+		data.append(DataSource.postsForInstaSection(a))
 	}
 
 	func onCellEventStories(_ event: CellEvent<Post>)

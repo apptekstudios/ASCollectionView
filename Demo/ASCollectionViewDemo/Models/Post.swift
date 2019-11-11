@@ -47,7 +47,25 @@ struct Post: Identifiable
 
 struct DataSource
 {
-	static func postsForSection(_ sectionID: Int, number: Int = 12) -> [Post]
+	static func postsForGridSection(_ sectionID: Int, number: Int = 12) -> [Post]
+	{
+		(0..<number).map
+			{ b -> Post in
+				let aspect: CGFloat = 1
+				return Post.randomPost(sectionID * 10_000 + b, aspectRatio: aspect, offset: b)
+		}
+	}
+	
+	static func postsForInstaSection(_ sectionID: Int, number: Int = 12) -> [Post]
+	{
+		(0..<number).map
+			{ b -> Post in
+				let aspect: CGFloat = [0.75, 1.0, 1.5].randomElement() ?? 1
+				return Post.randomPost(sectionID * 10_000 + b, aspectRatio: aspect, offset: b)
+		}
+	}
+	
+	static func postsForWaterfallSection(_ sectionID: Int, number: Int = 12) -> [Post]
 	{
 		(0..<number).map
 			{ b -> Post in

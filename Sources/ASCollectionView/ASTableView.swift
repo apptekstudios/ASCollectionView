@@ -11,9 +11,9 @@ extension ASTableView where SectionID == Int
 	 - Parameters:
 	 - section: A single section (ASTableViewSection)
 	 */
-	public init(mode: UITableView.Style = .plain, selectedItems: Binding<IndexSet>? = nil, section: Section)
+	public init(style: UITableView.Style = .plain, selectedItems: Binding<IndexSet>? = nil, section: Section)
 	{
-		self.mode = mode
+		self.style = style
 		self.selectedItems = selectedItems.map
 		{ selectedItems in
 			Binding(
@@ -27,13 +27,13 @@ extension ASTableView where SectionID == Int
 	 Initializes a  table view with a single section.
 	 */
 	public init<Data, DataID: Hashable, Content: View>(
-		mode: UITableView.Style = .plain,
+		style: UITableView.Style = .plain,
 		data: [Data],
 		dataID dataIDKeyPath: KeyPath<Data, DataID>,
 		selectedItems: Binding<IndexSet>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
 	{
-		self.mode = mode
+		self.style = style
 		let section = ASTableViewSection(
 			id: 0,
 			data: data,
@@ -53,7 +53,7 @@ extension ASTableView where SectionID == Int
 	 */
 	init(@ViewArrayBuilder staticContent: (() -> [AnyView])) //Clashing with above functions in Swift 5.1, therefore internal for time being
 	{
-		self.mode = .plain
+		self.style = .plain
 		self.sections = [
 			ASTableViewSection(id: 0, content: staticContent)
 		]
@@ -66,7 +66,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 {
 	public typealias Section = ASTableViewSection<SectionID>
 	public var sections: [Section]
-	public var mode: UITableView.Style
+	public var style: UITableView.Style
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
 
 	@Environment(\.tableViewSeparatorsEnabled) private var separatorsEnabled
@@ -82,16 +82,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	 - Parameters:
 	 - sections: An array of sections (ASTableViewSection)
 	 */
-	@inlinable public init(mode: UITableView.Style = .plain, selectedItems: Binding<[SectionID: IndexSet]>? = nil, sections: [Section])
+	@inlinable public init(style: UITableView.Style = .plain, selectedItems: Binding<[SectionID: IndexSet]>? = nil, sections: [Section])
 	{
-		self.mode = mode
+		self.style = style
 		self.selectedItems = selectedItems
 		self.sections = sections
 	}
 
-	@inlinable public init(mode: UITableView.Style = .plain, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
+	@inlinable public init(style: UITableView.Style = .plain, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
 	{
-		self.mode = mode
+		self.style = style
 		self.selectedItems = selectedItems
 		sections = sectionBuilder()
 	}
@@ -100,7 +100,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	{
 		context.coordinator.parent = self
 
-		let tableViewController = UITableViewController(style: .plain)
+		let tableViewController = UITableViewController(style: style)
 		tableViewController.tableView.tableFooterView = UIView()
 		updateTableViewSettings(tableViewController.tableView)
 		context.coordinator.tableViewController = tableViewController
@@ -246,7 +246,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 		public func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat
 		{
-			parent.sections[indexPath.section].estimatedItemSize?.height ?? 50
+			parent.sections[indexPath.section].estimatedRowHeight ?? 50
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
@@ -336,6 +336,58 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				selectedItemsBinding.wrappedValue = selectedBySection
 			}
 		}
+		
+		public func tableView(_ tableView: UITableView, estimatedHeightForHeaderInSection section: Int) -> CGFloat {
+			guard self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else {
+				return CGFloat.leastNormalMagnitude
+			}
+			return parent.sections[section].estimatedHeaderHeight ?? 50
+		}
+		
+		public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+			guard self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else {
+				return CGFloat.leastNormalMagnitude
+			}
+			return UITableView.automaticDimension
+		}
+		
+		public func tableView(_ tableView: UITableView, estimatedHeightForFooterInSection section: Int) -> CGFloat {
+			guard self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else {
+				return CGFloat.leastNormalMagnitude
+			}
+			return parent.sections[section].estimatedFooterHeight ?? 50
+		}
+		
+		public func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+			guard self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else {
+				return CGFloat.leastNormalMagnitude
+			}
+			return UITableView.automaticDimension
+		}
+		
+		public func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: self.supplementaryReuseID) as? ASTableViewSupplementaryView
+				else { return nil }
+			if let supplementaryView = self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader)
+			{
+				reusableView.setupFor(
+					id: section,
+					view: supplementaryView)
+			}
+			return reusableView
+		}
+		
+		public func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: self.supplementaryReuseID) as? ASTableViewSupplementaryView
+				else { return nil }
+			if let supplementaryView = self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter)
+			{
+				reusableView.setupFor(
+					id: section,
+					view: supplementaryView)
+			}
+			return reusableView
+		}
 
 		public func scrollViewDidScroll(_ scrollView: UIScrollView)
 		{
@@ -360,3 +412,20 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		}
 	}
 }
+
+/*
+class ASTableViewDataSource<SectionIdentifierType, ItemIdentifierType>: UITableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType : Hashable, ItemIdentifierType : Hashable {
+	public typealias HeaderFooterViewProvider = (_ sectionIndex: Int) -> UITableViewHeaderFooterView?
+	
+	public var headerViewProvider: HeaderFooterViewProvider?
+	public var footerViewProvider: HeaderFooterViewProvider?
+
+	func headerView(forSection section: Int) -> UITableViewHeaderFooterView? {
+		headerViewProvider?(section)
+	}
+	
+	func footerView(forSection section: Int) -> UITableViewHeaderFooterView? {
+		footerViewProvider?(section)
+	}
+}
+*/
