@@ -39,6 +39,7 @@ public enum DragDrop<Data>
 {
 	case onRemoveItem(indexPath: IndexPath)
 	case onAddItems(items: [Data], atIndexPath: IndexPath)
+    case onItemProvider(indexPath: IndexPath, itemProvider: (NSItemProvider) -> Void)
 }
 
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
@@ -143,9 +144,14 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	{
 		guard dragEnabled else { return nil }
-		let dragItem = UIDragItem(itemProvider: NSItemProvider())
-		dragItem.localObject = data[indexPath.item]
-		return dragItem
+        guard indexPath.item < data.endIndex else { return nil }
+        guard let onDragDrop = onDragDrop else { return nil }
+        var itemProvider: NSItemProvider? = nil
+        onDragDrop(.onItemProvider(indexPath: indexPath) { generatedItemProvider in
+            itemProvider = generatedItemProvider
+        })
+        if itemProvider == nil { return nil }
+		return UIDragItem(itemProvider: itemProvider!)
 	}
 
 	func removeItem(from indexPath: IndexPath)

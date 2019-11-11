@@ -109,6 +109,9 @@ struct PhotoGridScreen: View
 			data.remove(at: indexPath.item)
 		case let .onAddItems(items, indexPath):
 			data.insert(contentsOf: items, at: indexPath.item)
+        case let .onItemProvider(indexPath, itemProvider):
+            let it = NSItemProvider(object: "\(indexPath)" as NSString)
+            itemProvider(it)
 		}
 	}
 }
