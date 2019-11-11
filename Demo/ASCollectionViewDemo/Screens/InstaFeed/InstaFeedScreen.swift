@@ -42,6 +42,14 @@ struct InstaFeedScreen: View
 				{ item, _ in
 					PostView(post: item)
 				}
+				.sectionHeader {
+					HStack {
+						Text("Demo sticky header view")
+							.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+						Spacer()
+					}
+					.background(Color(.secondarySystemBackground))
+				}
 			}
 		}
 	}

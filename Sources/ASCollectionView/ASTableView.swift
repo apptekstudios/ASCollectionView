@@ -336,6 +336,60 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				selectedItemsBinding.wrappedValue = selectedBySection
 			}
 		}
+		
+		public func tableView(_ tableView: UITableView, estimatedHeightForHeaderInSection section: Int) -> CGFloat {
+			guard self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else {
+				return CGFloat.leastNormalMagnitude
+			}
+			#warning("Implement customisation of estimated height")
+			return 50
+		}
+		
+		public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+			guard self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else {
+				return CGFloat.leastNormalMagnitude
+			}
+			return UITableView.automaticDimension
+		}
+		
+		public func tableView(_ tableView: UITableView, estimatedHeightForFooterInSection section: Int) -> CGFloat {
+			guard self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else {
+				return CGFloat.leastNormalMagnitude
+			}
+			#warning("Implement customisation of estimated height")
+			return 50
+		}
+		
+		public func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
+			guard self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else {
+				return CGFloat.leastNormalMagnitude
+			}
+			return UITableView.automaticDimension
+		}
+		
+		public func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: self.supplementaryReuseID) as? ASTableViewSupplementaryView
+				else { return nil }
+			if let supplementaryView = self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader)
+			{
+				reusableView.setupFor(
+					id: section,
+					view: supplementaryView)
+			}
+			return reusableView
+		}
+		
+		public func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: self.supplementaryReuseID) as? ASTableViewSupplementaryView
+				else { return nil }
+			if let supplementaryView = self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter)
+			{
+				reusableView.setupFor(
+					id: section,
+					view: supplementaryView)
+			}
+			return reusableView
+		}
 
 		public func scrollViewDidScroll(_ scrollView: UIScrollView)
 		{
@@ -360,3 +414,20 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		}
 	}
 }
+
+/*
+class ASTableViewDataSource<SectionIdentifierType, ItemIdentifierType>: UITableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType : Hashable, ItemIdentifierType : Hashable {
+	public typealias HeaderFooterViewProvider = (_ sectionIndex: Int) -> UITableViewHeaderFooterView?
+	
+	public var headerViewProvider: HeaderFooterViewProvider?
+	public var footerViewProvider: HeaderFooterViewProvider?
+
+	func headerView(forSection section: Int) -> UITableViewHeaderFooterView? {
+		headerViewProvider?(section)
+	}
+	
+	func footerView(forSection section: Int) -> UITableViewHeaderFooterView? {
+		footerViewProvider?(section)
+	}
+}
+*/
