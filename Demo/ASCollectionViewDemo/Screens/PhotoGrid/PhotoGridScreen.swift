@@ -23,7 +23,11 @@ struct PhotoGridScreen: View
 			id: 0,
 			data: data,
 			onCellEvent: onCellEvent,
-			onDragDropEvent: onDragDropEvent)
+			onDragDropEvent: onDragDropEvent,
+			itemProvider: { item in
+				//Example of returning a custom item provider (eg. to support drag-drop to other apps)
+				NSItemProvider(object: item.url as NSURL)
+		})
 		{ item, state in
 			ZStack(alignment: .bottomTrailing)
 			{
@@ -109,9 +113,6 @@ struct PhotoGridScreen: View
 			data.remove(at: indexPath.item)
 		case let .onAddItems(items, indexPath):
 			data.insert(contentsOf: items, at: indexPath.item)
-		case let .onItemProvider(indexPath, itemProvider):
-			let it = NSItemProvider(object: "\(indexPath)" as NSString)
-			itemProvider(it)
 		}
 	}
 }
