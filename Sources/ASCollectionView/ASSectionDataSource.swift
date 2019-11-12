@@ -43,6 +43,7 @@ public enum DragDrop<Data>
 
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
 public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
+public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
 
 public struct CellContext
 {
@@ -57,6 +58,7 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 	var dataIDKeyPath: KeyPath<Data, DataID>
 	var onCellEvent: OnCellEvent<Data>?
 	var onDragDrop: OnDragDrop<Data>?
+	var itemProvider: ItemProvider<Data>?
 	var content: (Data, CellContext) -> Content
 
 	var dragEnabled: Bool { onDragDrop != nil }
@@ -143,7 +145,11 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	{
 		guard dragEnabled else { return nil }
-		let dragItem = UIDragItem(itemProvider: NSItemProvider())
+		guard indexPath.item < data.endIndex else { return nil }
+		let item = data[indexPath.item]
+		
+		let itemProvider: NSItemProvider = self.itemProvider?(item) ?? NSItemProvider()
+		let dragItem = UIDragItem(itemProvider: itemProvider)
 		dragItem.localObject = data[indexPath.item]
 		return dragItem
 	}

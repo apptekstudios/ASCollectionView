@@ -23,7 +23,11 @@ struct PhotoGridScreen: View
 			id: 0,
 			data: data,
 			onCellEvent: onCellEvent,
-			onDragDropEvent: onDragDropEvent)
+			onDragDropEvent: onDragDropEvent,
+			itemProvider: { item in
+				//Example of returning a custom item provider (eg. to support drag-drop to other apps)
+				NSItemProvider(object: item.url as NSURL)
+		})
 		{ item, state in
 			ZStack(alignment: .bottomTrailing)
 			{
