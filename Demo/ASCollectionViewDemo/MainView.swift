@@ -49,6 +49,11 @@ struct MainView: View
 					Image(systemName: "8.square.fill")
 					Text("Adjustable layout")
 				}
+				NavigationLink(destination: PhotoGridScreen(startingAtBottom: true))
+				{
+					Image(systemName: "hammer")
+					Text("Photo grid (Starting at bottom)")
+				}
 			}
 			.navigationBarTitle("Demo App")
 		}

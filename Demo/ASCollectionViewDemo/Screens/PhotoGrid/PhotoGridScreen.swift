@@ -6,6 +6,8 @@ import UIKit
 
 struct PhotoGridScreen: View
 {
+	var startingAtBottom: Bool = false
+	
 	@State var data: [Post] = DataSource.postsForGridSection(1, number: 1000)
 	@State var selectedItems: IndexSet = []
 
@@ -65,6 +67,7 @@ struct PhotoGridScreen: View
 			selectedItems: $selectedItems,
 			section: section)
 			.layout(self.layout)
+			.initialScrollPosition(startingAtBottom ? .bottom : nil)
 			.navigationBarTitle("Explore", displayMode: .inline)
 			.navigationBarItems(
 				trailing:

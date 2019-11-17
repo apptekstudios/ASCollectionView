@@ -78,6 +78,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
+	@Environment(\.initialScrollPosition) private var initialScrollPosition
 	@Environment(\.editMode) private var editMode
 
 	// MARK: Init for multi-section CVs
@@ -167,6 +168,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		let supplementaryEmptyKind = UUID().uuidString // Used to prevent crash if supplementaries defined in layout but not provided by the section
 
 		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
+		
+		var hasSetInitialScrollPosition = false
 
 		typealias Cell = ASCollectionViewCell
 
@@ -288,6 +291,60 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 			populateDataSource(animated: collectionViewController?.parent != nil)
 			updateSelectionBindings(cv)
+			if !hasSetInitialScrollPosition {
+				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
+				hasSetInitialScrollPosition = true
+			}
+		}
+		
+		func scrollToPosition(_ scrollPosition: ASCollectionViewScrollPosition, animated: Bool = false) {
+			switch scrollPosition {
+			case .top, .left:
+				collectionViewController?.collectionView.setContentOffset(.zero, animated: animated)
+			case .bottom:
+				guard let contentSize = collectionViewController?.collectionView.contentSizePlusInsets else { return }
+				collectionViewController?.collectionView.setContentOffset(.init(x: 0, y: contentSize.height), animated: animated)
+			case .right:
+				guard let contentSize = collectionViewController?.collectionView.contentSizePlusInsets else { return }
+				collectionViewController?.collectionView.setContentOffset(.init(x: contentSize.width, y: 0), animated: animated)
+			case .centerOnIndexPath(let indexPath):
+				guard let offset = getContentOffsetToCenterCell(at: indexPath) else { return }
+				collectionViewController?.collectionView.setContentOffset(offset, animated: animated)
+			}
+		}
+		
+		func prepareForOrientationChange() {
+			guard let collectionView = collectionViewController?.collectionView else { return }
+			//Get centremost cell
+			if let indexPath = collectionView.indexPathForItem(at: CGPoint(x: collectionView.bounds.midX, y: collectionView.bounds.midY)) {
+				//Item at centre
+				transitionCentralIndexPath = indexPath
+			} else if let visibleCells = collectionViewController?.collectionView.indexPathsForVisibleItems, !visibleCells.isEmpty {
+				//Approximate item at centre
+				transitionCentralIndexPath = visibleCells[visibleCells.count / 2]
+			} else {
+				transitionCentralIndexPath = nil
+			}
+		}
+		var transitionCentralIndexPath: IndexPath?
+		func getContentOffsetForOrientationChange() -> CGPoint? {
+			transitionCentralIndexPath.flatMap(getContentOffsetToCenterCell)
+		}
+		func completedOrientationChange() {
+			transitionCentralIndexPath = nil
+		}
+		
+		
+		func getContentOffsetToCenterCell(at indexPath: IndexPath) -> CGPoint? {
+			guard
+				let collectionView = collectionViewController?.collectionView,
+				let centerCellFrame = collectionView.layoutAttributesForItem(at: indexPath)?.frame
+				else { return nil }
+			let maxOffset = collectionView.maxContentOffset
+			print(maxOffset)
+			let newOffset = CGPoint(x: max(0, min(maxOffset.x, centerCellFrame.midX - (collectionView.bounds.width / 2))),
+									y: max(0, min(maxOffset.y, centerCellFrame.midY - (collectionView.bounds.height / 2))))
+			return newOffset
 		}
 		
 		func updateLayout()
@@ -467,6 +524,9 @@ public extension ASCollectionView
 internal protocol ASCollectionViewCoordinator: AnyObject
 {
 	func typeErasedDataForItem(at indexPath: IndexPath) -> Any?
+	func prepareForOrientationChange()
+	func getContentOffsetForOrientationChange() -> CGPoint?
+	func completedOrientationChange()
 	func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
@@ -555,6 +615,14 @@ extension ASCollectionView.Coordinator
 	}
 }
 
+public enum ASCollectionViewScrollPosition {
+	case top
+	case bottom
+	case left
+	case right
+	case centerOnIndexPath(_ : IndexPath)
+}
+
 public class AS_CollectionViewController: UIViewController
 {
 	weak var coordinator: ASCollectionViewCoordinator?
@@ -593,14 +661,25 @@ public class AS_CollectionViewController: UIViewController
 
 	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
 	{
+		//Get current central cell
+		self.coordinator?.prepareForOrientationChange()
+		
 		super.viewWillTransition(to: size, with: coordinator)
 		// The following is a workaround to fix the interface rotation animation under SwiftUI
 		view.frame = CGRect(origin: view.frame.origin, size: size)
+		
 		coordinator.animate(alongsideTransition: { _ in
 			self.view.setNeedsLayout()
 			self.view.layoutIfNeeded()
-			self.collectionViewLayout.invalidateLayout()
-		}, completion: nil)
+			UIView.performWithoutAnimation {
+				if let desiredOffset = self.coordinator?.getContentOffsetForOrientationChange() {
+					self.collectionView.contentOffset = desiredOffset
+				}
+			}
+		}) { _ in
+			//Completion
+			self.coordinator?.completedOrientationChange()
+		}
 	}
 
 	public override func viewSafeAreaInsetsDidChange()

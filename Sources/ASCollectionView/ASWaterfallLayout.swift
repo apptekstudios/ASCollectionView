@@ -50,7 +50,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 	private var cachedHeight: [IndexPath: CGFloat] = [:]
 	private var cachedSectionHeight: [Int: CGFloat] = [:]
 	
-	private var cachedAttributes: OrderedDictionary<IndexPath, UICollectionViewLayoutAttributes> = .init()
+	private var cachedAttributes: ASIndexedDictionary<IndexPath, UICollectionViewLayoutAttributes> = .init()
 	
 	private var contentHeight: CGFloat = 0
 	
@@ -205,45 +205,7 @@ public protocol ASWaterfallLayoutDelegate {
 
 
 //MARK: Helpers
-
-extension UICollectionView {
-	var allSections: Range<Int>? {
-		let sectionCount = dataSource?.numberOfSections?(in: self) ?? 1
-		guard sectionCount > 0 else { return nil }
-		return (0 ..< sectionCount)
-	}
-	
-	func allIndexPaths(inSection section: Int) -> [IndexPath] {
-		guard let itemCount = dataSource?.collectionView(self, numberOfItemsInSection: section), itemCount > 0 else { return [] }
-		return (0..<itemCount).map { item in
-			return IndexPath(item: item, section: section)
-		}
-	}
-	
-	func allIndexPaths() -> [IndexPath] {
-		guard let allSections = allSections else { return [] }
-		return allSections.flatMap { section -> [IndexPath] in
-			allIndexPaths(inSection: section)
-		}
-	}
-	func allIndexPaths(after afterIndexPath: IndexPath) -> [IndexPath] {
-		guard let sectionCount = dataSource?.numberOfSections?(in: self), sectionCount > 0 else { return [] }
-		return (afterIndexPath.section ..< sectionCount).flatMap { section -> [IndexPath] in
-			guard let itemCount = dataSource?.collectionView(self, numberOfItemsInSection: section), itemCount > 0 else { return [] }
-			let startIndex: Int
-			if section == afterIndexPath.section {
-				startIndex = afterIndexPath.item + 1
-			} else {
-				startIndex = 0
-			}
-			guard startIndex < itemCount else { return [] }
-			return (startIndex..<itemCount).map { item in
-				return IndexPath(item: item, section: section)
-			}
-		}
-	}
-}
-
+/*
 public func binarySearch<T: Collection>(_ sequence: T, searchFor: ((T.Element) -> Bool), shouldSearchEarlier: ((T.Element) -> Bool)) -> Int? where T.Index == Int {
 	var lowerBound = 0
 	var upperBound = sequence.count
@@ -258,68 +220,10 @@ public func binarySearch<T: Collection>(_ sequence: T, searchFor: ((T.Element) -
 		}
 	}
 	return nil
-}
+}*/
 
 extension Array where Element: Comparable {
 	public func indexOfMin() -> Int? {
 		self.min().flatMap(firstIndex(of:))
-	}
-}
-
-struct OrderedDictionary<Key: Hashable, Value>: BidirectionalCollection {
-	private var dictionary: [Key: Int] = [:]
-	private var array: [Value] = []
-	
-	
-	mutating func append(_ item: (key: Key, value: Value)) {
-		if let index = dictionary[item.key] {
-			array.remove(at: index)
-		}
-		array.append(item.value)
-		dictionary[item.key] = array.endIndex - 1
-	}
-	
-	mutating func append(_ items: [(key: Key, value: Value)]) {
-		items.forEach { append($0) }
-	}
-	
-	mutating func removeAll() {
-		dictionary.removeAll()
-		array.removeAll()
-	}
-	
-	var startIndex: Int { array.startIndex }
-	
-	var endIndex: Int { array.endIndex }
-	
-	var lastIndex: Int { Swift.max(startIndex, endIndex - 1) }
-	
-	func index(before i: Int) -> Int {
-		array.index(before: i)
-	}
-	
-	func index(after i: Int) -> Int {
-		array.index(after: i)
-	}
-	
-	subscript(index: Int) -> Value {
-		array[index]
-	}
-	
-	subscript(_ key: Key) -> Value? {
-		get {
-			dictionary[key].map { array[$0] }
-		}
-		set {
-			guard let newValue = newValue else {
-				_ = dictionary[key].map { array.remove(at: $0) }
-				return
-			}
-			if let index = dictionary[key] {
-				array[index] = newValue
-			} else {
-				append((key, value: newValue))
-			}
-		}
 	}
 }
