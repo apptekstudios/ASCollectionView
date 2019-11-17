@@ -147,7 +147,7 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 		guard dragEnabled else { return nil }
 		guard indexPath.item < data.endIndex else { return nil }
 		let item = data[indexPath.item]
-		
+
 		let itemProvider: NSItemProvider = self.itemProvider?(item) ?? NSItemProvider()
 		let dragItem = UIDragItem(itemProvider: itemProvider)
 		dragItem.localObject = data[indexPath.item]

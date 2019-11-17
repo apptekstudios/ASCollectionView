@@ -8,7 +8,8 @@ struct MainView: View
 	{
 		NavigationView
 		{
-			List {
+			List
+			{
 				NavigationLink(destination: PhotoGridScreen())
 				{
 					Image(systemName: "1.square.fill")

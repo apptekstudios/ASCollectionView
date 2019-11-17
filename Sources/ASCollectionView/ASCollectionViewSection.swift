@@ -33,7 +33,7 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 		dataSource.getUniqueItemIDs(withSectionID: id)
 	}
 
-	//Only relevant for ASTableView
+	// Only relevant for ASTableView
 	var estimatedRowHeight: CGFloat?
 	var estimatedHeaderHeight: CGFloat?
 	var estimatedFooterHeight: CGFloat?
@@ -139,7 +139,7 @@ public extension ASCollectionViewSection
 		section.setSupplementaryView(content(), ofKind: kind)
 		return section
 	}
-	
+
 	func tableViewSetEstimatedSizes(rowHeight: CGFloat? = nil, headerHeight: CGFloat? = nil, footerHeight: CGFloat? = nil) -> Self
 	{
 		var section = self

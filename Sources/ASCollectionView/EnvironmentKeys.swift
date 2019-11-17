@@ -86,7 +86,7 @@ public extension EnvironmentValues
 		get { return self[EnvironmentKeyASAlwaysBounceHorizontal.self] }
 		set { self[EnvironmentKeyASAlwaysBounceHorizontal.self] = newValue }
 	}
-	
+
 	var initialScrollPosition: ASCollectionViewScrollPosition?
 	{
 		get { return self[EnvironmentKeyASInitialScrollPosition.self] }
@@ -125,7 +125,7 @@ public extension View
 	{
 		environment(\.alwaysBounceVertical, alwaysBounce)
 	}
-	
+
 	func initialScrollPosition(_ scrollPosition: ASCollectionViewScrollPosition?) -> some View
 	{
 		environment(\.initialScrollPosition, scrollPosition)

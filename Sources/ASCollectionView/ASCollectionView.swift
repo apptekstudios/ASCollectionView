@@ -15,7 +15,7 @@ extension ASCollectionView where SectionID == Int
 	 */
 	public init(selectedItems: Binding<IndexSet>? = nil, section: Section)
 	{
-		self.sections = [section]
+		sections = [section]
 		self.selectedItems = selectedItems.map
 		{ selectedItems in
 			Binding(
@@ -38,7 +38,7 @@ extension ASCollectionView where SectionID == Int
 			data: data,
 			dataID: dataIDKeyPath,
 			contentBuilder: contentBuilder)
-		self.sections = [section]
+		sections = [section]
 		self.selectedItems = selectedItems.map
 		{ selectedItems in
 			Binding(
@@ -50,7 +50,7 @@ extension ASCollectionView where SectionID == Int
 	/**
 	 Initializes a  collection view with a single section of static content
 	 */
-	init(@ViewArrayBuilder staticContent: (() -> [AnyView])) //Clashing with above functions in Swift 5.1, therefore internal for time being
+	init(@ViewArrayBuilder staticContent: () -> [AnyView]) // Clashing with above functions in Swift 5.1, therefore internal for time being
 	{
 		sections = [
 			ASCollectionViewSection(id: 0, content: staticContent)
@@ -67,10 +67,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
 
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
-	
+
 	var shouldInvalidateLayoutOnStateChange: Bool = false
 	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
-	
+
 	var shouldRecreateLayoutOnStateChange: Bool = false
 	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
 
@@ -168,7 +168,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		let supplementaryEmptyKind = UUID().uuidString // Used to prevent crash if supplementaries defined in layout but not provided by the section
 
 		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
-		
+
 		var hasSetInitialScrollPosition = false
 
 		typealias Cell = ASCollectionViewCell
@@ -291,14 +291,17 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 			populateDataSource(animated: collectionViewController?.parent != nil)
 			updateSelectionBindings(cv)
-			if !hasSetInitialScrollPosition {
+			if !hasSetInitialScrollPosition
+			{
 				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
 				hasSetInitialScrollPosition = true
 			}
 		}
-		
-		func scrollToPosition(_ scrollPosition: ASCollectionViewScrollPosition, animated: Bool = false) {
-			switch scrollPosition {
+
+		func scrollToPosition(_ scrollPosition: ASCollectionViewScrollPosition, animated: Bool = false)
+		{
+			switch scrollPosition
+			{
 			case .top, .left:
 				collectionViewController?.collectionView.setContentOffset(.zero, animated: animated)
 			case .bottom:
@@ -307,64 +310,78 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			case .right:
 				guard let contentSize = collectionViewController?.collectionView.contentSizePlusInsets else { return }
 				collectionViewController?.collectionView.setContentOffset(.init(x: contentSize.width, y: 0), animated: animated)
-			case .centerOnIndexPath(let indexPath):
+			case let .centerOnIndexPath(indexPath):
 				guard let offset = getContentOffsetToCenterCell(at: indexPath) else { return }
 				collectionViewController?.collectionView.setContentOffset(offset, animated: animated)
 			}
 		}
-		
-		func prepareForOrientationChange() {
+
+		func prepareForOrientationChange()
+		{
 			guard let collectionView = collectionViewController?.collectionView else { return }
-			//Get centremost cell
-			if let indexPath = collectionView.indexPathForItem(at: CGPoint(x: collectionView.bounds.midX, y: collectionView.bounds.midY)) {
-				//Item at centre
+			// Get centremost cell
+			if let indexPath = collectionView.indexPathForItem(at: CGPoint(x: collectionView.bounds.midX, y: collectionView.bounds.midY))
+			{
+				// Item at centre
 				transitionCentralIndexPath = indexPath
-			} else if let visibleCells = collectionViewController?.collectionView.indexPathsForVisibleItems, !visibleCells.isEmpty {
-				//Approximate item at centre
+			}
+			else if let visibleCells = collectionViewController?.collectionView.indexPathsForVisibleItems, !visibleCells.isEmpty
+			{
+				// Approximate item at centre
 				transitionCentralIndexPath = visibleCells[visibleCells.count / 2]
-			} else {
+			}
+			else
+			{
 				transitionCentralIndexPath = nil
 			}
 		}
+
 		var transitionCentralIndexPath: IndexPath?
-		func getContentOffsetForOrientationChange() -> CGPoint? {
+		func getContentOffsetForOrientationChange() -> CGPoint?
+		{
 			transitionCentralIndexPath.flatMap(getContentOffsetToCenterCell)
 		}
-		func completedOrientationChange() {
+
+		func completedOrientationChange()
+		{
 			transitionCentralIndexPath = nil
 		}
-		
-		
-		func getContentOffsetToCenterCell(at indexPath: IndexPath) -> CGPoint? {
+
+		func getContentOffsetToCenterCell(at indexPath: IndexPath) -> CGPoint?
+		{
 			guard
 				let collectionView = collectionViewController?.collectionView,
 				let centerCellFrame = collectionView.layoutAttributesForItem(at: indexPath)?.frame
-				else { return nil }
+			else { return nil }
 			let maxOffset = collectionView.maxContentOffset
 			print(maxOffset)
-			let newOffset = CGPoint(x: max(0, min(maxOffset.x, centerCellFrame.midX - (collectionView.bounds.width / 2))),
-									y: max(0, min(maxOffset.y, centerCellFrame.midY - (collectionView.bounds.height / 2))))
+			let newOffset = CGPoint(
+				x: max(0, min(maxOffset.x, centerCellFrame.midX - (collectionView.bounds.width / 2))),
+				y: max(0, min(maxOffset.y, centerCellFrame.midY - (collectionView.bounds.height / 2))))
 			return newOffset
 		}
-		
+
 		func updateLayout()
 		{
 			guard let collectionViewController = collectionViewController else { return }
-			//Configure any custom layout
+			// Configure any custom layout
 			parent.layout.configureLayout(layoutObject: collectionViewController.collectionView.collectionViewLayout)
-			
-			//If enabled, recreate the layout
-			if parent.shouldRecreateLayoutOnStateChange {
+
+			// If enabled, recreate the layout
+			if parent.shouldRecreateLayoutOnStateChange
+			{
 				let newLayout = parent.layout.makeLayout(withCoordinator: self)
 				collectionViewController.collectionView.setCollectionViewLayout(newLayout, animated: parent.shouldAnimateRecreatedLayoutOnStateChange && collectionViewController.parent != nil)
 			}
-			//If enabled, invalidate the layout
-			else if parent.shouldInvalidateLayoutOnStateChange {
+			// If enabled, invalidate the layout
+			else if parent.shouldInvalidateLayoutOnStateChange
+			{
 				let changes = {
 					collectionViewController.collectionViewLayout.invalidateLayout()
 					collectionViewController.collectionView.layoutIfNeeded()
 				}
-				if parent.shouldAnimateInvalidatedLayoutOnStateChange && collectionViewController.parent != nil {
+				if parent.shouldAnimateInvalidatedLayoutOnStateChange, collectionViewController.parent != nil
+				{
 					UIView.animate(
 						withDuration: 0.4,
 						delay: 0.0,
@@ -372,9 +389,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						initialSpringVelocity: 0.0,
 						options: UIView.AnimationOptions(),
 						animations: changes,
-						completion: nil
-					)
-				} else {
+						completion: nil)
+				}
+				else
+				{
 					changes()
 				}
 			}
@@ -493,8 +511,8 @@ public extension ASCollectionView
 	}
 }
 
-
 // MARK: Modifer: Layout Invalidation
+
 public extension ASCollectionView
 {
 	/// For use in cases where you would like to change layout settings in response to a change in variables referenced by your layout closure.
@@ -508,7 +526,7 @@ public extension ASCollectionView
 		this.shouldAnimateInvalidatedLayoutOnStateChange = animated
 		return this
 	}
-	
+
 	/// For use in cases where you would like to recreate the layout object in response to a change in state. Eg. for changing layout types completely
 	/// If not changing the type of layout (eg. to a different class) t is preferable to invalidate the layout and update variables in the `configureCustomLayout` closure
 	func shouldRecreateLayoutOnStateChange(_ shouldRecreate: Bool, animated: Bool = true) -> Self
@@ -519,7 +537,6 @@ public extension ASCollectionView
 		return this
 	}
 }
-
 
 internal protocol ASCollectionViewCoordinator: AnyObject
 {
@@ -615,12 +632,13 @@ extension ASCollectionView.Coordinator
 	}
 }
 
-public enum ASCollectionViewScrollPosition {
+public enum ASCollectionViewScrollPosition
+{
 	case top
 	case bottom
 	case left
 	case right
-	case centerOnIndexPath(_ : IndexPath)
+	case centerOnIndexPath(_: IndexPath)
 }
 
 public class AS_CollectionViewController: UIViewController
@@ -661,23 +679,25 @@ public class AS_CollectionViewController: UIViewController
 
 	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
 	{
-		//Get current central cell
+		// Get current central cell
 		self.coordinator?.prepareForOrientationChange()
-		
+
 		super.viewWillTransition(to: size, with: coordinator)
 		// The following is a workaround to fix the interface rotation animation under SwiftUI
 		view.frame = CGRect(origin: view.frame.origin, size: size)
-		
+
 		coordinator.animate(alongsideTransition: { _ in
 			self.view.setNeedsLayout()
 			self.view.layoutIfNeeded()
-			UIView.performWithoutAnimation {
-				if let desiredOffset = self.coordinator?.getContentOffsetForOrientationChange() {
-					self.collectionView.contentOffset = desiredOffset
-				}
+			if
+				let desiredOffset = self.coordinator?.getContentOffsetForOrientationChange(),
+				self.collectionView.contentOffset != desiredOffset
+			{
+				self.collectionView.contentOffset = desiredOffset
 			}
-		}) { _ in
-			//Completion
+		})
+		{ _ in
+			// Completion
 			self.coordinator?.completedOrientationChange()
 		}
 	}
@@ -731,8 +751,8 @@ public extension ASCollectionView
 		this.layout = Layout(customLayout: customLayout)
 		return this
 	}
-	
-	func layout<LayoutClass: UICollectionViewLayout>(createCustomLayout: @escaping (() -> LayoutClass), configureCustomLayout: @escaping ((LayoutClass) -> ())) -> Self
+
+	func layout<LayoutClass: UICollectionViewLayout>(createCustomLayout: @escaping (() -> LayoutClass), configureCustomLayout: @escaping ((LayoutClass) -> Void)) -> Self
 	{
 		var this = self
 		this.layout = Layout(createCustomLayout: createCustomLayout, configureCustomLayout: configureCustomLayout)

@@ -20,7 +20,7 @@ extension ASTableView where SectionID == Int
 				get: { [:] },
 				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
 		}
-		self.sections = [section]
+		sections = [section]
 	}
 
 	/**
@@ -39,7 +39,7 @@ extension ASTableView where SectionID == Int
 			data: data,
 			dataID: dataIDKeyPath,
 			contentBuilder: contentBuilder)
-		self.sections = [section]
+		sections = [section]
 		self.selectedItems = selectedItems.map
 		{ selectedItems in
 			Binding(
@@ -51,10 +51,10 @@ extension ASTableView where SectionID == Int
 	/**
 	 Initializes a  table view with a single section of static content
 	 */
-	init(@ViewArrayBuilder staticContent: (() -> [AnyView])) //Clashing with above functions in Swift 5.1, therefore internal for time being
+	init(@ViewArrayBuilder staticContent: () -> [AnyView]) // Clashing with above functions in Swift 5.1, therefore internal for time being
 	{
-		self.style = .plain
-		self.sections = [
+		style = .plain
+		sections = [
 			ASTableViewSection(id: 0, content: staticContent)
 		]
 	}
@@ -336,38 +336,47 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				selectedItemsBinding.wrappedValue = selectedBySection
 			}
 		}
-		
-		public func tableView(_ tableView: UITableView, estimatedHeightForHeaderInSection section: Int) -> CGFloat {
-			guard self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else {
+
+		public func tableView(_ tableView: UITableView, estimatedHeightForHeaderInSection section: Int) -> CGFloat
+		{
+			guard parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else
+			{
 				return CGFloat.leastNormalMagnitude
 			}
 			return parent.sections[section].estimatedHeaderHeight ?? 50
 		}
-		
-		public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-			guard self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else {
+
+		public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat
+		{
+			guard parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else
+			{
 				return CGFloat.leastNormalMagnitude
 			}
 			return UITableView.automaticDimension
 		}
-		
-		public func tableView(_ tableView: UITableView, estimatedHeightForFooterInSection section: Int) -> CGFloat {
-			guard self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else {
+
+		public func tableView(_ tableView: UITableView, estimatedHeightForFooterInSection section: Int) -> CGFloat
+		{
+			guard parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else
+			{
 				return CGFloat.leastNormalMagnitude
 			}
 			return parent.sections[section].estimatedFooterHeight ?? 50
 		}
-		
-		public func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-			guard self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else {
+
+		public func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat
+		{
+			guard parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else
+			{
 				return CGFloat.leastNormalMagnitude
 			}
 			return UITableView.automaticDimension
 		}
-		
-		public func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+
+		public func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView?
+		{
 			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: self.supplementaryReuseID) as? ASTableViewSupplementaryView
-				else { return nil }
+			else { return nil }
 			if let supplementaryView = self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader)
 			{
 				reusableView.setupFor(
@@ -376,10 +385,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			}
 			return reusableView
 		}
-		
-		public func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView? {
+
+		public func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView?
+		{
 			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: self.supplementaryReuseID) as? ASTableViewSupplementaryView
-				else { return nil }
+			else { return nil }
 			if let supplementaryView = self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter)
 			{
 				reusableView.setupFor(
@@ -414,18 +424,18 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 }
 
 /*
-class ASTableViewDataSource<SectionIdentifierType, ItemIdentifierType>: UITableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType : Hashable, ItemIdentifierType : Hashable {
-	public typealias HeaderFooterViewProvider = (_ sectionIndex: Int) -> UITableViewHeaderFooterView?
-	
-	public var headerViewProvider: HeaderFooterViewProvider?
-	public var footerViewProvider: HeaderFooterViewProvider?
+ class ASTableViewDataSource<SectionIdentifierType, ItemIdentifierType>: UITableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType : Hashable, ItemIdentifierType : Hashable {
+ public typealias HeaderFooterViewProvider = (_ sectionIndex: Int) -> UITableViewHeaderFooterView?
 
-	func headerView(forSection section: Int) -> UITableViewHeaderFooterView? {
-		headerViewProvider?(section)
-	}
-	
-	func footerView(forSection section: Int) -> UITableViewHeaderFooterView? {
-		footerViewProvider?(section)
-	}
-}
-*/
+ public var headerViewProvider: HeaderFooterViewProvider?
+ public var footerViewProvider: HeaderFooterViewProvider?
+
+ func headerView(forSection section: Int) -> UITableViewHeaderFooterView? {
+ 	headerViewProvider?(section)
+ }
+
+ func footerView(forSection section: Int) -> UITableViewHeaderFooterView? {
+ 	footerViewProvider?(section)
+ }
+ }
+ */

@@ -53,7 +53,7 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 	{
 		if let collectionView = self.collectionView
 		{
-			return collectionView.frame.width != newBounds.width //We only care about changes in the width
+			return collectionView.frame.width != newBounds.width // We only care about changes in the width
 		}
 
 		return false

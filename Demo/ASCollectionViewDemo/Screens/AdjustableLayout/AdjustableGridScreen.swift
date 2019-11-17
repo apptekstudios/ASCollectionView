@@ -4,10 +4,11 @@ import ASCollectionView
 import SwiftUI
 import UIKit
 
-class LayoutState: ObservableObject {
+class LayoutState: ObservableObject
+{
 	@Published
 	var numberOfColumns: Int = 3
-	
+
 	@Published
 	var itemInset: Int = 0
 }
@@ -57,9 +58,11 @@ struct AdjustableGridScreen: View
 			}
 		}
 	}
-	
-	var config: some View {
-		VStack {
+
+	var config: some View
+	{
+		VStack
+		{
 			Stepper("Number of columns", value: self.$layoutState.numberOfColumns, in: 0...10)
 				.padding()
 			Stepper("Item inset", value: self.$layoutState.itemInset, in: 0...5)
@@ -71,8 +74,10 @@ struct AdjustableGridScreen: View
 
 	var body: some View
 	{
-		VStack {
-			if showConfig {
+		VStack
+		{
+			if showConfig
+			{
 				config
 			}
 			ASCollectionView(
@@ -81,14 +86,14 @@ struct AdjustableGridScreen: View
 				.shouldInvalidateLayoutOnStateChange(true, animated: self.animateChange) ///////////////////////// TELLS ASCOLLECTIONVIEW TO INVALIDATE THE LAYOUT WHEN THE VIEW IS UPDATED
 				.navigationBarTitle("Adjustable Layout", displayMode: .inline)
 		}
-		.navigationBarItems(trailing:
+		.navigationBarItems(
+			trailing:
 			Button(action: {
 				self.showConfig.toggle()
-			}) {
+			})
+			{
 				Text("Toggle config")
-			}
-		)
-		
+		})
 	}
 
 	func onCellEvent(_ event: CellEvent<Post>)
@@ -119,23 +124,22 @@ extension AdjustableGridScreen
 	{
 		ASCollectionLayout(scrollDirection: .vertical, interSectionSpacing: 0)
 		{
-			ASCollectionLayoutSection {
+			ASCollectionLayoutSection
+			{
 				let gridBlockSize = NSCollectionLayoutDimension.fractionalWidth(1 / CGFloat(self.layoutState.numberOfColumns))
 				let item = NSCollectionLayoutItem(
 					layoutSize: NSCollectionLayoutSize(
 						widthDimension: gridBlockSize,
-						heightDimension: .fractionalHeight(1.0)
-					)
-				)
+						heightDimension: .fractionalHeight(1.0)))
 				let inset = CGFloat(self.layoutState.itemInset)
 				item.contentInsets = NSDirectionalEdgeInsets(top: inset, leading: inset, bottom: inset, trailing: inset)
-				
+
 				let itemsGroup = NSCollectionLayoutGroup.horizontal(
 					layoutSize: NSCollectionLayoutSize(
 						widthDimension: .fractionalWidth(1.0),
 						heightDimension: gridBlockSize),
 					subitems: [item])
-				
+
 				let section = NSCollectionLayoutSection(group: itemsGroup)
 				return section
 			}
