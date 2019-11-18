@@ -58,13 +58,15 @@ extension ASCollectionView where SectionID == Int
 	}
 }
 
-public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentable
+public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentable, ContentSize
 {
 	public typealias Section = ASCollectionViewSection<SectionID>
 	public typealias Layout = ASCollectionLayout<SectionID>
 	public var layout: Layout = .default
 	public var sections: [Section]
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
+	
+	var contentSize: Binding<CGSize?>?
 
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
 
@@ -262,7 +264,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			{
 				snapshot.appendItems($0.itemIDs, toSection: $0.id)
 			}
-			dataSource?.apply(snapshot, animatingDifferences: animated)
+			dataSource?.apply(snapshot, animatingDifferences: animated) {
+				self.collectionViewController.map { self.didUpdateContentSize($0.collectionView.contentSize) }
+			}
 		}
 
 		func updateContent(_ cv: UICollectionView, animated: Bool, refreshExistingCells: Bool)
@@ -491,6 +495,18 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return nil }
 			return parent.sections[indexPath.section].dataSource.getTypeErasedData(for: indexPath)
 		}
+		
+		
+		var lastContentSize: CGSize = .zero
+		func didUpdateContentSize(_ size: CGSize) {
+			guard let cv = collectionViewController?.collectionView, cv.contentSize != lastContentSize else { return }
+			lastContentSize = cv.contentSize
+			if let contentSizeBinding = parent.contentSize, contentSizeBinding.wrappedValue != size {
+				DispatchQueue.main.async {
+					contentSizeBinding.wrappedValue = size
+				}
+			}
+		}
 
 		private let queuePrefetch = PassthroughSubject<Void, Never>()
 		private var prefetchSubscription: AnyCancellable?
@@ -554,6 +570,7 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func canDrop(at indexPath: IndexPath) -> Bool
 	func removeItem(from indexPath: IndexPath)
 	func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
+	func didUpdateContentSize(_ size: CGSize)
 }
 
 // MARK: Custom Prefetching Implementation
@@ -708,6 +725,11 @@ public class AS_CollectionViewController: UIViewController
 		// The following is a workaround to fix the interface rotation animation under SwiftUI
 		collectionViewLayout.invalidateLayout()
 	}
+	
+	public override func viewDidLayoutSubviews() {
+		super.viewDidLayoutSubviews()
+		coordinator?.didUpdateContentSize(collectionView.contentSize)
+	}
 }
 
 public extension ASCollectionView
@@ -757,5 +779,49 @@ public extension ASCollectionView
 		var this = self
 		this.layout = Layout(createCustomLayout: createCustomLayout, configureCustomLayout: configureCustomLayout)
 		return this
+	}
+	
+	func shrinkToContentSize(_ contentSize: Binding<CGSize?>, dimensionToShrink: ShrinkDimension) -> some View {
+		SelfSizingWrapper(self, contentSize: contentSize, shrinkDirection: dimensionToShrink)
+	}
+}
+
+protocol ContentSize {
+	var contentSize: Binding<CGSize?>? { get set }
+}
+
+public enum ShrinkDimension {
+	case horizontal
+	case vertical
+	//case both
+	
+	var shrinkVertical: Bool {
+		self == .vertical //|| self == .both
+	}
+	var shrinkHorizontal: Bool {
+		self == .horizontal //|| self == .both
+	}
+}
+struct SelfSizingWrapper<Content: View & ContentSize>: View {
+	var contentSize: Binding<CGSize?>
+	var content: Content
+	var shrinkDirection: ShrinkDimension
+	
+	init(_ content: Content, contentSize: Binding<CGSize?>, shrinkDirection: ShrinkDimension) {
+		self.content = content
+		self.contentSize = contentSize
+		self.shrinkDirection = shrinkDirection
+		
+		self.content.contentSize = contentSize
+	}
+	
+	var body: some View {
+		content
+			.frame(idealWidth: shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
+				   maxWidth: shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
+				   idealHeight: shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
+				   maxHeight:  shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
+				   alignment: .topLeading)
+			.background(Color.green)
 	}
 }

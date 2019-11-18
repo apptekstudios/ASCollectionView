@@ -6,6 +6,7 @@ import SwiftUI
 struct TagsScreen: View
 {
 	@ObservedObject var store = TagStore()
+	@State var contentSize: CGSize?
 
 	var body: some View
 	{
@@ -37,6 +38,8 @@ struct TagsScreen: View
 				fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
 				return fl
 			}
+			.shrinkToContentSize($contentSize, dimensionToShrink: .vertical)
+			Rectangle().fill(Color.blue)
 		}
 		.padding()
 		.onTapGesture
