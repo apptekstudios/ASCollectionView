@@ -503,7 +503,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			lastContentSize = cv.contentSize
 			if let contentSizeBinding = parent.contentSize, contentSizeBinding.wrappedValue != size {
 				DispatchQueue.main.async {
-					contentSizeBinding.wrappedValue = size
+					if contentSizeBinding.wrappedValue == nil {
+						//Initial size setting, don't animate
+						contentSizeBinding.wrappedValue = size
+					} else {
+						//Animate change
+						contentSizeBinding.animation().wrappedValue = size
+					}
 				}
 			}
 		}
@@ -822,6 +828,5 @@ struct SelfSizingWrapper<Content: View & ContentSize>: View {
 				   idealHeight: shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
 				   maxHeight:  shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
 				   alignment: .topLeading)
-			.background(Color.green)
 	}
 }

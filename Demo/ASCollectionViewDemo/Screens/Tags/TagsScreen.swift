@@ -39,7 +39,12 @@ struct TagsScreen: View
 				return fl
 			}
 			.shrinkToContentSize($contentSize, dimensionToShrink: .vertical)
-			Rectangle().fill(Color.blue)
+			Rectangle().fill(Color(.secondarySystemBackground))
+				.overlay(
+					Text("This is another view in the VStack, demonstrating the `shrinkToContentSize` modifier on the collectionView above.")
+						.foregroundColor(Color(.secondaryLabel))
+						.padding()
+					, alignment: .topLeading)
 		}
 		.padding()
 		.onTapGesture
