@@ -6,10 +6,10 @@ import SwiftUI
 struct TagsScreen: View
 {
 	@ObservedObject var store = TagStore()
-	
-	///Used in the extra example that shrinks the collectionView to fit its content
+
+	/// Used in the extra example that shrinks the collectionView to fit its content
 	var shrinkToSize: Bool = false
-	@State var contentSize: CGSize? //This state variable is handed to the collectionView to allow it to store the content size
+	@State var contentSize: CGSize? // This state variable is handed to the collectionView to allow it to store the content size
 	///
 
 	var body: some View
@@ -17,16 +17,16 @@ struct TagsScreen: View
 		VStack(alignment: .leading, spacing: 20)
 		{
 			HStack
-				{
-					Spacer()
-					Text("Tap screen to reload new tags")
-						.padding()
-						.background(Color(.secondarySystemBackground))
-					Spacer()
+			{
+				Spacer()
+				Text("Tap screen to reload new tags")
+					.padding()
+					.background(Color(.secondarySystemBackground))
+				Spacer()
 			}
 			Text("Tags:")
 				.font(.title)
-			
+
 			ASCollectionView(
 				section:
 				ASCollectionViewSection(id: 0, data: store.items)
@@ -38,26 +38,27 @@ struct TagsScreen: View
 						.cornerRadius(5)
 			})
 				.layout
-				{
-					let fl = AlignedFlowLayout()
-					fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
-					return fl
+			{
+				let fl = AlignedFlowLayout()
+				fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
+				return fl
 			}
 			.shrinkToContentSize(isEnabled: shrinkToSize, $contentSize, dimensionToShrink: .vertical)
-				
-			if shrinkToSize {
+
+			if shrinkToSize
+			{
 				Rectangle().fill(Color(.secondarySystemBackground))
 					.overlay(
 						Text("This is another view in the VStack, it shows how the collectionView above fits itself to the content.")
 							.foregroundColor(Color(.secondaryLabel))
-							.padding()
-						, alignment: .topLeading)
+							.padding(),
+						alignment: .topLeading)
 			}
 		}
 		.padding()
 		.onTapGesture
-			{
-				self.store.refreshStore()
+		{
+			self.store.refreshStore()
 		}
 		.navigationBarTitle("Tags", displayMode: .inline)
 	}

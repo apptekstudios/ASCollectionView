@@ -31,6 +31,6 @@ public struct SectionArrayBuilder<SectionID> where SectionID: Hashable
 
 	public static func buildIf(_ item: Section?) -> Output
 	{
-		return [item].compactMap { $0 }
+		[item].compactMap { $0 }
 	}
 }

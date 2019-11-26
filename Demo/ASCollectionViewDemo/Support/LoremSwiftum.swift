@@ -16,7 +16,7 @@ public final class Lorem
 	/// Generates a single word.
 	public static var word: String
 	{
-		return allWords.randomElement()!
+		allWords.randomElement()!
 	}
 
 	/// Generates multiple words whose count is defined by the given value.
@@ -25,7 +25,7 @@ public final class Lorem
 	/// - Returns: The generated words joined by a space character.
 	public static func words(_ count: Int) -> String
 	{
-		return _compose(
+		_compose(
 			word,
 			count: count,
 			joinBy: .space)
@@ -37,7 +37,7 @@ public final class Lorem
 	/// - Returns: The generated words joined by a space character.
 	public static func words(_ range: Range<Int>) -> String
 	{
-		return _compose(word, count: Int.random(in: range), joinBy: .space)
+		_compose(word, count: Int.random(in: range), joinBy: .space)
 	}
 
 	/// Generates multiple words whose count is randomly selected from within the given closed range.
@@ -46,7 +46,7 @@ public final class Lorem
 	/// - Returns: The generated words joined by a space character.
 	public static func words(_ range: ClosedRange<Int>) -> String
 	{
-		return _compose(word, count: Int.random(in: range), joinBy: .space)
+		_compose(word, count: Int.random(in: range), joinBy: .space)
 	}
 
 	/// Generates a single sentence.
@@ -68,7 +68,7 @@ public final class Lorem
 	/// - Returns: The generated sentences joined by a space character.
 	public static func sentences(_ count: Int) -> String
 	{
-		return _compose(
+		_compose(
 			sentence,
 			count: count,
 			joinBy: .space)
@@ -80,7 +80,7 @@ public final class Lorem
 	/// - Returns: The generated sentences joined by a space character.
 	public static func sentences(_ range: Range<Int>) -> String
 	{
-		return _compose(sentence, count: Int.random(in: range), joinBy: .space)
+		_compose(sentence, count: Int.random(in: range), joinBy: .space)
 	}
 
 	/// Generates multiple sentences whose count is selected from within the given closed range.
@@ -89,7 +89,7 @@ public final class Lorem
 	/// - Returns: The generated sentences joined by a space character.
 	public static func sentences(_ range: ClosedRange<Int>) -> String
 	{
-		return _compose(sentence, count: Int.random(in: range), joinBy: .space)
+		_compose(sentence, count: Int.random(in: range), joinBy: .space)
 	}
 
 	/// Generates a single paragraph.
@@ -109,7 +109,7 @@ public final class Lorem
 	/// - Returns: The generated paragraphs joined by a new line character.
 	public static func paragraphs(_ count: Int) -> String
 	{
-		return _compose(
+		_compose(
 			paragraph,
 			count: count,
 			joinBy: .newLine)
@@ -121,7 +121,7 @@ public final class Lorem
 	/// - Returns: The generated paragraphs joined by a new line character.
 	public static func paragraphs(_ range: Range<Int>) -> String
 	{
-		return _compose(
+		_compose(
 			paragraph,
 			count: Int.random(in: range),
 			joinBy: .newLine)
@@ -133,7 +133,7 @@ public final class Lorem
 	/// - Returns: The generated paragraphs joined by a new line character.
 	public static func paragraphs(_ range: ClosedRange<Int>) -> String
 	{
-		return _compose(
+		_compose(
 			paragraph,
 			count: Int.random(in: range),
 			joinBy: .newLine)
@@ -160,19 +160,19 @@ public final class Lorem
 	/// Generates a first name.
 	public static var firstName: String
 	{
-		return firstNames.randomElement()!
+		firstNames.randomElement()!
 	}
 
 	/// Generates a last name.
 	public static var lastName: String
 	{
-		return lastNames.randomElement()!
+		lastNames.randomElement()!
 	}
 
 	/// Generates a full name.
 	public static var fullName: String
 	{
-		return "\(firstName) \(lastName)"
+		"\(firstName) \(lastName)"
 	}
 
 	// ======================================================= //
@@ -207,13 +207,13 @@ public final class Lorem
 	/// Generates a random tweet which is shorter than 140 characters.
 	public static var shortTweet: String
 	{
-		return _composeTweet(shortTweetMaxLength)
+		_composeTweet(shortTweetMaxLength)
 	}
 
 	/// Generates a random tweet which is shorter than 280 characters.
 	public static var tweet: String
 	{
-		return _composeTweet(tweetMaxLength)
+		_composeTweet(tweetMaxLength)
 	}
 
 	public static var caption: String

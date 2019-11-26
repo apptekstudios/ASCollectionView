@@ -65,7 +65,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	public var layout: Layout = .default
 	public var sections: [Section]
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
-	
+
 	var contentSize: Binding<CGSize?>?
 
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
@@ -264,7 +264,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			{
 				snapshot.appendItems($0.itemIDs, toSection: $0.id)
 			}
-			dataSource?.apply(snapshot, animatingDifferences: animated) {
+			dataSource?.apply(snapshot, animatingDifferences: animated)
+			{
 				self.collectionViewController.map { self.didUpdateContentSize($0.collectionView.contentSize) }
 			}
 		}
@@ -495,19 +496,24 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return nil }
 			return parent.sections[indexPath.section].dataSource.getTypeErasedData(for: indexPath)
 		}
-		
-		
+
 		var lastContentSize: CGSize = .zero
-		func didUpdateContentSize(_ size: CGSize) {
+		func didUpdateContentSize(_ size: CGSize)
+		{
 			guard let cv = collectionViewController?.collectionView, cv.contentSize != lastContentSize else { return }
 			lastContentSize = cv.contentSize
-			if let contentSizeBinding = parent.contentSize, contentSizeBinding.wrappedValue != size {
-				DispatchQueue.main.async {
-					if contentSizeBinding.wrappedValue == nil {
-						//Initial size setting, don't animate
+			if let contentSizeBinding = parent.contentSize, contentSizeBinding.wrappedValue != size
+			{
+				DispatchQueue.main.async
+				{
+					if contentSizeBinding.wrappedValue == nil
+					{
+						// Initial size setting, don't animate
 						contentSizeBinding.wrappedValue = size
-					} else {
-						//Animate change
+					}
+					else
+					{
+						// Animate change
 						contentSizeBinding.animation().wrappedValue = size
 					}
 				}
@@ -731,8 +737,9 @@ public class AS_CollectionViewController: UIViewController
 		// The following is a workaround to fix the interface rotation animation under SwiftUI
 		collectionViewLayout.invalidateLayout()
 	}
-	
-	public override func viewDidLayoutSubviews() {
+
+	public override func viewDidLayoutSubviews()
+	{
 		super.viewDidLayoutSubviews()
 		coordinator?.didUpdateContentSize(collectionView.contentSize)
 	}
@@ -786,50 +793,61 @@ public extension ASCollectionView
 		this.layout = Layout(createCustomLayout: createCustomLayout, configureCustomLayout: configureCustomLayout)
 		return this
 	}
-	
-	func shrinkToContentSize(isEnabled: Bool, _ contentSize: Binding<CGSize?>, dimensionToShrink: ShrinkDimension) -> some View {
+
+	func shrinkToContentSize(isEnabled: Bool, _ contentSize: Binding<CGSize?>, dimensionToShrink: ShrinkDimension) -> some View
+	{
 		SelfSizingWrapper(self, isEnabled: isEnabled, contentSize: contentSize, shrinkDirection: dimensionToShrink)
 	}
 }
 
-protocol ContentSize {
+protocol ContentSize
+{
 	var contentSize: Binding<CGSize?>? { get set }
 }
 
-//MARK: Helpers for self-sizing collection
-public enum ShrinkDimension {
+// MARK: Helpers for self-sizing collection
+
+public enum ShrinkDimension
+{
 	case horizontal
 	case vertical
-	
-	var shrinkVertical: Bool {
+
+	var shrinkVertical: Bool
+	{
 		self == .vertical
 	}
-	var shrinkHorizontal: Bool {
+
+	var shrinkHorizontal: Bool
+	{
 		self == .horizontal
 	}
 }
 
-struct SelfSizingWrapper<Content: View & ContentSize>: View {
+struct SelfSizingWrapper<Content: View & ContentSize>: View
+{
 	var contentSize: Binding<CGSize?>
 	var content: Content
 	var shrinkDirection: ShrinkDimension
 	var isEnabled: Bool
-	
-	init(_ content: Content, isEnabled: Bool, contentSize: Binding<CGSize?>, shrinkDirection: ShrinkDimension) {
+
+	init(_ content: Content, isEnabled: Bool, contentSize: Binding<CGSize?>, shrinkDirection: ShrinkDimension)
+	{
 		self.content = content
 		self.contentSize = contentSize
 		self.shrinkDirection = shrinkDirection
 		self.isEnabled = isEnabled
-		
+
 		self.content.contentSize = contentSize
 	}
-	
-	var body: some View {
+
+	var body: some View
+	{
 		content
-			.frame(idealWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
-				   maxWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
-				   idealHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
-				   maxHeight:  isEnabled && shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
-				   alignment: .topLeading)
+			.frame(
+				idealWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
+				maxWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
+				idealHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
+				maxHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
+				alignment: .topLeading)
 	}
 }

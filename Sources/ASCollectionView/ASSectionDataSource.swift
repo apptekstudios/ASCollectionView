@@ -66,7 +66,7 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 
 	func cellContext(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> CellContext
 	{
-		return CellContext(
+		CellContext(
 			isSelected: isSelected,
 			isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
 			isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)

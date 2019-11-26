@@ -72,7 +72,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 
 	public override var collectionViewContentSize: CGSize
 	{
-		return CGSize(width: contentWidth, height: contentHeight)
+		CGSize(width: contentWidth, height: contentHeight)
 	}
 
 	var calculatedNumberOfColumns: Int
@@ -188,7 +188,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 
 	public override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes?
 	{
-		return cachedAttributes[indexPath]
+		cachedAttributes[indexPath]
 	}
 
 	public override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool

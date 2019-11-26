@@ -10,7 +10,8 @@ struct MainView: View
 		{
 			List
 			{
-				Section(header: Text("Example screens")) {
+				Section(header: Text("Example screens"))
+				{
 					NavigationLink(destination: PhotoGridScreen())
 					{
 						Image(systemName: "1.square.fill")
@@ -52,7 +53,8 @@ struct MainView: View
 						Text("Adjustable layout")
 					}
 				}
-				Section(header: Text("Modified examples")) {
+				Section(header: Text("Modified examples"))
+				{
 					NavigationLink(destination: PhotoGridScreen(startingAtBottom: true))
 					{
 						Image(systemName: "hammer")

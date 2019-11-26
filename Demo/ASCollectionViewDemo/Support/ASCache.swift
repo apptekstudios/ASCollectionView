@@ -35,7 +35,7 @@ final class ASCache<Key: Hashable, Value>
 
 	func value(forKey key: Key) -> Value?
 	{
-		return entry(forKey: key)?.value
+		entry(forKey: key)?.value
 	}
 
 	func removeValue(forKey key: Key)
@@ -97,7 +97,7 @@ private extension ASCache
 
 		init(_ key: Key) { self.key = key }
 
-		override var hash: Int { return key.hashValue }
+		override var hash: Int { key.hashValue }
 
 		override func isEqual(_ object: Any?) -> Bool
 		{
