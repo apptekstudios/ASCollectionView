@@ -15,7 +15,7 @@ extension ASCollectionView where SectionID == Int
 	 */
 	public init(selectedItems: Binding<IndexSet>? = nil, section: Section)
 	{
-		self.sections = [section]
+		sections = [section]
 		self.selectedItems = selectedItems.map
 		{ selectedItems in
 			Binding(
@@ -38,7 +38,7 @@ extension ASCollectionView where SectionID == Int
 			data: data,
 			dataID: dataIDKeyPath,
 			contentBuilder: contentBuilder)
-		self.sections = [section]
+		sections = [section]
 		self.selectedItems = selectedItems.map
 		{ selectedItems in
 			Binding(
@@ -50,7 +50,7 @@ extension ASCollectionView where SectionID == Int
 	/**
 	 Initializes a  collection view with a single section of static content
 	 */
-	init(@ViewArrayBuilder staticContent: (() -> [AnyView])) //Clashing with above functions in Swift 5.1, therefore internal for time being
+	init(@ViewArrayBuilder staticContent: () -> [AnyView]) // Clashing with above functions in Swift 5.1, therefore internal for time being
 	{
 		sections = [
 			ASCollectionViewSection(id: 0, content: staticContent)
@@ -58,7 +58,7 @@ extension ASCollectionView where SectionID == Int
 	}
 }
 
-public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentable
+public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentable, ContentSize
 {
 	public typealias Section = ASCollectionViewSection<SectionID>
 	public typealias Layout = ASCollectionLayout<SectionID>
@@ -66,11 +66,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	public var sections: [Section]
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
 
+	var contentSize: Binding<CGSize?>?
+
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
-	
+
 	var shouldInvalidateLayoutOnStateChange: Bool = false
 	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
-	
+
 	var shouldRecreateLayoutOnStateChange: Bool = false
 	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
 
@@ -78,6 +80,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
+	@Environment(\.initialScrollPosition) private var initialScrollPosition
 	@Environment(\.editMode) private var editMode
 
 	// MARK: Init for multi-section CVs
@@ -167,6 +170,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		let supplementaryEmptyKind = UUID().uuidString // Used to prevent crash if supplementaries defined in layout but not provided by the section
 
 		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
+
+		var hasSetInitialScrollPosition = false
 
 		typealias Cell = ASCollectionViewCell
 
@@ -260,6 +265,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				snapshot.appendItems($0.itemIDs, toSection: $0.id)
 			}
 			dataSource?.apply(snapshot, animatingDifferences: animated)
+			{
+				self.collectionViewController.map { self.didUpdateContentSize($0.collectionView.contentSize) }
+			}
 		}
 
 		func updateContent(_ cv: UICollectionView, animated: Bool, refreshExistingCells: Bool)
@@ -288,26 +296,97 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 			populateDataSource(animated: collectionViewController?.parent != nil)
 			updateSelectionBindings(cv)
+			if !hasSetInitialScrollPosition
+			{
+				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
+				hasSetInitialScrollPosition = true
+			}
 		}
-		
+
+		func scrollToPosition(_ scrollPosition: ASCollectionViewScrollPosition, animated: Bool = false)
+		{
+			switch scrollPosition
+			{
+			case .top, .left:
+				collectionViewController?.collectionView.setContentOffset(.zero, animated: animated)
+			case .bottom:
+				guard let contentSize = collectionViewController?.collectionView.contentSizePlusInsets else { return }
+				collectionViewController?.collectionView.setContentOffset(.init(x: 0, y: contentSize.height), animated: animated)
+			case .right:
+				guard let contentSize = collectionViewController?.collectionView.contentSizePlusInsets else { return }
+				collectionViewController?.collectionView.setContentOffset(.init(x: contentSize.width, y: 0), animated: animated)
+			case let .centerOnIndexPath(indexPath):
+				guard let offset = getContentOffsetToCenterCell(at: indexPath) else { return }
+				collectionViewController?.collectionView.setContentOffset(offset, animated: animated)
+			}
+		}
+
+		func prepareForOrientationChange()
+		{
+			guard let collectionView = collectionViewController?.collectionView else { return }
+			// Get centremost cell
+			if let indexPath = collectionView.indexPathForItem(at: CGPoint(x: collectionView.bounds.midX, y: collectionView.bounds.midY))
+			{
+				// Item at centre
+				transitionCentralIndexPath = indexPath
+			}
+			else if let visibleCells = collectionViewController?.collectionView.indexPathsForVisibleItems, !visibleCells.isEmpty
+			{
+				// Approximate item at centre
+				transitionCentralIndexPath = visibleCells[visibleCells.count / 2]
+			}
+			else
+			{
+				transitionCentralIndexPath = nil
+			}
+		}
+
+		var transitionCentralIndexPath: IndexPath?
+		func getContentOffsetForOrientationChange() -> CGPoint?
+		{
+			transitionCentralIndexPath.flatMap(getContentOffsetToCenterCell)
+		}
+
+		func completedOrientationChange()
+		{
+			transitionCentralIndexPath = nil
+		}
+
+		func getContentOffsetToCenterCell(at indexPath: IndexPath) -> CGPoint?
+		{
+			guard
+				let collectionView = collectionViewController?.collectionView,
+				let centerCellFrame = collectionView.layoutAttributesForItem(at: indexPath)?.frame
+			else { return nil }
+			let maxOffset = collectionView.maxContentOffset
+			print(maxOffset)
+			let newOffset = CGPoint(
+				x: max(0, min(maxOffset.x, centerCellFrame.midX - (collectionView.bounds.width / 2))),
+				y: max(0, min(maxOffset.y, centerCellFrame.midY - (collectionView.bounds.height / 2))))
+			return newOffset
+		}
+
 		func updateLayout()
 		{
 			guard let collectionViewController = collectionViewController else { return }
-			//Configure any custom layout
+			// Configure any custom layout
 			parent.layout.configureLayout(layoutObject: collectionViewController.collectionView.collectionViewLayout)
-			
-			//If enabled, recreate the layout
-			if parent.shouldRecreateLayoutOnStateChange {
+
+			// If enabled, recreate the layout
+			if parent.shouldRecreateLayoutOnStateChange
+			{
 				let newLayout = parent.layout.makeLayout(withCoordinator: self)
 				collectionViewController.collectionView.setCollectionViewLayout(newLayout, animated: parent.shouldAnimateRecreatedLayoutOnStateChange && collectionViewController.parent != nil)
 			}
-			//If enabled, invalidate the layout
-			else if parent.shouldInvalidateLayoutOnStateChange {
+			// If enabled, invalidate the layout
+			else if parent.shouldInvalidateLayoutOnStateChange
+			{
 				let changes = {
 					collectionViewController.collectionViewLayout.invalidateLayout()
 					collectionViewController.collectionView.layoutIfNeeded()
 				}
-				if parent.shouldAnimateInvalidatedLayoutOnStateChange && collectionViewController.parent != nil {
+				if parent.shouldAnimateInvalidatedLayoutOnStateChange, collectionViewController.parent != nil
+				{
 					UIView.animate(
 						withDuration: 0.4,
 						delay: 0.0,
@@ -315,9 +394,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						initialSpringVelocity: 0.0,
 						options: UIView.AnimationOptions(),
 						animations: changes,
-						completion: nil
-					)
-				} else {
+						completion: nil)
+				}
+				else
+				{
 					changes()
 				}
 			}
@@ -417,6 +497,29 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			return parent.sections[indexPath.section].dataSource.getTypeErasedData(for: indexPath)
 		}
 
+		var lastContentSize: CGSize = .zero
+		func didUpdateContentSize(_ size: CGSize)
+		{
+			guard let cv = collectionViewController?.collectionView, cv.contentSize != lastContentSize else { return }
+			lastContentSize = cv.contentSize
+			if let contentSizeBinding = parent.contentSize, contentSizeBinding.wrappedValue != size
+			{
+				DispatchQueue.main.async
+				{
+					if contentSizeBinding.wrappedValue == nil
+					{
+						// Initial size setting, don't animate
+						contentSizeBinding.wrappedValue = size
+					}
+					else
+					{
+						// Animate change
+						contentSizeBinding.animation().wrappedValue = size
+					}
+				}
+			}
+		}
+
 		private let queuePrefetch = PassthroughSubject<Void, Never>()
 		private var prefetchSubscription: AnyCancellable?
 		private var currentlyPrefetching: Set<IndexPath> = []
@@ -436,8 +539,8 @@ public extension ASCollectionView
 	}
 }
 
-
 // MARK: Modifer: Layout Invalidation
+
 public extension ASCollectionView
 {
 	/// For use in cases where you would like to change layout settings in response to a change in variables referenced by your layout closure.
@@ -451,7 +554,7 @@ public extension ASCollectionView
 		this.shouldAnimateInvalidatedLayoutOnStateChange = animated
 		return this
 	}
-	
+
 	/// For use in cases where you would like to recreate the layout object in response to a change in state. Eg. for changing layout types completely
 	/// If not changing the type of layout (eg. to a different class) t is preferable to invalidate the layout and update variables in the `configureCustomLayout` closure
 	func shouldRecreateLayoutOnStateChange(_ shouldRecreate: Bool, animated: Bool = true) -> Self
@@ -463,10 +566,12 @@ public extension ASCollectionView
 	}
 }
 
-
 internal protocol ASCollectionViewCoordinator: AnyObject
 {
 	func typeErasedDataForItem(at indexPath: IndexPath) -> Any?
+	func prepareForOrientationChange()
+	func getContentOffsetForOrientationChange() -> CGPoint?
+	func completedOrientationChange()
 	func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
@@ -477,6 +582,7 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func canDrop(at indexPath: IndexPath) -> Bool
 	func removeItem(from indexPath: IndexPath)
 	func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
+	func didUpdateContentSize(_ size: CGSize)
 }
 
 // MARK: Custom Prefetching Implementation
@@ -555,6 +661,15 @@ extension ASCollectionView.Coordinator
 	}
 }
 
+public enum ASCollectionViewScrollPosition
+{
+	case top
+	case bottom
+	case left
+	case right
+	case centerOnIndexPath(_: IndexPath)
+}
+
 public class AS_CollectionViewController: UIViewController
 {
 	weak var coordinator: ASCollectionViewCoordinator?
@@ -593,14 +708,27 @@ public class AS_CollectionViewController: UIViewController
 
 	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
 	{
+		// Get current central cell
+		self.coordinator?.prepareForOrientationChange()
+
 		super.viewWillTransition(to: size, with: coordinator)
 		// The following is a workaround to fix the interface rotation animation under SwiftUI
 		view.frame = CGRect(origin: view.frame.origin, size: size)
+
 		coordinator.animate(alongsideTransition: { _ in
 			self.view.setNeedsLayout()
 			self.view.layoutIfNeeded()
-			self.collectionViewLayout.invalidateLayout()
-		}, completion: nil)
+			if
+				let desiredOffset = self.coordinator?.getContentOffsetForOrientationChange(),
+				self.collectionView.contentOffset != desiredOffset
+			{
+				self.collectionView.contentOffset = desiredOffset
+			}
+		})
+		{ _ in
+			// Completion
+			self.coordinator?.completedOrientationChange()
+		}
 	}
 
 	public override func viewSafeAreaInsetsDidChange()
@@ -608,6 +736,12 @@ public class AS_CollectionViewController: UIViewController
 		super.viewSafeAreaInsetsDidChange()
 		// The following is a workaround to fix the interface rotation animation under SwiftUI
 		collectionViewLayout.invalidateLayout()
+	}
+
+	public override func viewDidLayoutSubviews()
+	{
+		super.viewDidLayoutSubviews()
+		coordinator?.didUpdateContentSize(collectionView.contentSize)
 	}
 }
 
@@ -652,11 +786,68 @@ public extension ASCollectionView
 		this.layout = Layout(customLayout: customLayout)
 		return this
 	}
-	
-	func layout<LayoutClass: UICollectionViewLayout>(createCustomLayout: @escaping (() -> LayoutClass), configureCustomLayout: @escaping ((LayoutClass) -> ())) -> Self
+
+	func layout<LayoutClass: UICollectionViewLayout>(createCustomLayout: @escaping (() -> LayoutClass), configureCustomLayout: @escaping ((LayoutClass) -> Void)) -> Self
 	{
 		var this = self
 		this.layout = Layout(createCustomLayout: createCustomLayout, configureCustomLayout: configureCustomLayout)
 		return this
+	}
+
+	func shrinkToContentSize(isEnabled: Bool, _ contentSize: Binding<CGSize?>, dimensionToShrink: ShrinkDimension) -> some View
+	{
+		SelfSizingWrapper(self, isEnabled: isEnabled, contentSize: contentSize, shrinkDirection: dimensionToShrink)
+	}
+}
+
+protocol ContentSize
+{
+	var contentSize: Binding<CGSize?>? { get set }
+}
+
+// MARK: Helpers for self-sizing collection
+
+public enum ShrinkDimension
+{
+	case horizontal
+	case vertical
+
+	var shrinkVertical: Bool
+	{
+		self == .vertical
+	}
+
+	var shrinkHorizontal: Bool
+	{
+		self == .horizontal
+	}
+}
+
+struct SelfSizingWrapper<Content: View & ContentSize>: View
+{
+	var contentSize: Binding<CGSize?>
+	var content: Content
+	var shrinkDirection: ShrinkDimension
+	var isEnabled: Bool
+
+	init(_ content: Content, isEnabled: Bool, contentSize: Binding<CGSize?>, shrinkDirection: ShrinkDimension)
+	{
+		self.content = content
+		self.contentSize = contentSize
+		self.shrinkDirection = shrinkDirection
+		self.isEnabled = isEnabled
+
+		self.content.contentSize = contentSize
+	}
+
+	var body: some View
+	{
+		content
+			.frame(
+				idealWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
+				maxWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
+				idealHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
+				maxHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
+				alignment: .topLeading)
 	}
 }

@@ -66,7 +66,7 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 
 	func cellContext(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> CellContext
 	{
-		return CellContext(
+		CellContext(
 			isSelected: isSelected,
 			isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
 			isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
@@ -147,7 +147,7 @@ internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceP
 		guard dragEnabled else { return nil }
 		guard indexPath.item < data.endIndex else { return nil }
 		let item = data[indexPath.item]
-		
+
 		let itemProvider: NSItemProvider = self.itemProvider?(item) ?? NSItemProvider()
 		let dragItem = UIDragItem(itemProvider: itemProvider)
 		dragItem.localObject = data[indexPath.item]

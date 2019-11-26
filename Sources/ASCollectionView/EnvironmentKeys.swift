@@ -38,6 +38,11 @@ struct EnvironmentKeyASAlwaysBounceHorizontal: EnvironmentKey
 	static let defaultValue: Bool = false
 }
 
+struct EnvironmentKeyASInitialScrollPosition: EnvironmentKey
+{
+	static let defaultValue: ASCollectionViewScrollPosition? = nil
+}
+
 public extension EnvironmentValues
 {
 	var invalidateCellLayout: () -> Void
@@ -81,6 +86,12 @@ public extension EnvironmentValues
 		get { return self[EnvironmentKeyASAlwaysBounceHorizontal.self] }
 		set { self[EnvironmentKeyASAlwaysBounceHorizontal.self] = newValue }
 	}
+
+	var initialScrollPosition: ASCollectionViewScrollPosition?
+	{
+		get { return self[EnvironmentKeyASInitialScrollPosition.self] }
+		set { self[EnvironmentKeyASInitialScrollPosition.self] = newValue }
+	}
 }
 
 public extension View
@@ -113,5 +124,10 @@ public extension View
 	func alwaysBounceVertical(_ alwaysBounce: Bool = true) -> some View
 	{
 		environment(\.alwaysBounceVertical, alwaysBounce)
+	}
+
+	func initialScrollPosition(_ scrollPosition: ASCollectionViewScrollPosition?) -> some View
+	{
+		environment(\.initialScrollPosition, scrollPosition)
 	}
 }

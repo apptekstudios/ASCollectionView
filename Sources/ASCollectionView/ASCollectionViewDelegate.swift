@@ -20,12 +20,12 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 
 	open func collectionView(cellShouldSelfSizeHorizontallyForItemAt indexPath: IndexPath) -> Bool?
 	{
-		return nil
+		nil
 	}
 
 	open func collectionView(cellShouldSelfSizeVerticallyForItemAt indexPath: IndexPath) -> Bool?
 	{
-		return nil
+		nil
 	}
 
 	open var collectionViewContentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior

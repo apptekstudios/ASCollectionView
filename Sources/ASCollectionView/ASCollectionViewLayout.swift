@@ -4,9 +4,9 @@ import Foundation
 import SwiftUI
 import UIKit
 
-
 /// If building a custom layout, you can conform to this protocol to tell ASCollectionLayout which dimensions should be self-sized (default is both)
-public protocol ASCollectionViewLayoutProtocol {
+public protocol ASCollectionViewLayoutProtocol
+{
 	var selfSizeVertically: Bool { get }
 	var selfSizeHorizontally: Bool { get }
 }
@@ -25,7 +25,7 @@ public struct ASCollectionLayout<SectionID: Hashable>
 	}
 
 	var layout: LayoutType
-	var configureLayout: ((UICollectionViewLayout) -> ())?
+	var configureLayout: ((UICollectionViewLayout) -> Void)?
 	var decorationTypes: [(elementKind: String, ViewType: UICollectionReusableView.Type)] = []
 
 	public init(
@@ -44,14 +44,16 @@ public struct ASCollectionLayout<SectionID: Hashable>
 		self.layout = .compositional({ _ in layout() }, interSectionSpacing: interSectionSpacing, scrollDirection: scrollDirection)
 	}
 
-	public init(customLayout: () -> UICollectionViewLayout) {
+	public init(customLayout: () -> UICollectionViewLayout)
+	{
 		layout = .custom(customLayout())
 	}
-	
-	public init<LayoutClass: UICollectionViewLayout>(createCustomLayout: () -> LayoutClass, configureCustomLayout: ((LayoutClass) -> ())?)
+
+	public init<LayoutClass: UICollectionViewLayout>(createCustomLayout: () -> LayoutClass, configureCustomLayout: ((LayoutClass) -> Void)?)
 	{
 		layout = .custom(createCustomLayout())
-		configureLayout = configureCustomLayout.map { configuration in
+		configureLayout = configureCustomLayout.map
+		{ configuration in
 			{ layoutObject in
 				guard let layoutObject = layoutObject as? LayoutClass else { return }
 				configuration(layoutObject)
@@ -81,10 +83,10 @@ public struct ASCollectionLayout<SectionID: Hashable>
 			return cvLayout
 		}
 	}
-	
+
 	public func configureLayout(layoutObject: UICollectionViewLayout)
 	{
-		self.configureLayout?(layoutObject)
+		configureLayout?(layoutObject)
 	}
 
 	public static var `default`: ASCollectionLayout<SectionID>

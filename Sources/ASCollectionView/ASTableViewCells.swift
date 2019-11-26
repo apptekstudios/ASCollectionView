@@ -88,16 +88,18 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	var hostingController: ASHostingControllerProtocol?
 
 	private(set) var id: Int?
-	
-	override init(reuseIdentifier: String?) {
+
+	override init(reuseIdentifier: String?)
+	{
 		super.init(reuseIdentifier: reuseIdentifier)
 		backgroundView = UIView()
 	}
-	
-	required init?(coder: NSCoder) {
+
+	required init?(coder: NSCoder)
+	{
 		fatalError("init(coder:) has not been implemented")
 	}
-	
+
 	func setupFor<Content: View>(id: Int, view: Content?)
 	{
 		self.id = id

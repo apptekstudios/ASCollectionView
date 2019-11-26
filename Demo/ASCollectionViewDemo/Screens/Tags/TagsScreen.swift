@@ -7,6 +7,11 @@ struct TagsScreen: View
 {
 	@ObservedObject var store = TagStore()
 
+	/// Used in the extra example that shrinks the collectionView to fit its content
+	var shrinkToSize: Bool = false
+	@State var contentSize: CGSize? // This state variable is handed to the collectionView to allow it to store the content size
+	///
+
 	var body: some View
 	{
 		VStack(alignment: .leading, spacing: 20)
@@ -21,6 +26,7 @@ struct TagsScreen: View
 			}
 			Text("Tags:")
 				.font(.title)
+
 			ASCollectionView(
 				section:
 				ASCollectionViewSection(id: 0, data: store.items)
@@ -36,6 +42,17 @@ struct TagsScreen: View
 				let fl = AlignedFlowLayout()
 				fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
 				return fl
+			}
+			.shrinkToContentSize(isEnabled: shrinkToSize, $contentSize, dimensionToShrink: .vertical)
+
+			if shrinkToSize
+			{
+				Rectangle().fill(Color(.secondarySystemBackground))
+					.overlay(
+						Text("This is another view in the VStack, it shows how the collectionView above fits itself to the content.")
+							.foregroundColor(Color(.secondaryLabel))
+							.padding(),
+						alignment: .topLeading)
 			}
 		}
 		.padding()
@@ -53,7 +70,7 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 	{
 		if let collectionView = self.collectionView
 		{
-			return collectionView.frame.width != newBounds.width //We only care about changes in the width
+			return collectionView.frame.width != newBounds.width // We only care about changes in the width
 		}
 
 		return false

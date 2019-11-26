@@ -41,10 +41,13 @@ struct InstaFeedScreen: View
 				{ item, _ in
 					PostView(post: item)
 				}
-				.tableViewSetEstimatedSizes(rowHeight: 500, headerHeight: 50) //Optional: Provide reasonable estimated heights for this section
-				.sectionHeader {
-					VStack(spacing: 0) {
-						HStack {
+				.tableViewSetEstimatedSizes(rowHeight: 500, headerHeight: 50) // Optional: Provide reasonable estimated heights for this section
+				.sectionHeader
+				{
+					VStack(spacing: 0)
+					{
+						HStack
+						{
 							Text("Demo sticky header view")
 								.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
 							Spacer()
@@ -120,7 +123,6 @@ struct InstaFeedScreen: View
 		}
 	}
 }
-
 
 struct FeedView_Previews: PreviewProvider
 {

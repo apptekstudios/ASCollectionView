@@ -10,6 +10,7 @@
 --header "ASCollectionView. Created by Apptek Studios 2019"
 --allman true
 --indent tabs
+--tabwidth 4
 --closingparen same-line
 --commas inline
 --comments indent

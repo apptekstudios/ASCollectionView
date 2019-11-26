@@ -71,9 +71,10 @@ class ASCollectionViewCell: UICollectionViewCell
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
-		guard let hc = hostingController else {
+		guard let hc = hostingController else
+		{
 			return CGSize(width: 1, height: 1)
-		} //Can't return .zero as UICollectionViewLayout will crash
+		} // Can't return .zero as UICollectionViewLayout will crash
 		let size = hc.sizeThatFits(
 			in: targetSize,
 			selfSizeHorizontal: selfSizeHorizontal,

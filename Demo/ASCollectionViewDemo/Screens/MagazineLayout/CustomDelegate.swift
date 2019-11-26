@@ -8,12 +8,12 @@ class ASCollectionViewMagazineLayoutDelegate: ASCollectionViewDelegate, UICollec
 {
 	override func collectionView(cellShouldSelfSizeVerticallyForItemAt indexPath: IndexPath) -> Bool
 	{
-		return true
+		true
 	}
 
 	override func collectionView(cellShouldSelfSizeHorizontallyForItemAt indexPath: IndexPath) -> Bool
 	{
-		return false
+		false
 	}
 
 	override var collectionViewContentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior
@@ -31,36 +31,36 @@ class ASCollectionViewMagazineLayoutDelegate: ASCollectionViewDelegate, UICollec
 
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, visibilityModeForHeaderInSectionAtIndex index: Int) -> MagazineLayoutHeaderVisibilityMode
 	{
-		return .visible(heightMode: .dynamic, pinToVisibleBounds: true)
+		.visible(heightMode: .dynamic, pinToVisibleBounds: true)
 	}
 
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, visibilityModeForFooterInSectionAtIndex index: Int) -> MagazineLayoutFooterVisibilityMode
 	{
-		return .visible(heightMode: .dynamic, pinToVisibleBounds: false)
+		.visible(heightMode: .dynamic, pinToVisibleBounds: false)
 	}
 
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, visibilityModeForBackgroundInSectionAtIndex index: Int) -> MagazineLayoutBackgroundVisibilityMode
 	{
-		return .hidden
+		.hidden
 	}
 
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, horizontalSpacingForItemsInSectionAtIndex index: Int) -> CGFloat
 	{
-		return 12
+		12
 	}
 
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, verticalSpacingForElementsInSectionAtIndex index: Int) -> CGFloat
 	{
-		return 12
+		12
 	}
 
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetsForSectionAtIndex index: Int) -> UIEdgeInsets
 	{
-		return UIEdgeInsets(top: 0, left: 8, bottom: 24, right: 8)
+		UIEdgeInsets(top: 0, left: 8, bottom: 24, right: 8)
 	}
 
 	func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetsForItemsInSectionAtIndex index: Int) -> UIEdgeInsets
 	{
-		return UIEdgeInsets(top: 24, left: 0, bottom: 24, right: 0)
+		UIEdgeInsets(top: 24, left: 0, bottom: 24, right: 0)
 	}
 }
