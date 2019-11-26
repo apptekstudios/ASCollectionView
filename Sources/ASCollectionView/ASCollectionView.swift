@@ -359,7 +359,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				let centerCellFrame = collectionView.layoutAttributesForItem(at: indexPath)?.frame
 			else { return nil }
 			let maxOffset = collectionView.maxContentOffset
-			print(maxOffset)
 			let newOffset = CGPoint(
 				x: max(0, min(maxOffset.x, centerCellFrame.midX - (collectionView.bounds.width / 2))),
 				y: max(0, min(maxOffset.y, centerCellFrame.midY - (collectionView.bounds.height / 2))))
