@@ -787,8 +787,8 @@ public extension ASCollectionView
 		return this
 	}
 	
-	func shrinkToContentSize(_ contentSize: Binding<CGSize?>, dimensionToShrink: ShrinkDimension) -> some View {
-		SelfSizingWrapper(self, contentSize: contentSize, shrinkDirection: dimensionToShrink)
+	func shrinkToContentSize(isEnabled: Bool, _ contentSize: Binding<CGSize?>, dimensionToShrink: ShrinkDimension) -> some View {
+		SelfSizingWrapper(self, isEnabled: isEnabled, contentSize: contentSize, shrinkDirection: dimensionToShrink)
 	}
 }
 
@@ -796,37 +796,40 @@ protocol ContentSize {
 	var contentSize: Binding<CGSize?>? { get set }
 }
 
+//MARK: Helpers for self-sizing collection
 public enum ShrinkDimension {
 	case horizontal
 	case vertical
-	//case both
 	
 	var shrinkVertical: Bool {
-		self == .vertical //|| self == .both
+		self == .vertical
 	}
 	var shrinkHorizontal: Bool {
-		self == .horizontal //|| self == .both
+		self == .horizontal
 	}
 }
+
 struct SelfSizingWrapper<Content: View & ContentSize>: View {
 	var contentSize: Binding<CGSize?>
 	var content: Content
 	var shrinkDirection: ShrinkDimension
+	var isEnabled: Bool
 	
-	init(_ content: Content, contentSize: Binding<CGSize?>, shrinkDirection: ShrinkDimension) {
+	init(_ content: Content, isEnabled: Bool, contentSize: Binding<CGSize?>, shrinkDirection: ShrinkDimension) {
 		self.content = content
 		self.contentSize = contentSize
 		self.shrinkDirection = shrinkDirection
+		self.isEnabled = isEnabled
 		
 		self.content.contentSize = contentSize
 	}
 	
 	var body: some View {
 		content
-			.frame(idealWidth: shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
-				   maxWidth: shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
-				   idealHeight: shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
-				   maxHeight:  shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
+			.frame(idealWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
+				   maxWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
+				   idealHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
+				   maxHeight:  isEnabled && shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
 				   alignment: .topLeading)
 	}
 }

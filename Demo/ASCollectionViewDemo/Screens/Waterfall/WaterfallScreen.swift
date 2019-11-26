@@ -86,7 +86,7 @@ struct WaterfallScreen: View
 				.layout(self.layout)
 				.customDelegate(WaterfallScreenLayoutDelegate.init)
 				.contentInsets(.init(top: 0, left: 10, bottom: 10, right: 10))
-				.navigationBarTitle("Waterfall (Work in progress)", displayMode: .inline)
+				.navigationBarTitle("Waterfall Layout", displayMode: .inline)
 				.navigationBarItems(
 					trailing:
 					HStack(spacing: 20)
