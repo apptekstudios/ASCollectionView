@@ -10,6 +10,7 @@ struct RemindersScreen: View
 		case upper
 		case list
 		case addNew
+		case footnote
 	}
 
 	@State var upperData: [GroupModel] = [
@@ -54,7 +55,7 @@ struct RemindersScreen: View
 					Text("My Lists")
 						.font(.headline)
 						.bold()
-						.padding(.bottom, 5)
+						.padding()
 					Spacer()
 				}
 			}
@@ -63,17 +64,16 @@ struct RemindersScreen: View
 			{
 				GroupSmall(model: self.addNewModel)
 			}
-			.sectionFooter
+			
+			ASCollectionViewSection(id: Section.footnote)
 			{
 				HStack
-				{
-					Spacer()
-					Text("Try rotating the screen")
-						.padding()
-						.background(Color(.secondarySystemGroupedBackground))
-					Spacer()
+					{
+						Spacer()
+						Text("Try rotating the screen")
+							.padding()
+						Spacer()
 				}
-				.padding(.top)
 			}
 		}
 		.layout(self.layout)
@@ -98,7 +98,7 @@ struct RemindersScreen: View
 					itemSpacing: 20,
 					lineSpacing: 20,
 					itemSize: .estimated(90))
-			case .list, .addNew:
+			case .list, .addNew, .footnote:
 				return ASCollectionLayoutSection
 				{
 					let itemSize = NSCollectionLayoutSize(
@@ -113,6 +113,17 @@ struct RemindersScreen: View
 
 					let section = NSCollectionLayoutSection(group: group)
 					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
+					
+					let supplementarySize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
+					let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
+						layoutSize: supplementarySize,
+						elementKind: UICollectionView.elementKindSectionHeader,
+						alignment: .top)
+					let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
+						layoutSize: supplementarySize,
+						elementKind: UICollectionView.elementKindSectionFooter,
+						alignment: .bottom)
+					section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
 
 					let sectionBackgroundDecoration = NSCollectionLayoutDecorationItem.background(elementKind: self.groupBackgroundElementID)
 					sectionBackgroundDecoration.contentInsets = section.contentInsets
