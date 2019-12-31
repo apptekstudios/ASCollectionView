@@ -74,8 +74,8 @@ extension UICollectionView
 	var contentSizePlusInsets: CGSize
 	{
 		CGSize(
-			width: contentSize.width + contentInset.left + contentInset.right,
-			height: contentSize.height + contentInset.top + contentInset.bottom)
+			width: contentSize.width + adjustedContentInset.left + adjustedContentInset.right,
+			height: contentSize.height + adjustedContentInset.top + adjustedContentInset.bottom)
 	}
 
 	var maxContentOffset: CGPoint

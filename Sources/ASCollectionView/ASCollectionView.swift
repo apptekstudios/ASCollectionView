@@ -310,11 +310,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			case .top, .left:
 				collectionViewController?.collectionView.setContentOffset(.zero, animated: animated)
 			case .bottom:
-				guard let contentSize = collectionViewController?.collectionView.contentSizePlusInsets else { return }
-				collectionViewController?.collectionView.setContentOffset(.init(x: 0, y: contentSize.height), animated: animated)
+				guard let maxOffset = collectionViewController?.collectionView.maxContentOffset else { return }
+				collectionViewController?.collectionView.setContentOffset(.init(x: 0, y: maxOffset.y), animated: animated)
 			case .right:
-				guard let contentSize = collectionViewController?.collectionView.contentSizePlusInsets else { return }
-				collectionViewController?.collectionView.setContentOffset(.init(x: contentSize.width, y: 0), animated: animated)
+				guard let maxOffset = collectionViewController?.collectionView.maxContentOffset else { return }
+				collectionViewController?.collectionView.setContentOffset(.init(x: maxOffset.x, y: 0), animated: animated)
 			case let .centerOnIndexPath(indexPath):
 				guard let offset = getContentOffsetToCenterCell(at: indexPath) else { return }
 				collectionViewController?.collectionView.setContentOffset(offset, animated: animated)
@@ -404,7 +404,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 		{
-			(cell as? Cell)?.willAppear(in: collectionViewController)
+			collectionViewController.map { (cell as? Cell)?.willAppear(in: $0) }
 			currentlyPrefetching.remove(indexPath)
 			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
 			parent.sections[indexPath.section].dataSource.onAppear(indexPath)

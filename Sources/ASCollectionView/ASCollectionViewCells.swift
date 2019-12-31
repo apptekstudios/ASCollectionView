@@ -28,17 +28,17 @@ class ASCollectionViewCell: UICollectionViewCell
 		self.id = id
 	}
 
-	func willAppear(in vc: UIViewController?)
+	func willAppear(in vc: UIViewController)
 	{
 		hostingController.map
 		{
 			$0.viewController.removeFromParent()
-			vc?.addChild($0.viewController)
+			vc.addChild($0.viewController)
 			contentView.addSubview($0.viewController.view)
 
 			setNeedsLayout()
 
-			vc.map { hostingController?.viewController.didMove(toParent: $0) }
+			hostingController?.viewController.didMove(toParent: vc)
 		}
 	}
 
