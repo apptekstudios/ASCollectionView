@@ -124,7 +124,7 @@
 				B86C6F16234B078600522AEF /* AppDelegate.swift */,
 				B86C6F18234B078600522AEF /* SceneDelegate.swift */,
 				B86C6F42234B0B9D00522AEF /* MainView.swift */,
-				B86C6F35234B0B9D00522AEF /* Models */,
+				B86C6F35234B0B9D00522AEF /* SharedModels */,
 				B86C6F30234B0B9D00522AEF /* Support */,
 				B86C6F38234B0B9D00522AEF /* Screens */,
 				B86C6F1C234B078800522AEF /* Assets.xcassets */,
@@ -161,12 +161,12 @@
 			path = Support;
 			sourceTree = "<group>";
 		};
-		B86C6F35234B0B9D00522AEF /* Models */ = {
+		B86C6F35234B0B9D00522AEF /* SharedModels */ = {
 			isa = PBXGroup;
 			children = (
 				B86C6F36234B0B9D00522AEF /* Post.swift */,
 			);
-			path = Models;
+			path = SharedModels;
 			sourceTree = "<group>";
 		};
 		B86C6F38234B0B9D00522AEF /* Screens */ = {

@@ -76,6 +76,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	var shouldRecreateLayoutOnStateChange: Bool = false
 	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
 
+	// MARK: Environment variables
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
@@ -272,7 +273,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func updateContent(_ cv: UICollectionView, animated: Bool, refreshExistingCells: Bool)
 		{
-			if refreshExistingCells, collectionViewController?.parent != nil
+			guard collectionViewController?.parent != nil else { return }
+			if refreshExistingCells
 			{
 				cv.visibleCells.forEach
 				{ cell in
@@ -294,8 +296,14 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					}
 				}
 			}
-			populateDataSource(animated: collectionViewController?.parent != nil)
+			populateDataSource(animated: animated)
 			updateSelectionBindings(cv)
+		}
+		
+		func onMoveToParent(_ collectionViewController: AS_CollectionViewController) {
+			//Populate data source
+			populateDataSource(animated: false)
+			//Set initial scroll position
 			if !hasSetInitialScrollPosition
 			{
 				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
@@ -564,7 +572,7 @@ public extension ASCollectionView
 		return this
 	}
 }
-
+// MARK: Coordinator Protocol
 internal protocol ASCollectionViewCoordinator: AnyObject
 {
 	func typeErasedDataForItem(at indexPath: IndexPath) -> Any?
@@ -582,6 +590,7 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func removeItem(from indexPath: IndexPath)
 	func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
 	func didUpdateContentSize(_ size: CGSize)
+	func onMoveToParent(_ collectionViewController: AS_CollectionViewController)
 }
 
 // MARK: Custom Prefetching Implementation
@@ -687,6 +696,11 @@ public class AS_CollectionViewController: UIViewController
 	required init?(coder: NSCoder)
 	{
 		fatalError("init(coder:) has not been implemented")
+	}
+	
+	public override func didMove(toParent parent: UIViewController?) {
+		super.didMove(toParent: parent)
+		coordinator?.onMoveToParent(self)
 	}
 
 	public override func viewDidLoad()
