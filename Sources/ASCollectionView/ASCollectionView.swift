@@ -70,11 +70,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
 
-	var shouldInvalidateLayoutOnStateChange: Bool = false
-	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
-
-	var shouldRecreateLayoutOnStateChange: Bool = false
-	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
 
 	// MARK: Environment variables
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
@@ -83,6 +78,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.initialScrollPosition) private var initialScrollPosition
 	@Environment(\.editMode) private var editMode
+	
+	// MARK: Internal variables modified by modifier functions
+	var shouldInvalidateLayoutOnStateChange: Bool = false
+	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
+	
+	var shouldRecreateLayoutOnStateChange: Bool = false
+	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
 
 	// MARK: Init for multi-section CVs
 
@@ -172,7 +174,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 
-		var hasSetInitialScrollPosition = false
+		
+		// MARK: Private tracking variables
+		private var hasSetInitialScrollPosition = false
 
 		typealias Cell = ASCollectionViewCell
 
