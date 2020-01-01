@@ -10,8 +10,9 @@ A SwiftUI implementation of UICollectionView & UITableView. Here's some of its u
  * supports **preloading** and **onAppear/onDisappear**.
  * supports **cell selection**, with automatic support for SwiftUI editing mode.
  * supports **autosizing** of cells.
- * supports **removing separators** for ASTableView.
  * supports the new **UICollectionViewCompositionalLayout**, and **any other UICollectionViewLayout**
+ * supports **removing separators** for ASTableView.
+ * supports directly using **FetchedResults** as a data source
 
 ### Pull requests and suggestions welcome :)
 <a href="https://github.com/apptekstudios/ASCollectionView/issues">Report Bug</a>  ·  <a href="https://github.com/apptekstudios/ASCollectionView/issues">Suggest a feature</a>
