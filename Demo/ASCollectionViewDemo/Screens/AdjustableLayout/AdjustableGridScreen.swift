@@ -33,7 +33,7 @@ struct AdjustableGridScreen: View
 			{
 				GeometryReader
 				{ geom in
-					ASRemoteImageView(item.squareThumbURL)
+					ASRemoteImageView(item.url)
 						.aspectRatio(1, contentMode: .fill)
 						.frame(width: geom.size.width, height: geom.size.height)
 						.clipped()
@@ -101,18 +101,18 @@ struct AdjustableGridScreen: View
 		switch event
 		{
 		case let .onAppear(item):
-			ASRemoteImageManager.shared.load(item.squareThumbURL)
+			ASRemoteImageManager.shared.load(item.url)
 		case let .onDisappear(item):
-			ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+			ASRemoteImageManager.shared.cancelLoad(for: item.url)
 		case let .prefetchForData(data):
 			for item in data
 			{
-				ASRemoteImageManager.shared.load(item.squareThumbURL)
+				ASRemoteImageManager.shared.load(item.url)
 			}
 		case let .cancelPrefetchForData(data):
 			for item in data
 			{
-				ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+				ASRemoteImageManager.shared.cancelLoad(for: item.url)
 			}
 		}
 	}

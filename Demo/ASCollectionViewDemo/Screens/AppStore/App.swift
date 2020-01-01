@@ -14,7 +14,7 @@ struct App: Identifiable
 		URL(string: "https://picsum.photos/800/500?random=\(abs(randomNumberForImage))")!
 	}
 
-	var squareThumbURL: URL
+	var url: URL
 	{
 		URL(string: "https://picsum.photos/500?random=\(abs(randomNumberForImage))")!
 	}

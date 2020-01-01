@@ -35,11 +35,14 @@ struct PhotoGridScreen: View
 			{
 				GeometryReader
 				{ geom in
-					ASRemoteImageView(item.squareThumbURL)
-						.aspectRatio(1, contentMode: .fill)
-						.frame(width: geom.size.width, height: geom.size.height)
-						.clipped()
-						.opacity(state.isSelected ? 0.7 : 1.0)
+					NavigationLink(destination: self.destinationForItem(item)) {
+						ASRemoteImageView(item.url)
+							.aspectRatio(1, contentMode: .fill)
+							.frame(width: geom.size.width, height: geom.size.height)
+							.clipped()
+					}
+					.buttonStyle(PlainButtonStyle())
+					.disabled(self.isEditing)
 				}
 
 				if state.isSelected
@@ -92,18 +95,28 @@ struct PhotoGridScreen: View
 		switch event
 		{
 		case let .onAppear(item):
-			ASRemoteImageManager.shared.load(item.squareThumbURL)
+			ASRemoteImageManager.shared.load(item.url)
 		case let .onDisappear(item):
-			ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+			ASRemoteImageManager.shared.cancelLoad(for: item.url)
 		case let .prefetchForData(data):
 			for item in data
 			{
-				ASRemoteImageManager.shared.load(item.squareThumbURL)
+				ASRemoteImageManager.shared.load(item.url)
 			}
 		case let .cancelPrefetchForData(data):
 			for item in data
 			{
-				ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+				ASRemoteImageManager.shared.cancelLoad(for: item.url)
+			}
+		}
+	}
+	
+	func destinationForItem(_ item: Post) -> some View {
+		ScrollView {
+			PostView(post: item)
+				.onAppear {
+					ASRemoteImageManager.shared.load(item.url)
+					ASRemoteImageManager.shared.load(item.usernamePhotoURL)
 			}
 		}
 	}
