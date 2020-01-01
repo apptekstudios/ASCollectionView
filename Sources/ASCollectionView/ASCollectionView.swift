@@ -178,7 +178,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		// MARK: Private tracking variables
 
-		private var hasSetInitialScrollPosition = false
+		private var hasDoneInitialSetup = false
 		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
 
 		typealias Cell = ASCollectionViewCell
@@ -307,15 +307,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			updateSelectionBindings(cv)
 		}
 
-		func onMoveToParent(_: AS_CollectionViewController)
+		func onMoveToParent(_ parentController: AS_CollectionViewController)
 		{
-			// Populate data source
-			populateDataSource(animated: false)
-			// Set initial scroll position
-			if !hasSetInitialScrollPosition
-			{
+			if !hasDoneInitialSetup {
+				hasDoneInitialSetup = true
+				
+				// Populate data source
+				populateDataSource(animated: false)
+				
+				// Set initial scroll position
 				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
-				hasSetInitialScrollPosition = true
 			}
 		}
 
@@ -656,9 +657,9 @@ extension ASCollectionView.Coordinator
 {
 	func setupPrefetching()
 	{
-		let numberToPreload = 10
+		let numberToPreload = 8
 		prefetchSubscription = queuePrefetch
-			.collect(.byTime(DispatchQueue.main, 0.1)) // Wanted to use .throttle(for: 0.1, scheduler: DispatchQueue(label: "ASCollectionView PREFETCH"), latest: true) -> THIS CRASHES?? BUG??
+			.throttle(for: 0.1, scheduler: DispatchQueue.main, latest: true)
 			.compactMap
 		{ _ in
 			self.collectionViewController?.collectionView.indexPathsForVisibleItems
