@@ -53,7 +53,7 @@ struct DataSource
 		}
 	}
 
-	static func postsForInstaSection(_ sectionID: Int, number: Int = 12) -> [Post]
+	static func postsForInstaSection(_ sectionID: Int, number: Int = 5) -> [Post]
 	{
 		(0..<number).map
 		{ b -> Post in

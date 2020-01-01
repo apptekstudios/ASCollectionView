@@ -28,6 +28,11 @@ struct EnvironmentKeyASTableViewOnReachedBottom: EnvironmentKey
 	static let defaultValue: (() -> Void) = {}
 }
 
+struct EnvironmentKeyASCollectionViewOnReachedBoundary: EnvironmentKey
+{
+	static let defaultValue: ((Boundary) -> Void) = { _ in }
+}
+
 struct EnvironmentKeyASAlwaysBounceVertical: EnvironmentKey
 {
 	static let defaultValue: Bool = false
@@ -75,6 +80,12 @@ public extension EnvironmentValues
 		set { self[EnvironmentKeyASTableViewOnReachedBottom.self] = newValue }
 	}
 
+	var collectionViewOnReachedBoundary: (Boundary) -> Void
+	{
+		get { self[EnvironmentKeyASCollectionViewOnReachedBoundary.self] }
+		set { self[EnvironmentKeyASCollectionViewOnReachedBoundary.self] = newValue }
+	}
+
 	var alwaysBounceVertical: Bool
 	{
 		get { return self[EnvironmentKeyASAlwaysBounceVertical.self] }
@@ -114,6 +125,11 @@ public extension View
 	func onTableViewReachedBottom(_ onReachedBottom: @escaping (() -> Void)) -> some View
 	{
 		environment(\.tableViewOnReachedBottom, onReachedBottom)
+	}
+
+	func onCollectionViewReachedBoundary(_ onReachedBoundary: @escaping ((Boundary) -> Void)) -> some View
+	{
+		environment(\.collectionViewOnReachedBoundary, onReachedBoundary)
 	}
 
 	func alwaysBounceHorizontal(_ alwaysBounce: Bool = true) -> some View

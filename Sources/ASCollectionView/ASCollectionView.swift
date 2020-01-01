@@ -70,18 +70,23 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
 
-	var shouldInvalidateLayoutOnStateChange: Bool = false
-	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
-
-	var shouldRecreateLayoutOnStateChange: Bool = false
-	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
+	// MARK: Environment variables
 
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.initialScrollPosition) private var initialScrollPosition
+	@Environment(\.collectionViewOnReachedBoundary) private var onReachedBoundary
 	@Environment(\.editMode) private var editMode
+
+	// MARK: Internal variables modified by modifier functions
+
+	var shouldInvalidateLayoutOnStateChange: Bool = false
+	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
+
+	var shouldRecreateLayoutOnStateChange: Bool = false
+	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
 
 	// MARK: Init for multi-section CVs
 
@@ -171,7 +176,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 
-		var hasSetInitialScrollPosition = false
+		// MARK: Private tracking variables
+
+		private var hasDoneInitialSetup = false
+		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
 
 		typealias Cell = ASCollectionViewCell
 
@@ -272,7 +280,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func updateContent(_ cv: UICollectionView, animated: Bool, refreshExistingCells: Bool)
 		{
-			if refreshExistingCells, collectionViewController?.parent != nil
+			guard collectionViewController?.parent != nil else { return }
+			if refreshExistingCells
 			{
 				cv.visibleCells.forEach
 				{ cell in
@@ -294,12 +303,20 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					}
 				}
 			}
-			populateDataSource(animated: collectionViewController?.parent != nil)
+			populateDataSource(animated: animated)
 			updateSelectionBindings(cv)
-			if !hasSetInitialScrollPosition
-			{
+		}
+
+		func onMoveToParent(_ parentController: AS_CollectionViewController)
+		{
+			if !hasDoneInitialSetup {
+				hasDoneInitialSetup = true
+				
+				// Populate data source
+				populateDataSource(animated: false)
+				
+				// Set initial scroll position
 				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
-				hasSetInitialScrollPosition = true
 			}
 		}
 
@@ -310,11 +327,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			case .top, .left:
 				collectionViewController?.collectionView.setContentOffset(.zero, animated: animated)
 			case .bottom:
-				guard let contentSize = collectionViewController?.collectionView.contentSizePlusInsets else { return }
-				collectionViewController?.collectionView.setContentOffset(.init(x: 0, y: contentSize.height), animated: animated)
+				guard let maxOffset = collectionViewController?.collectionView.maxContentOffset else { return }
+				collectionViewController?.collectionView.setContentOffset(.init(x: 0, y: maxOffset.y), animated: animated)
 			case .right:
-				guard let contentSize = collectionViewController?.collectionView.contentSizePlusInsets else { return }
-				collectionViewController?.collectionView.setContentOffset(.init(x: contentSize.width, y: 0), animated: animated)
+				guard let maxOffset = collectionViewController?.collectionView.maxContentOffset else { return }
+				collectionViewController?.collectionView.setContentOffset(.init(x: maxOffset.x, y: 0), animated: animated)
 			case let .centerOnIndexPath(indexPath):
 				guard let offset = getContentOffsetToCenterCell(at: indexPath) else { return }
 				collectionViewController?.collectionView.setContentOffset(offset, animated: animated)
@@ -404,7 +421,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 		{
-			(cell as? Cell)?.willAppear(in: collectionViewController)
+			collectionViewController.map { (cell as? Cell)?.willAppear(in: $0) }
 			currentlyPrefetching.remove(indexPath)
 			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
 			parent.sections[indexPath.section].dataSource.onAppear(indexPath)
@@ -525,6 +542,54 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	}
 }
 
+// MARK: OnReachedEnd support
+
+extension ASCollectionView.Coordinator
+{
+	public func scrollViewDidScroll(_ scrollView: UIScrollView)
+	{
+		checkIfReachedBoundary(scrollView)
+	}
+
+	func checkIfReachedBoundary(_ scrollView: UIScrollView)
+	{
+		let scrollableHorizontally = scrollView.contentSizePlusInsets.width > scrollView.frame.size.width
+		let scrollableVertically = scrollView.contentSizePlusInsets.height > scrollView.frame.size.height
+
+		for boundary in Boundary.allCases
+		{
+			let hasReachedBoundary: Bool = {
+				switch boundary
+				{
+				case .left:
+					return scrollableHorizontally && scrollView.contentOffset.x <= 0
+				case .top:
+					return scrollableVertically && scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top
+				case .right:
+					return scrollableHorizontally && (scrollView.contentSizePlusInsets.width - scrollView.contentOffset.x) <= scrollView.frame.size.width
+				case .bottom:
+					return scrollableVertically && (scrollView.contentSizePlusInsets.height - scrollView.contentOffset.y) <= scrollView.frame.size.height
+				}
+			}()
+
+			if hasReachedBoundary
+			{
+				// If we haven't already fired the notification, send it now
+				if !hasFiredBoundaryNotificationForBoundary.contains(boundary)
+				{
+					hasFiredBoundaryNotificationForBoundary.insert(boundary)
+					parent.onReachedBoundary(boundary)
+				}
+			}
+			else
+			{
+				// No longer at this boundary, reset so it can fire again if needed
+				hasFiredBoundaryNotificationForBoundary.remove(boundary)
+			}
+		}
+	}
+}
+
 // MARK: Modifer: Custom Delegate
 
 public extension ASCollectionView
@@ -564,7 +629,7 @@ public extension ASCollectionView
 		return this
 	}
 }
-
+// MARK: Coordinator Protocol
 internal protocol ASCollectionViewCoordinator: AnyObject
 {
 	func typeErasedDataForItem(at indexPath: IndexPath) -> Any?
@@ -582,6 +647,8 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func removeItem(from indexPath: IndexPath)
 	func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
 	func didUpdateContentSize(_ size: CGSize)
+	func scrollViewDidScroll(_ scrollView: UIScrollView)
+	func onMoveToParent(_ collectionViewController: AS_CollectionViewController)
 }
 
 // MARK: Custom Prefetching Implementation
@@ -590,9 +657,9 @@ extension ASCollectionView.Coordinator
 {
 	func setupPrefetching()
 	{
-		let numberToPreload = 10
+		let numberToPreload = 8
 		prefetchSubscription = queuePrefetch
-			.collect(.byTime(DispatchQueue.main, 0.1)) // Wanted to use .throttle(for: 0.1, scheduler: DispatchQueue(label: "ASCollectionView PREFETCH"), latest: true) -> THIS CRASHES?? BUG??
+			.collect(.byTime(DispatchQueue.main, 0.1)) // .throttle CRASHES on 13.1, fixed from 13.3 but still using .collect for 13.1 compatibility
 			.compactMap
 		{ _ in
 			self.collectionViewController?.collectionView.indexPathsForVisibleItems
@@ -687,6 +754,12 @@ public class AS_CollectionViewController: UIViewController
 	required init?(coder: NSCoder)
 	{
 		fatalError("init(coder:) has not been implemented")
+	}
+
+	public override func didMove(toParent parent: UIViewController?)
+	{
+		super.didMove(toParent: parent)
+		coordinator?.onMoveToParent(self)
 	}
 
 	public override func viewDidLoad()

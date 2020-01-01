@@ -140,4 +140,9 @@ extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionVi
 			return
 		}
 	}
+
+	public func scrollViewDidScroll(_ scrollView: UIScrollView)
+	{
+		self.coordinator?.scrollViewDidScroll(scrollView)
+	}
 }

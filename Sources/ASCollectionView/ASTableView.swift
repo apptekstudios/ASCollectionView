@@ -197,16 +197,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				return cell
 			}
 			dataSource?.defaultRowAnimation = .fade
-			/* self.dataSource?. = { (cv, kind, indexPath) -> UICollectionReusableView? in
-			     guard
-			         let reusableView = cv.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
-			         else { return nil }
-
-			     let headerView = self.parent.sections[indexPath.section].header
-			     reusableView.setupFor(id: indexPath.section,
-			                           view: headerView)
-			     return reusableView
-			 } */
 		}
 
 		func updateContent(_ tv: UITableView, refreshExistingCells: Bool)
