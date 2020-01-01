@@ -10,7 +10,7 @@ struct StoryView: View
 	{
 		VStack
 		{
-			ASRemoteImageView(post.squareThumbURL)
+			ASRemoteImageView(post.url)
 				.aspectRatio(contentMode: .fill)
 				.clipShape(Circle())
 				.frame(width: 50, height: 50)

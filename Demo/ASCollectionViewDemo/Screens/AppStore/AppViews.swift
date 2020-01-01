@@ -46,7 +46,7 @@ struct AppViewLarge: View
 	{
 		HStack(alignment: .top)
 		{
-			ASRemoteImageView(app.squareThumbURL)
+			ASRemoteImageView(app.url)
 				.aspectRatio(1, contentMode: .fit)
 				.cornerRadius(16)
 				.clipped()
@@ -72,7 +72,7 @@ struct AppViewCompact: View
 	{
 		HStack(alignment: .center)
 		{
-			ASRemoteImageView(app.squareThumbURL)
+			ASRemoteImageView(app.url)
 				.aspectRatio(1, contentMode: .fit)
 				.cornerRadius(16)
 				.clipped()

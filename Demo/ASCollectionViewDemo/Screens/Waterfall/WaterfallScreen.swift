@@ -30,7 +30,7 @@ struct WaterfallScreen: View
 			{ geom in
 				ZStack(alignment: .bottomTrailing)
 				{
-					ASRemoteImageView(item.squareThumbURL)
+					ASRemoteImageView(item.url)
 						.scaledToFill()
 						.frame(width: geom.size.width, height: geom.size.height)
 						.opacity(state.isSelected ? 0.7 : 1.0)
@@ -114,18 +114,18 @@ struct WaterfallScreen: View
 		switch event
 		{
 		case let .onAppear(item):
-			ASRemoteImageManager.shared.load(item.squareThumbURL)
+			ASRemoteImageManager.shared.load(item.url)
 		case let .onDisappear(item):
-			ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+			ASRemoteImageManager.shared.cancelLoad(for: item.url)
 		case let .prefetchForData(data):
 			for item in data
 			{
-				ASRemoteImageManager.shared.load(item.squareThumbURL)
+				ASRemoteImageManager.shared.load(item.url)
 			}
 		case let .cancelPrefetchForData(data):
 			for item in data
 			{
-				ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+				ASRemoteImageManager.shared.cancelLoad(for: item.url)
 			}
 		}
 	}

@@ -73,7 +73,7 @@ struct AppStoreScreen: View
 			case 0:
 				ASRemoteImageManager.shared.load(item.featureImageURL)
 			default:
-				ASRemoteImageManager.shared.load(item.squareThumbURL)
+				ASRemoteImageManager.shared.load(item.url)
 			}
 		case let .onDisappear(item):
 			switch sectionID
@@ -81,7 +81,7 @@ struct AppStoreScreen: View
 			case 0:
 				ASRemoteImageManager.shared.cancelLoad(for: item.featureImageURL)
 			default:
-				ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+				ASRemoteImageManager.shared.cancelLoad(for: item.url)
 			}
 		case let .prefetchForData(data):
 			for item in data
@@ -91,7 +91,7 @@ struct AppStoreScreen: View
 				case 0:
 					ASRemoteImageManager.shared.load(item.featureImageURL)
 				default:
-					ASRemoteImageManager.shared.load(item.squareThumbURL)
+					ASRemoteImageManager.shared.load(item.url)
 				}
 			}
 		case let .cancelPrefetchForData(data):
@@ -102,7 +102,7 @@ struct AppStoreScreen: View
 				case 0:
 					ASRemoteImageManager.shared.cancelLoad(for: item.featureImageURL)
 				default:
-					ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+					ASRemoteImageManager.shared.cancelLoad(for: item.url)
 				}
 			}
 		}

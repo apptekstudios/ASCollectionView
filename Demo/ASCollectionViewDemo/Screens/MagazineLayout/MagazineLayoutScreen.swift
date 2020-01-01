@@ -18,7 +18,7 @@ struct MagazineLayoutScreen: View
 		{ (offset, sectionData) -> ASCollectionViewSection<Int> in
 			ASCollectionViewSection(id: offset, data: sectionData, onCellEvent: onCellEvent)
 			{ item, _ in
-				ASRemoteImageView(item.squareThumbURL)
+				ASRemoteImageView(item.url)
 					.aspectRatio(1, contentMode: .fit)
 					.contextMenu
 				{
@@ -57,18 +57,18 @@ struct MagazineLayoutScreen: View
 		switch event
 		{
 		case let .onAppear(item):
-			ASRemoteImageManager.shared.load(item.squareThumbURL)
+			ASRemoteImageManager.shared.load(item.url)
 		case let .onDisappear(item):
-			ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+			ASRemoteImageManager.shared.cancelLoad(for: item.url)
 		case let .prefetchForData(data):
 			for item in data
 			{
-				ASRemoteImageManager.shared.load(item.squareThumbURL)
+				ASRemoteImageManager.shared.load(item.url)
 			}
 		case let .cancelPrefetchForData(data):
 			for item in data
 			{
-				ASRemoteImageManager.shared.cancelLoad(for: item.squareThumbURL)
+				ASRemoteImageManager.shared.cancelLoad(for: item.url)
 			}
 		}
 	}
