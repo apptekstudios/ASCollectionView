@@ -659,7 +659,7 @@ extension ASCollectionView.Coordinator
 	{
 		let numberToPreload = 8
 		prefetchSubscription = queuePrefetch
-			.throttle(for: 0.1, scheduler: DispatchQueue.main, latest: true)
+			.collect(.byTime(DispatchQueue.main, 0.1)) // .throttle CRASHES on 13.1, fixed from 13.3 but still using .collect for 13.1 compatibility
 			.compactMap
 		{ _ in
 			self.collectionViewController?.collectionView.indexPathsForVisibleItems
