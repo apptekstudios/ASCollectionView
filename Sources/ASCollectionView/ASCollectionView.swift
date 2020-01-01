@@ -70,19 +70,21 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
 
-
 	// MARK: Environment variables
+
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.initialScrollPosition) private var initialScrollPosition
+	@Environment(\.collectionViewOnReachedBoundary) private var onReachedBoundary
 	@Environment(\.editMode) private var editMode
-	
+
 	// MARK: Internal variables modified by modifier functions
+
 	var shouldInvalidateLayoutOnStateChange: Bool = false
 	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
-	
+
 	var shouldRecreateLayoutOnStateChange: Bool = false
 	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
 
@@ -174,9 +176,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 
-		
 		// MARK: Private tracking variables
+
 		private var hasSetInitialScrollPosition = false
+		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
 
 		typealias Cell = ASCollectionViewCell
 
@@ -303,11 +306,12 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			populateDataSource(animated: animated)
 			updateSelectionBindings(cv)
 		}
-		
-		func onMoveToParent(_ collectionViewController: AS_CollectionViewController) {
-			//Populate data source
+
+		func onMoveToParent(_: AS_CollectionViewController)
+		{
+			// Populate data source
 			populateDataSource(animated: false)
-			//Set initial scroll position
+			// Set initial scroll position
 			if !hasSetInitialScrollPosition
 			{
 				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
@@ -537,6 +541,54 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	}
 }
 
+// MARK: OnReachedEnd support
+
+extension ASCollectionView.Coordinator
+{
+	public func scrollViewDidScroll(_ scrollView: UIScrollView)
+	{
+		checkIfReachedBoundary(scrollView)
+	}
+
+	func checkIfReachedBoundary(_ scrollView: UIScrollView)
+	{
+		let scrollableHorizontally = scrollView.contentSizePlusInsets.width > scrollView.frame.size.width
+		let scrollableVertically = scrollView.contentSizePlusInsets.height > scrollView.frame.size.height
+
+		for boundary in Boundary.allCases
+		{
+			let hasReachedBoundary: Bool = {
+				switch boundary
+				{
+				case .left:
+					return scrollableHorizontally && scrollView.contentOffset.x <= 0
+				case .top:
+					return scrollableVertically && scrollView.contentOffset.y <= -scrollView.adjustedContentInset.top
+				case .right:
+					return scrollableHorizontally && (scrollView.contentSizePlusInsets.width - scrollView.contentOffset.x) <= scrollView.frame.size.width
+				case .bottom:
+					return scrollableVertically && (scrollView.contentSizePlusInsets.height - scrollView.contentOffset.y) <= scrollView.frame.size.height
+				}
+			}()
+
+			if hasReachedBoundary
+			{
+				// If we haven't already fired the notification, send it now
+				if !hasFiredBoundaryNotificationForBoundary.contains(boundary)
+				{
+					hasFiredBoundaryNotificationForBoundary.insert(boundary)
+					parent.onReachedBoundary(boundary)
+				}
+			}
+			else
+			{
+				// No longer at this boundary, reset so it can fire again if needed
+				hasFiredBoundaryNotificationForBoundary.remove(boundary)
+			}
+		}
+	}
+}
+
 // MARK: Modifer: Custom Delegate
 
 public extension ASCollectionView
@@ -594,6 +646,7 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func removeItem(from indexPath: IndexPath)
 	func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
 	func didUpdateContentSize(_ size: CGSize)
+	func scrollViewDidScroll(_ scrollView: UIScrollView)
 	func onMoveToParent(_ collectionViewController: AS_CollectionViewController)
 }
 
@@ -701,8 +754,9 @@ public class AS_CollectionViewController: UIViewController
 	{
 		fatalError("init(coder:) has not been implemented")
 	}
-	
-	public override func didMove(toParent parent: UIViewController?) {
+
+	public override func didMove(toParent parent: UIViewController?)
+	{
 		super.didMove(toParent: parent)
 		coordinator?.onMoveToParent(self)
 	}

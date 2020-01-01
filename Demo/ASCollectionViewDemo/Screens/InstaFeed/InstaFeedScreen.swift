@@ -30,6 +30,10 @@ struct InstaFeedScreen: View
 					}
 					.frame(height: 100)
 					.scrollIndicatorsEnabled(false)
+					.onCollectionViewReachedBoundary
+					{ boundary in
+						print("Reached the \(boundary) boundary")
+					}
 				}
 			}
 			else
