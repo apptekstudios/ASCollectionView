@@ -6,7 +6,7 @@ import UIKit
 
 struct InstaFeedScreen: View
 {
-	@State var data: [[Post]] = (0...3).map { DataSource.postsForInstaSection($0) }
+	@State var data: [[Post]] = (0...1).map { DataSource.postsForInstaSection($0) }
 
 	var sections: [ASTableViewSection<Int>]
 	{
