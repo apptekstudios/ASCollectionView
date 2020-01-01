@@ -1,13 +1,13 @@
 // ASCollectionView. Created by Apptek Studios 2019
 
 import SwiftUI
-
+@available(iOS 13.0, *)
 protocol ContentSize
 {
 	var contentSize: Binding<CGSize?>? { get set }
 }
 
-
+@available(iOS 13.0, *)
 public enum ShrinkDimension
 {
 	case horizontal
@@ -23,7 +23,7 @@ public enum ShrinkDimension
 		self == .horizontal
 	}
 }
-
+@available(iOS 13.0, *)
 struct SelfSizingWrapper<Content: View & ContentSize>: View
 {
 	var contentSize: Binding<CGSize?>
@@ -52,7 +52,7 @@ struct SelfSizingWrapper<Content: View & ContentSize>: View
 				alignment: .topLeading)
 	}
 }
-
+@available(iOS 13.0, *)
 public extension ASCollectionView
 {
 	func shrinkToContentSize(isEnabled: Bool, _ contentSize: Binding<CGSize?>, dimensionToShrink: ShrinkDimension) -> some View

@@ -3,6 +3,7 @@
 import Foundation
 import SwiftUI
 
+@available(iOS 13.0, *)
 class ASTableViewCell: UITableViewCell
 {
 	var hostingController: ASHostingControllerProtocol?
@@ -83,6 +84,7 @@ class ASTableViewCell: UITableViewCell
 	}
 }
 
+@available(iOS 13.0, *)
 class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 {
 	var hostingController: ASHostingControllerProtocol?

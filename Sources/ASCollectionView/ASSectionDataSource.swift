@@ -2,7 +2,7 @@
 
 import Foundation
 import SwiftUI
-
+@available(iOS 13.0, *)
 internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
@@ -19,7 +19,7 @@ internal protocol ASSectionDataSourceProtocol
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 }
-
+@available(iOS 13.0, *)
 public enum CellEvent<Data>
 {
 	/// Respond by starting necessary prefetch operations for this data to be displayed soon (eg. download images)
@@ -34,17 +34,21 @@ public enum CellEvent<Data>
 	/// Called when an item is disappearing from the screen
 	case onDisappear(item: Data)
 }
-
+@available(iOS 13.0, *)
 public enum DragDrop<Data>
 {
 	case onRemoveItem(indexPath: IndexPath)
 	case onAddItems(items: [Data], atIndexPath: IndexPath)
 }
 
+@available(iOS 13.0, *)
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
+@available(iOS 13.0, *)
 public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
+@available(iOS 13.0, *)
 public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
 
+@available(iOS 13.0, *)
 public struct CellContext
 {
 	public var isSelected: Bool
@@ -52,6 +56,7 @@ public struct CellContext
 	public var isLastInSection: Bool
 }
 
+@available(iOS 13.0, *)
 internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID, Content>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View, DataCollection.Index == Int
 {
 	typealias Data = DataCollection.Element

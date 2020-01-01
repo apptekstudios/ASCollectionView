@@ -4,6 +4,7 @@ import Foundation
 import SwiftUI
 import UIKit
 
+@available(iOS 13.0, *)
 /// If building a custom layout, you can conform to this protocol to tell ASCollectionLayout which dimensions should be self-sized (default is both)
 public protocol ASCollectionViewLayoutProtocol
 {
@@ -13,9 +14,13 @@ public protocol ASCollectionViewLayoutProtocol
 
 // MARK: Public Typealias for layout closures
 
+@available(iOS 13.0, *)
 public typealias CompositionalLayout<SectionID: Hashable> = ((_ sectionID: SectionID) -> ASCollectionLayoutSection)
+
+@available(iOS 13.0, *)
 public typealias CompositionalLayoutIgnoringSections = (() -> ASCollectionLayoutSection)
 
+@available(iOS 13.0, *)
 public struct ASCollectionLayout<SectionID: Hashable>
 {
 	enum LayoutType
@@ -106,6 +111,7 @@ public struct ASCollectionLayout<SectionID: Hashable>
 	}
 }
 
+@available(iOS 13.0, *)
 public extension ASCollectionLayout
 {
 	func decorationView<Content: View & Decoration>(_ viewType: Content.Type, forDecorationViewOfKind elementKind: String) -> Self
@@ -116,6 +122,7 @@ public extension ASCollectionLayout
 	}
 }
 
+@available(iOS 13.0, *)
 public struct ASCollectionLayoutSection
 {
 	public init(_ sectionLayout: @escaping () -> NSCollectionLayoutSection)
@@ -145,6 +152,7 @@ public struct ASCollectionLayoutSection
 	}
 }
 
+@available(iOS 13.0, *)
 public extension ASCollectionLayoutSection
 {
 	static func list(
@@ -192,6 +200,7 @@ public extension ASCollectionLayoutSection
 	}
 }
 
+@available(iOS 13.0, *)
 public extension ASCollectionLayoutSection
 {
 	enum GridLayoutMode
@@ -266,6 +275,7 @@ public extension ASCollectionLayoutSection
 	}
 }
 
+@available(iOS 13.0, *)
 public extension ASCollectionLayoutSection
 {
 	static func orthogonalGrid(

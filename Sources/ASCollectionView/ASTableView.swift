@@ -3,6 +3,7 @@
 import Combine
 import SwiftUI
 
+@available(iOS 13.0, *)
 extension ASTableView where SectionID == Int
 {
 	/**
@@ -60,8 +61,10 @@ extension ASTableView where SectionID == Int
 	}
 }
 
+@available(iOS 13.0, *)
 public typealias ASTableViewSection<SectionID: Hashable> = ASCollectionViewSection<SectionID>
 
+@available(iOS 13.0, *)
 public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 {
 	public typealias Section = ASTableViewSection<SectionID>

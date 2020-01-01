@@ -3,6 +3,7 @@
 import Foundation
 import UIKit
 
+@available(iOS 13.0, *)
 /// WORK IN PROGRESS
 public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol
 {
@@ -230,6 +231,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 
 // MARK: Delegate
 
+@available(iOS 13.0, *)
 public protocol ASWaterfallLayoutDelegate
 {
 	func heightForCell(at indexPath: IndexPath, context: ASWaterfallLayout.CellLayoutContext) -> CGFloat

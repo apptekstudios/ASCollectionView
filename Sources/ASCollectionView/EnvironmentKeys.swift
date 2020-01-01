@@ -2,52 +2,52 @@
 
 import Foundation
 import SwiftUI
-
+@available(iOS 13.0, *)
 struct EnvironmentKeyInvalidateCellLayout: EnvironmentKey
 {
 	static let defaultValue: (() -> Void) = {}
 }
-
+@available(iOS 13.0, *)
 struct EnvironmentKeyASScrollIndicatorsEnabled: EnvironmentKey
 {
 	static let defaultValue: Bool = true
 }
-
+@available(iOS 13.0, *)
 struct EnvironmentKeyASContentInsets: EnvironmentKey
 {
 	static let defaultValue: UIEdgeInsets = .zero
 }
-
+@available(iOS 13.0, *)
 struct EnvironmentKeyASTableViewSeparatorsEnabled: EnvironmentKey
 {
 	static let defaultValue: Bool = true
 }
-
+@available(iOS 13.0, *)
 struct EnvironmentKeyASTableViewOnReachedBottom: EnvironmentKey
 {
 	static let defaultValue: (() -> Void) = {}
 }
-
+@available(iOS 13.0, *)
 struct EnvironmentKeyASCollectionViewOnReachedBoundary: EnvironmentKey
 {
 	static let defaultValue: ((Boundary) -> Void) = { _ in }
 }
-
+@available(iOS 13.0, *)
 struct EnvironmentKeyASAlwaysBounceVertical: EnvironmentKey
 {
 	static let defaultValue: Bool = false
 }
-
+@available(iOS 13.0, *)
 struct EnvironmentKeyASAlwaysBounceHorizontal: EnvironmentKey
 {
 	static let defaultValue: Bool = false
 }
-
+@available(iOS 13.0, *)
 struct EnvironmentKeyASInitialScrollPosition: EnvironmentKey
 {
 	static let defaultValue: ASCollectionViewScrollPosition? = nil
 }
-
+@available(iOS 13.0, *)
 public extension EnvironmentValues
 {
 	var invalidateCellLayout: () -> Void
@@ -104,7 +104,7 @@ public extension EnvironmentValues
 		set { self[EnvironmentKeyASInitialScrollPosition.self] = newValue }
 	}
 }
-
+@available(iOS 13.0, *)
 public extension View
 {
 	/// Set whether to show scroll indicators for the ASCollectionView/ASTableView
