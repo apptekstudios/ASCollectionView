@@ -27,11 +27,12 @@ extension ASCollectionView where SectionID == Int
 	/**
 	 Initializes a  collection view with a single section.
 	 */
-	public init<Data, DataID: Hashable, Content: View>(
-		data: [Data],
-		dataID dataIDKeyPath: KeyPath<Data, DataID>,
+	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
+		data: DataCollection,
+		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
 		selectedItems: Binding<IndexSet>? = nil,
-		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+		where DataCollection.Index == Int
 	{
 		let section = ASCollectionViewSection(
 			id: 0,
