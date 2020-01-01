@@ -25,8 +25,18 @@ extension ASCollectionView where SectionID == Int
 	}
 
 	/**
-	 Initializes a  collection view with a single section.
+	 Initializes a  collection view with a single section of static content
 	 */
+	init(@ViewArrayBuilder staticContent: () -> [AnyView]) // Clashing with above functions in Swift 5.1, therefore internal for time being
+	{
+		sections = [
+			ASCollectionViewSection(id: 0, content: staticContent)
+		]
+	}
+	
+	/**
+	Initializes a  collection view with a single section.
+	*/
 	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
 		data: DataCollection,
 		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
@@ -41,21 +51,23 @@ extension ASCollectionView where SectionID == Int
 			contentBuilder: contentBuilder)
 		sections = [section]
 		self.selectedItems = selectedItems.map
-		{ selectedItems in
-			Binding(
-				get: { [:] },
-				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
+			{ selectedItems in
+				Binding(
+					get: { [:] },
+					set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
 		}
 	}
-
+	
 	/**
-	 Initializes a  collection view with a single section of static content
-	 */
-	init(@ViewArrayBuilder staticContent: () -> [AnyView]) // Clashing with above functions in Swift 5.1, therefore internal for time being
+	Initializes a  collection view with a single section with identifiable data
+	*/
+	public init<DataCollection: RandomAccessCollection, Content: View>(
+		data: DataCollection,
+		selectedItems: Binding<IndexSet>? = nil,
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+		where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
-		sections = [
-			ASCollectionViewSection(id: 0, content: staticContent)
-		]
+		self.init(data: data, dataID: \.id, selectedItems: selectedItems, contentBuilder: contentBuilder)
 	}
 }
 
