@@ -6,62 +6,69 @@ import UIKit
 
 struct InstaFeedScreen: View
 {
-	@State var data: [[Post]] = (0...1).map { DataSource.postsForInstaSection($0) }
+	@State var storiesData: [Post] = DataSource.postsForInstaSection(0, number: 12)
+	@State var data: [[Post]] = (0...1).map { DataSource.postsForInstaSection($0 + 1) }
 
-	var sections: [ASTableViewSection<Int>]
-	{
-		data.enumerated().map
-		{ i, sectionData in
-			if i == 0 {
-				return ASTableViewSection(id: i)
-				{
-					ASCollectionView(
-						section:
-						ASCollectionViewSection(
-							id: 0,
-							data: sectionData,
-							onCellEvent: onCellEventStories)
-						{ item, _ in
-							StoryView(post: item)
-					})
-						.layout(scrollDirection: .horizontal)
-					{
-						.list(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
-					}
-					.frame(height: 100)
-					.scrollIndicatorsEnabled(false)
-					.onCollectionViewReachedBoundary
-					{ boundary in
-						print("Reached the \(boundary) boundary")
-					}
-				}
-			}
-			else
+	var storiesCollectionView: some View {
+		ASCollectionView(
+			section:
+			ASCollectionViewSection(
+				id: 0,
+				data: storiesData,
+				onCellEvent: onCellEventStories)
+			{ item, _ in
+				StoryView(post: item)
+		})
+			.layout(scrollDirection: .horizontal)
 			{
+				.list(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
+		}
+		.frame(height: 100)
+		.scrollIndicatorsEnabled(false)
+		.onCollectionViewReachedBoundary
+			{ boundary in
+				print("Reached the \(boundary) boundary")
+		}
+	}
+	
+	var storiesSection: ASTableViewSection<Int> {
+		return ASTableViewSection(id: 0)
+		{
+			storiesCollectionView
+		}
+	}
+	
+	var postSections: [ASTableViewSection<Int>] {
+		data.enumerated().map
+			{ i, sectionData in
 				return ASTableViewSection(
-					id: i,
+					id: i + 1,
 					data: sectionData,
 					onCellEvent: onCellEventPosts)
 				{ item, _ in
 					PostView(post: item)
 				}
-				.tableViewSetEstimatedSizes(rowHeight: 500, headerHeight: 50) // Optional: Provide reasonable estimated heights for this section
-				.sectionHeader
-				{
-					VStack(spacing: 0)
+					.tableViewSetEstimatedSizes(rowHeight: 500, headerHeight: 50) // Optional: Provide reasonable estimated heights for this section
+					.sectionHeader
 					{
-						HStack
+						VStack(spacing: 0)
 						{
-							Text("Demo sticky header view")
-								.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
-							Spacer()
+							HStack
+								{
+									Text("Demo sticky header view")
+										.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+									Spacer()
+							}
+							Divider()
 						}
-						Divider()
-					}
-					.background(Color(.secondarySystemBackground))
+						.background(Color(.secondarySystemBackground))
 				}
-			}
 		}
+	}
+	
+	var sections: [ASTableViewSection<Int>]
+	{
+		[storiesSection] + postSections
 	}
 
 	var body: some View
@@ -78,7 +85,7 @@ struct InstaFeedScreen: View
 	func loadMoreContent()
 	{
 		let a = data.count
-		data.append(DataSource.postsForInstaSection(a))
+		data.append(DataSource.postsForInstaSection(a+1))
 	}
 
 	func onCellEventStories(_ event: CellEvent<Post>)
