@@ -52,9 +52,10 @@ public struct CellContext
 	public var isLastInSection: Bool
 }
 
-internal struct ASSectionDataSource<Data, DataID, Content>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View
+internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID, Content>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View, DataCollection.Index == Int
 {
-	var data: [Data]
+	typealias Data = DataCollection.Element
+	var data: DataCollection
 	var dataIDKeyPath: KeyPath<Data, DataID>
 	var onCellEvent: OnCellEvent<Data>?
 	var onDragDrop: OnDragDrop<Data>?

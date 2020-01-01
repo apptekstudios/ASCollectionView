@@ -49,17 +49,18 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 	 - onDragDropEvent: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
 	 */
-	public init<Data, DataID: Hashable, Content: View>(
+	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View> (
 		id: SectionID,
-		data: [Data],
-		dataID dataIDKeyPath: KeyPath<Data, DataID>,
-		onCellEvent: OnCellEvent<Data>? = nil,
-		onDragDropEvent: OnDragDrop<Data>? = nil,
-		itemProvider: ItemProvider<Data>? = nil,
-		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
+		data: DataCollection,
+		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
+		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
+		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
+		itemProvider: ItemProvider<DataCollection.Element>? = nil,
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+		where DataCollection.Index == Int
 	{
 		self.id = id
-		dataSource = ASSectionDataSource<Data, DataID, Content>(
+		dataSource = ASSectionDataSource<DataCollection, DataID, Content>(
 			data: data,
 			dataIDKeyPath: dataIDKeyPath,
 			onCellEvent: onCellEvent,
@@ -164,7 +165,7 @@ public extension ASCollectionViewSection
 	init(id: SectionID, @ViewArrayBuilder content: () -> [AnyView])
 	{
 		self.id = id
-		dataSource = ASSectionDataSource<ASCollectionViewStaticContent, ASCollectionViewStaticContent.ID, AnyView>(
+		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView>(
 			data: content().enumerated().map
 			{
 				ASCollectionViewStaticContent(id: $0.offset, view: $0.element)
@@ -183,7 +184,7 @@ public extension ASCollectionViewSection
 	init<Content: View>(id: SectionID, content: () -> Content)
 	{
 		self.id = id
-		dataSource = ASSectionDataSource<ASCollectionViewStaticContent, ASCollectionViewStaticContent.ID, AnyView>(
+		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView>(
 			data: [ASCollectionViewStaticContent(id: 0, view: AnyView(content()))],
 			dataIDKeyPath: \.id,
 			content: { staticContent, _ in staticContent.view })
