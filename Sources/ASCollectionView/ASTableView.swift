@@ -72,9 +72,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	public var style: UITableView.Style
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
 	
-	// MARK: Other private variables
-	private let forceRefresh = UUID() //This is a workaround for SwiftUI failing to call updateUIViewController.
-	
 	// MARK: Environment variables
 	@Environment(\.tableViewSeparatorsEnabled) private var separatorsEnabled
 	@Environment(\.tableViewOnPullToRefresh) private var onPullToRefresh
@@ -109,6 +106,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		context.coordinator.parent = self
 
 		let tableViewController = AS_TableViewController(style: style)
+		tableViewController.coordinator = context.coordinator
+		
 		updateTableViewSettings(tableViewController.tableView)
 		context.coordinator.tableViewController = tableViewController
 
@@ -120,7 +119,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	{
 		context.coordinator.parent = self
 		updateTableViewSettings(tableViewController.tableView)
-		context.coordinator.updateContent(tableViewController.tableView, refreshExistingCells: false)
+		context.coordinator.updateContent(tableViewController.tableView, animated: true, refreshExistingCells: true)
 	}
 
 	func updateTableViewSettings(_ tableView: UITableView)
@@ -142,7 +141,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		Coordinator(self)
 	}
 
-	public class Coordinator: NSObject, UITableViewDelegate, UITableViewDataSourcePrefetching
+	public class Coordinator: NSObject, ASTableViewCoordinator, UITableViewDelegate, UITableViewDataSourcePrefetching
 	{
 		var parent: ASTableView
 		var tableViewController: AS_TableViewController?
@@ -151,6 +150,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 		let cellReuseID = UUID().uuidString
 		let supplementaryReuseID = UUID().uuidString
+		
+		// MARK: Private tracking variables
+		private var hasDoneInitialSetup = false
 
 		var hostingControllerCache = ASFIFODictionary<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 
@@ -205,35 +207,48 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			}
 			dataSource?.defaultRowAnimation = .fade
 		}
-
-		func updateContent(_ tv: UITableView, refreshExistingCells: Bool)
+		
+		
+		func populateDataSource(animated: Bool = true)
 		{
 			var snapshot = NSDiffableDataSourceSnapshot<SectionID, ASCollectionViewItemUniqueID>()
 			snapshot.appendSections(parent.sections.map { $0.id })
 			parent.sections.forEach
-			{
-				snapshot.appendItems($0.itemIDs, toSection: $0.id)
+				{
+					snapshot.appendItems($0.itemIDs, toSection: $0.id)
 			}
+			dataSource?.apply(snapshot, animatingDifferences: animated)
+		}
+
+		func updateContent(_ tv: UITableView, animated: Bool, refreshExistingCells: Bool)
+		{
+			guard tableViewController?.parent != nil else { return }
 			if refreshExistingCells
 			{
 				tv.visibleCells.forEach
-				{ cell in
-					guard
-						let cell = cell as? Cell,
-						let itemID = cell.id
-					else { return }
-
-					self.configureHostingController(forItemID: itemID, isSelected: cell.isSelected)
+					{ cell in
+						guard
+							let cell = cell as? Cell,
+							let itemID = cell.id
+							else { return }
+						
+						self.configureHostingController(forItemID: itemID, isSelected: cell.isSelected)
 				}
 			}
-			// APPLY CHANGES (ADD/REMOVE CELLS) AFTER REFRESHING CELLS
-			dataSource?.apply(snapshot, animatingDifferences: refreshExistingCells)
+			populateDataSource(animated: animated)
 			updateSelectionBindings(tv)
-			configureRefreshControl(for: tv)
-
-			DispatchQueue.main.async
-			{
-				self.checkIfReachedBottom(tv) // Call reached bottom if the initial content doesn't cover the screen
+		}
+		
+		func onMoveToParent(_ parentController: AS_TableViewController)
+		{
+			if !hasDoneInitialSetup {
+				hasDoneInitialSetup = true
+				
+				// Populate data source
+				populateDataSource(animated: false)
+				
+				// Check if reached bottom already
+				self.checkIfReachedBottom(parentController.tableView)
 			}
 		}
 		
@@ -323,6 +338,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				self?.onDeleteAction(indexPath: indexPath, completionHandler: completionHandler)
 			}
 			return UISwipeActionsConfiguration(actions: [deleteAction])
+		}
+		
+		public func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
+			.none
 		}
 		
 		private func onDeleteAction(indexPath: IndexPath, completionHandler: ((Bool) -> Void)) {
@@ -456,6 +475,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	}
 }
 
+protocol ASTableViewCoordinator: class {
+	func onMoveToParent(_ parentController: AS_TableViewController)
+}
+
 // MARK: ASTableView specific header modifiers
 public extension ASTableViewSection {
 	
@@ -477,6 +500,7 @@ public extension ASTableViewSection {
 
 public class AS_TableViewController: UIViewController
 {
+	weak var coordinator: ASTableViewCoordinator?
 	var style: UITableView.Style
 	
 	lazy var tableView: UITableView = {
@@ -510,6 +534,13 @@ public class AS_TableViewController: UIViewController
 			tableView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
 			tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
 		])
+	}
+	
+	
+	public override func didMove(toParent parent: UIViewController?)
+	{
+		super.didMove(toParent: parent)
+		coordinator?.onMoveToParent(self)
 	}
 }
 

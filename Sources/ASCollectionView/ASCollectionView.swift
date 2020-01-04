@@ -93,9 +93,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	
 	var shouldRecreateLayoutOnStateChange: Bool = false
 	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
-	
-	// MARK: Other private variables
-	private let forceRefresh = UUID() //This is a workaround for SwiftUI failing to call updateUIViewController.
 
 	// MARK: Environment variables
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
