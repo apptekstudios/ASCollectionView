@@ -5,8 +5,10 @@ import SwiftUI
 
 public struct ASCollectionViewStaticContent: Identifiable
 {
-	public var id: Int
-	public var view: AnyView
+	public var index: Int
+	var view: AnyView
+	
+	public var id: Int { index }
 }
 
 public struct ASCollectionViewItemUniqueID: Hashable
@@ -57,6 +59,7 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
 		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
 		itemProvider: ItemProvider<DataCollection.Element>? = nil,
+		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
 		where DataCollection.Index == Int
 	{
@@ -68,6 +71,7 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 			onCellEvent: onCellEvent,
 			onDragDrop: onDragDropEvent,
 			itemProvider: itemProvider,
+			onSwipeToDelete: onSwipeToDelete,
 			content: contentBuilder)
 	}
 	
@@ -78,10 +82,11 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
 		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
 		itemProvider: ItemProvider<DataCollection.Element>? = nil,
+		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
 		where DataCollection.Index == Int
 	{
-		self.init(id: id, data: data, dataID: dataIDKeyPath, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: dataIDKeyPath, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
 	}
 
 	public func hash(into hasher: inout Hasher)
@@ -183,7 +188,7 @@ public extension ASCollectionViewSection
 		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView, Container>(
 			data: content().enumerated().map
 			{
-				ASCollectionViewStaticContent(id: $0.offset, view: $0.element)
+				ASCollectionViewStaticContent(index: $0.offset, view: $0.element)
 			},
 			dataIDKeyPath: \.id,
 			container: container,
@@ -205,7 +210,7 @@ public extension ASCollectionViewSection
 	{
 		self.id = id
 		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView, Container>(
-			data: [ASCollectionViewStaticContent(id: 0, view: AnyView(content()))],
+			data: [ASCollectionViewStaticContent(index: 0, view: AnyView(content()))],
 			dataIDKeyPath: \.id,
 			container: container,
 			content: { staticContent, _ in staticContent.view })
@@ -237,9 +242,10 @@ public extension ASCollectionViewSection
 		onCellEvent: OnCellEvent<Data>? = nil,
 		onDragDropEvent: OnDragDrop<Data>? = nil,
 		itemProvider: ItemProvider<Data>? = nil,
+		onSwipeToDelete: OnSwipeToDelete<Data>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
 	{
-		self.init(id: id, data: data, dataID: \.id, container: container, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: \.id, container: container, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
 	}
 	
 	@inlinable init<Content: View, Data: Identifiable>(
@@ -248,8 +254,9 @@ public extension ASCollectionViewSection
 		onCellEvent: OnCellEvent<Data>? = nil,
 		onDragDropEvent: OnDragDrop<Data>? = nil,
 		itemProvider: ItemProvider<Data>? = nil,
+		onSwipeToDelete: OnSwipeToDelete<Data>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
 	{
-		self.init(id: id, data: data, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
 	}
 }

@@ -147,7 +147,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		var parent: ASTableView
 		var tableViewController: AS_TableViewController?
 
-		var dataSource: UITableViewDiffableDataSource<SectionID, ASCollectionViewItemUniqueID>?
+		var dataSource: ASTableViewDiffableDataSource<SectionID, ASCollectionViewItemUniqueID>?
 
 		let cellReuseID = UUID().uuidString
 		let supplementaryReuseID = UUID().uuidString
@@ -233,7 +233,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 			DispatchQueue.main.async
 			{
-				self.checkIfReachedBottom(tv)
+				self.checkIfReachedBottom(tv) // Call reached bottom if the initial content doesn't cover the screen
 			}
 		}
 		
@@ -314,6 +314,22 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				parent.sections[safe: $0.key]?.dataSource.cancelPrefetch($0.value)
 			}
 		}
+		
+		
+		// MARK: Swipe actions
+		public func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+			guard parent.sections[safe: indexPath.section]?.dataSource.supportsDelete(at: indexPath) == true else { return nil }
+			let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { [weak self] (action, sourceView, completionHandler) in
+				self?.onDeleteAction(indexPath: indexPath, completionHandler: completionHandler)
+			}
+			return UISwipeActionsConfiguration(actions: [deleteAction])
+		}
+		
+		private func onDeleteAction(indexPath: IndexPath, completionHandler: ((Bool) -> Void)) {
+			parent.sections[safe: indexPath.section]?.dataSource.onDelete(indexPath: indexPath, completionHandler: completionHandler)
+		}
+		
+		// MARK: Cell Selection
 
 		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
 		{
@@ -334,6 +350,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			updateSelectionBindings(tableView)
 			configureHostingController(forItemID: itemID, isSelected: false)
 		}
+		
 
 		func updateSelectionBindings(_ tableView: UITableView)
 		{
@@ -493,5 +510,11 @@ public class AS_TableViewController: UIViewController
 			tableView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
 			tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
 		])
+	}
+}
+
+class ASTableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: UITableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType : Hashable, ItemIdentifierType : Hashable {
+	override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+		return true
 	}
 }

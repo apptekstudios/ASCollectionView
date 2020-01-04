@@ -16,6 +16,8 @@ internal protocol ASSectionDataSourceProtocol
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	func removeItem(from indexPath: IndexPath)
 	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
+	func supportsDelete(at indexPath: IndexPath) -> Bool
+	func onDelete(indexPath: IndexPath, completionHandler: ((Bool) -> Void))
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 }
@@ -44,6 +46,7 @@ public enum DragDrop<Data>
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
 public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
 public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
+public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: ((Bool) -> Void)) -> Void)
 
 public struct CellContext
 {
@@ -61,6 +64,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var onCellEvent: OnCellEvent<Data>?
 	var onDragDrop: OnDragDrop<Data>?
 	var itemProvider: ItemProvider<Data>?
+	var onSwipeToDelete: OnSwipeToDelete<Data>?
 	var content: (Data, CellContext) -> Content
 
 	var dragEnabled: Bool { onDragDrop != nil }
@@ -138,6 +142,15 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			return data[safe: $0.item]
 		}
 		onCellEvent?(.cancelPrefetchForData(data: dataToCancelPrefetch))
+	}
+	
+	func supportsDelete(at indexPath: IndexPath) -> Bool {
+		onSwipeToDelete != nil
+	}
+	
+	func onDelete(indexPath: IndexPath, completionHandler: ((Bool) -> Void)) {
+		guard let item = data[safe: indexPath.item] else { return }
+		onSwipeToDelete?(item, completionHandler)
 	}
 
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
