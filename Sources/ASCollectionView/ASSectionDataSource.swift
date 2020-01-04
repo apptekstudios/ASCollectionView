@@ -52,11 +52,12 @@ public struct CellContext
 	public var isLastInSection: Bool
 }
 
-internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID, Content>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View, DataCollection.Index == Int
+internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID, Content, Container>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View, Container: View, DataCollection.Index == Int
 {
 	typealias Data = DataCollection.Element
 	var data: DataCollection
 	var dataIDKeyPath: KeyPath<Data, DataID>
+	var container: ((Content) -> Container)
 	var onCellEvent: OnCellEvent<Data>?
 	var onDragDrop: OnDragDrop<Data>?
 	var itemProvider: ItemProvider<Data>?
@@ -77,15 +78,16 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
 		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
-
-		if let existingHC = reusingController as? ASHostingController<Content>
+		let containedView = container(view)
+		
+		if let existingHC = reusingController as? ASHostingController<Container>
 		{
-			existingHC.setView(view)
+			existingHC.setView(containedView)
 			return existingHC
 		}
 		else
 		{
-			let newHC = ASHostingController<Content>(view)
+			let newHC = ASHostingController<Container>(containedView)
 			return newHC
 		}
 	}
