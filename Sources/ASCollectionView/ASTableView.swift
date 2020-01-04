@@ -154,9 +154,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			self.parent = parent
 		}
 
-		func sectionID(fromSectionIndex sectionIndex: Int) -> SectionID
+		func sectionID(fromSectionIndex sectionIndex: Int) -> SectionID?
 		{
-			parent.sections[sectionIndex].id
+			parent.sections[safe: sectionIndex]?.id
 		}
 
 		func section(forItemID itemID: ASCollectionViewItemUniqueID) -> Section?
@@ -218,11 +218,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 					self.configureHostingController(forItemID: itemID, isSelected: cell.isSelected)
 				}
-				/* tv.indexPathsForVisibleSupplementaryElements(ofKind: UICollectionView.elementKindSectionHeader).forEach {
-				     guard let header = parent.sections[$0.section].header else { return }
-				     (cv.supplementaryView(forElementKind: UICollectionView.elementKindSectionHeader, at: $0) as? ASCollectionViewSupplementaryView)?
-				         .updateView(header)
-				 } */
 			}
 			// APPLY CHANGES (ADD/REMOVE CELLS) AFTER REFRESHING CELLS
 			dataSource?.apply(snapshot, animatingDifferences: refreshExistingCells)
@@ -236,19 +231,19 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 		public func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat
 		{
-			parent.sections[indexPath.section].estimatedRowHeight ?? 50
+			parent.sections[safe: indexPath.section]?.estimatedRowHeight ?? 50
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
 			(cell as? Cell)?.willAppear(in: tableViewController)
-			parent.sections[indexPath.section].dataSource.onAppear(indexPath)
+			parent.sections[safe: indexPath.section]?.dataSource.onAppear(indexPath)
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplaying cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
 			(cell as? Cell)?.didDisappear()
-			parent.sections[indexPath.section].dataSource.onDisappear(indexPath)
+			parent.sections[safe: indexPath.section]?.dataSource.onDisappear(indexPath)
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
@@ -276,7 +271,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			let itemIDsToPrefetchBySection: [Int: [IndexPath]] = Dictionary(grouping: indexPaths) { $0.section }
 			itemIDsToPrefetchBySection.forEach
 			{
-				parent.sections[$0.key].dataSource.prefetch($0.value)
+				parent.sections[safe: $0.key]?.dataSource.prefetch($0.value)
 			}
 		}
 
@@ -285,7 +280,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			let itemIDsToCancelPrefetchBySection: [Int: [IndexPath]] = Dictionary(grouping: indexPaths) { $0.section }
 			itemIDsToCancelPrefetchBySection.forEach
 			{
-				parent.sections[$0.key].dataSource.cancelPrefetch($0.value)
+				parent.sections[safe: $0.key]?.dataSource.cancelPrefetch($0.value)
 			}
 		}
 
@@ -313,7 +308,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		{
 			guard let selectedItemsBinding = parent.selectedItems else { return }
 			let selected = tableView.indexPathsForSelectedRows ?? []
-			let selectedSafe = selected.filter { $0.section < parent.sections.endIndex }
+			let selectedSafe = selected.filter { parent.sections.containsIndex($0.section) }
 			let selectedBySection = Dictionary(grouping: selectedSafe)
 			{
 				parent.sections[$0.section].id
@@ -329,16 +324,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 		public func tableView(_ tableView: UITableView, estimatedHeightForHeaderInSection section: Int) -> CGFloat
 		{
-			guard parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else
+			guard parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else
 			{
 				return CGFloat.leastNormalMagnitude
 			}
-			return parent.sections[section].estimatedHeaderHeight ?? 50
+			return parent.sections[safe: section]?.estimatedHeaderHeight ?? 50
 		}
 
 		public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat
 		{
-			guard parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else
+			guard parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else
 			{
 				return CGFloat.leastNormalMagnitude
 			}
@@ -347,16 +342,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 		public func tableView(_ tableView: UITableView, estimatedHeightForFooterInSection section: Int) -> CGFloat
 		{
-			guard parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else
+			guard parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else
 			{
 				return CGFloat.leastNormalMagnitude
 			}
-			return parent.sections[section].estimatedFooterHeight ?? 50
+			return parent.sections[safe: section]?.estimatedFooterHeight ?? 50
 		}
 
 		public func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat
 		{
-			guard parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else
+			guard parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else
 			{
 				return CGFloat.leastNormalMagnitude
 			}
@@ -367,7 +362,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		{
 			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: self.supplementaryReuseID) as? ASTableViewSupplementaryView
 			else { return nil }
-			if let supplementaryView = self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionHeader)
+			if let supplementaryView = self.parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionHeader)
 			{
 				reusableView.setupFor(
 					id: section,
@@ -380,7 +375,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		{
 			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: self.supplementaryReuseID) as? ASTableViewSupplementaryView
 			else { return nil }
-			if let supplementaryView = self.parent.sections[section].supplementary(ofKind: UICollectionView.elementKindSectionFooter)
+			if let supplementaryView = self.parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionFooter)
 			{
 				reusableView.setupFor(
 					id: section,

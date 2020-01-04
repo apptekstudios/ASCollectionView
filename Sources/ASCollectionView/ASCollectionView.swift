@@ -201,9 +201,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			self.parent = parent
 		}
 
-		func sectionID(fromSectionIndex sectionIndex: Int) -> SectionID
+		func sectionID(fromSectionIndex sectionIndex: Int) -> SectionID?
 		{
-			parent.sections[sectionIndex].id
+			parent.sections[safe: sectionIndex]?.id
 		}
 
 		func section(forItemID itemID: ASCollectionViewItemUniqueID) -> Section?
@@ -266,7 +266,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 				guard let reusableView = cv.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
 				else { return nil }
-				if let supplementaryView = self.parent.sections[indexPath.section].supplementary(ofKind: kind)
+				if let supplementaryView = self.parent.sections[safe: indexPath.section]?.supplementary(ofKind: kind)
 				{
 					reusableView.setupFor(
 						id: indexPath.section,
@@ -310,7 +310,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				{ kind in
 					cv.indexPathsForVisibleSupplementaryElements(ofKind: kind).forEach
 					{
-						guard let supplementaryView = parent.sections[$0.section].supplementary(ofKind: kind) else { return }
+						guard let supplementaryView = parent.sections[safe: $0.section]?.supplementary(ofKind: kind) else { return }
 						(cv.supplementaryView(forElementKind: kind, at: $0) as? ASCollectionViewSupplementaryView)?
 							.updateView(supplementaryView)
 					}
@@ -436,16 +436,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			collectionViewController.map { (cell as? Cell)?.willAppear(in: $0) }
 			currentlyPrefetching.remove(indexPath)
-			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
-			parent.sections[indexPath.section].dataSource.onAppear(indexPath)
+			guard !indexPath.isEmpty else { return }
+			parent.sections[safe: indexPath.section]?.dataSource.onAppear(indexPath)
 			queuePrefetch.send()
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 		{
 			(cell as? Cell)?.didDisappear()
-			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
-			parent.sections[indexPath.section].dataSource.onDisappear(indexPath)
+			guard !indexPath.isEmpty else { return }
+			parent.sections[safe: indexPath.section]?.dataSource.onDisappear(indexPath)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
@@ -482,7 +482,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			guard let selectedItemsBinding = parent.selectedItems else { return }
 			let selected = collectionView.indexPathsForSelectedItems ?? []
-			let selectedSafe = selected.filter { $0.section < parent.sections.endIndex }
+			let selectedSafe = selected.filter { parent.sections.containsIndex($0.section) }
 			let selectedBySection = Dictionary(grouping: selectedSafe)
 			{
 				parent.sections[$0.section].id
@@ -498,32 +498,32 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func dragItem(for indexPath: IndexPath) -> UIDragItem?
 		{
-			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return nil }
-			return parent.sections[indexPath.section].dataSource.getDragItem(for: indexPath)
+			guard !indexPath.isEmpty else { return nil }
+			return parent.sections[safe: indexPath.section]?.dataSource.getDragItem(for: indexPath)
 		}
 
 		func canDrop(at indexPath: IndexPath) -> Bool
 		{
-			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return false }
-			return parent.sections[indexPath.section].dataSource.dropEnabled
+			guard !indexPath.isEmpty else { return false }
+			return parent.sections[safe: indexPath.section]?.dataSource.dropEnabled ?? false
 		}
 
 		func removeItem(from indexPath: IndexPath)
 		{
-			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
-			parent.sections[indexPath.section].dataSource.removeItem(from: indexPath)
+			guard !indexPath.isEmpty else { return }
+			parent.sections[safe: indexPath.section]?.dataSource.removeItem(from: indexPath)
 		}
 
 		func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
 		{
-			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return }
-			parent.sections[indexPath.section].dataSource.insertDragItems(items, at: indexPath)
+			guard !indexPath.isEmpty else { return }
+			parent.sections[safe: indexPath.section]?.dataSource.insertDragItems(items, at: indexPath)
 		}
 
 		func typeErasedDataForItem(at indexPath: IndexPath) -> Any?
 		{
-			guard !indexPath.isEmpty, indexPath.section < parent.sections.endIndex else { return nil }
-			return parent.sections[indexPath.section].dataSource.getTypeErasedData(for: indexPath)
+			guard !indexPath.isEmpty else { return nil }
+			return parent.sections[safe: indexPath.section]?.dataSource.getTypeErasedData(for: indexPath)
 		}
 
 		var lastContentSize: CGSize = .zero
@@ -685,9 +685,9 @@ extension ASCollectionView.Coordinator
 				guard let first = indexPaths.min(), let last = indexPaths.max() else { return nil }
 				return (section: first.section, first: first.item, last: last.item)
 			}
-			var toPrefetch: [Int: [IndexPath]] = visibleIndexPathsBySection.mapValues
+			var toPrefetch: [Int: [IndexPath]] = visibleIndexPathsBySection.compactMapValues
 			{ item in
-				let sectionIndexPaths = self.parent.sections[item.section].dataSource.getIndexPaths(withSectionIndex: item.section)
+				guard let sectionIndexPaths = self.parent.sections[safe: item.section]?.dataSource.getIndexPaths(withSectionIndex: item.section) else { return nil }
 				let nextItemsInSection: ArraySlice<IndexPath> = {
 					guard (item.last + 1) < sectionIndexPaths.endIndex else { return [] }
 					return sectionIndexPaths[(item.last + 1)..<min(item.last + numberToPreload + 1, sectionIndexPaths.endIndex)]
@@ -726,12 +726,12 @@ extension ASCollectionView.Coordinator
 			{ sectionIndex, toPrefetch in
 				if !toPrefetch.isEmpty
 				{
-					self.parent.sections[sectionIndex].dataSource.prefetch(toPrefetch)
+					self.parent.sections[safe: sectionIndex]?.dataSource.prefetch(toPrefetch)
 				}
 				let toCancel = Array(self.currentlyPrefetching.filter { $0.section == sectionIndex }.subtracting(toPrefetch))
 				if !toCancel.isEmpty
 				{
-					self.parent.sections[sectionIndex].dataSource.cancelPrefetch(toCancel)
+					self.parent.sections[safe: sectionIndex]?.dataSource.cancelPrefetch(toCancel)
 				}
 			}
 

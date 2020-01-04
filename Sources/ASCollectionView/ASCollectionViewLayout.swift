@@ -74,7 +74,7 @@ public struct ASCollectionLayout<SectionID: Hashable>
 			config.interSectionSpacing = interSectionSpacing
 
 			let sectionProvider: UICollectionViewCompositionalLayoutSectionProvider = { sectionIndex, layoutEnvironment -> NSCollectionLayoutSection in
-				let sectionID = coordinator.sectionID(fromSectionIndex: sectionIndex)
+				guard let sectionID = coordinator.sectionID(fromSectionIndex: sectionIndex) else { return NSCollectionLayoutSection.placeholder }
 				return layoutClosure(sectionID).makeLayoutSection(environment: layoutEnvironment, primaryScrollDirection: scrollDirection)
 			}
 
@@ -103,6 +103,13 @@ public struct ASCollectionLayout<SectionID: Hashable>
 		{ elementKind, ViewType in
 			layout.register(ViewType, forDecorationViewOfKind: elementKind)
 		}
+	}
+}
+
+fileprivate extension NSCollectionLayoutSection {
+	static var placeholder: NSCollectionLayoutSection {
+		//Used to avoid a crash when UICollectionViewCompositionalLayout requests a NSCollectionLayoutSection for a section that no longer exists
+		return NSCollectionLayoutSection(group: NSCollectionLayoutGroup(layoutSize: NSCollectionLayoutSize(widthDimension: .absolute(1), heightDimension: .absolute(1))))
 	}
 }
 

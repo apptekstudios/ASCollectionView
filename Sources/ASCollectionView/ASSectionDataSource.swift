@@ -92,8 +92,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	{
-		guard indexPath.item < data.endIndex else { return nil }
-		return data[indexPath.item]
+		return data[safe: indexPath.item]
 	}
 
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
@@ -111,15 +110,13 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func onAppear(_ indexPath: IndexPath)
 	{
-		guard indexPath.item < data.endIndex else { return }
-		let item = data[indexPath.item]
+		guard let item = data[safe: indexPath.item] else { return }
 		onCellEvent?(.onAppear(item: item))
 	}
 
 	func onDisappear(_ indexPath: IndexPath)
 	{
-		guard indexPath.item < data.endIndex else { return }
-		let item = data[indexPath.item]
+		guard let item = data[safe: indexPath.item] else { return }
 		onCellEvent?(.onDisappear(item: item))
 	}
 
@@ -127,8 +124,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		let dataToPrefetch: [Data] = indexPaths.compactMap
 		{
-			guard $0.item < data.endIndex else { return nil }
-			return data[$0.item]
+			return data[safe: $0.item]
 		}
 		onCellEvent?(.prefetchForData(data: dataToPrefetch))
 	}
@@ -137,8 +133,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		let dataToCancelPrefetch: [Data] = indexPaths.compactMap
 		{
-			guard $0.item < data.endIndex else { return nil }
-			return data[$0.item]
+			return data[safe: $0.item]
 		}
 		onCellEvent?(.cancelPrefetchForData(data: dataToCancelPrefetch))
 	}
@@ -146,30 +141,30 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	{
 		guard dragEnabled else { return nil }
-		guard indexPath.item < data.endIndex else { return nil }
-		let item = data[indexPath.item]
-
+		guard let item = data[safe: indexPath.item] else { return nil }
+		
 		let itemProvider: NSItemProvider = self.itemProvider?(item) ?? NSItemProvider()
 		let dragItem = UIDragItem(itemProvider: itemProvider)
-		dragItem.localObject = data[indexPath.item]
+		dragItem.localObject = item
 		return dragItem
 	}
 
 	func removeItem(from indexPath: IndexPath)
 	{
-		guard indexPath.item < data.endIndex else { return }
+		guard data.containsIndex(indexPath.item) else { return }
 		onDragDrop?(.onRemoveItem(indexPath: indexPath))
 	}
 
 	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
 	{
 		guard dropEnabled else { return }
-		let index = IndexPath(item: min(indexPath.item, data.endIndex), section: indexPath.section)
+		let index = max(data.startIndex, min(indexPath.item, data.endIndex))
+		let indexPath = IndexPath(item: index, section: indexPath.section)
 		let dataItems = items.compactMap
 		{ (dragItem) -> Data? in
 			guard let item = dragItem.localObject as? Data else { return nil }
 			return item
 		}
-		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: index))
+		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: indexPath))
 	}
 }
