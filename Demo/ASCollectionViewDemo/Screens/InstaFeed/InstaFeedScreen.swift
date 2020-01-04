@@ -75,9 +75,15 @@ struct InstaFeedScreen: View
 	{
 		ASTableView(sections: sections)
 			.tableViewSeparatorsEnabled(false)
+			.onTableViewPullToRefresh { endRefreshing in
+				print("PULL TO REFRESH")
+				Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { (_) in
+					endRefreshing()
+				}
+		}
 			.onTableViewReachedBottom
-		{
-			self.loadMoreContent() // REACHED BOTTOM, LOADING MORE CONTENT
+			{
+				self.loadMoreContent() // REACHED BOTTOM, LOADING MORE CONTENT
 		}
 		.navigationBarTitle("Insta Feed (tableview)", displayMode: .inline)
 	}

@@ -64,12 +64,20 @@ public typealias ASTableViewSection<SectionID: Hashable> = ASCollectionViewSecti
 
 public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 {
+	// MARK: Type definitions
 	public typealias Section = ASTableViewSection<SectionID>
+	
+	// MARK: Key variables
 	public var sections: [Section]
 	public var style: UITableView.Style
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
-
+	
+	// MARK: Other private variables
+	private let forceRefresh = UUID() //This is a workaround for SwiftUI failing to call updateUIViewController.
+	
+	// MARK: Environment variables
 	@Environment(\.tableViewSeparatorsEnabled) private var separatorsEnabled
+	@Environment(\.tableViewOnPullToRefresh) private var onPullToRefresh
 	@Environment(\.tableViewOnReachedBottom) private var onReachedBottom
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
@@ -96,12 +104,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		sections = sectionBuilder()
 	}
 
-	public func makeUIViewController(context: Context) -> UITableViewController
+	public func makeUIViewController(context: Context) -> AS_TableViewController
 	{
 		context.coordinator.parent = self
 
-		let tableViewController = UITableViewController(style: style)
-		tableViewController.tableView.tableFooterView = UIView()
+		let tableViewController = AS_TableViewController(style: style)
 		updateTableViewSettings(tableViewController.tableView)
 		context.coordinator.tableViewController = tableViewController
 
@@ -109,7 +116,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		return tableViewController
 	}
 
-	public func updateUIViewController(_ tableViewController: UITableViewController, context: Context)
+	public func updateUIViewController(_ tableViewController: AS_TableViewController, context: Context)
 	{
 		context.coordinator.parent = self
 		updateTableViewSettings(tableViewController.tableView)
@@ -118,7 +125,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 	func updateTableViewSettings(_ tableView: UITableView)
 	{
-		tableView.backgroundColor = .clear
+		tableView.backgroundColor = (style == .plain) ? .clear : .systemGroupedBackground
 		tableView.separatorStyle = separatorsEnabled ? .singleLine : .none
 		tableView.contentInset = contentInsets
 		tableView.alwaysBounceVertical = alwaysBounceVertical
@@ -138,7 +145,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	public class Coordinator: NSObject, UITableViewDelegate, UITableViewDataSourcePrefetching
 	{
 		var parent: ASTableView
-		var tableViewController: UITableViewController?
+		var tableViewController: AS_TableViewController?
 
 		var dataSource: UITableViewDiffableDataSource<SectionID, ASCollectionViewItemUniqueID>?
 
@@ -222,11 +229,35 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			// APPLY CHANGES (ADD/REMOVE CELLS) AFTER REFRESHING CELLS
 			dataSource?.apply(snapshot, animatingDifferences: refreshExistingCells)
 			updateSelectionBindings(tv)
+			configureRefreshControl(for: tv)
 
 			DispatchQueue.main.async
 			{
 				self.checkIfReachedBottom(tv)
 			}
+		}
+		
+		func configureRefreshControl(for tv: UITableView) {
+			guard parent.onPullToRefresh != nil else {
+				if tv.refreshControl != nil {
+					tv.refreshControl = nil
+				}
+				return
+			}
+			if tv.refreshControl == nil {
+				let refreshControl = UIRefreshControl()
+				refreshControl.addTarget(self, action: #selector(tableViewDidPullToRefresh), for: .valueChanged)
+				tv.refreshControl = refreshControl
+			}
+		}
+		
+		@objc
+		public func tableViewDidPullToRefresh() {
+			guard let tableView = self.tableViewController?.tableView else { return }
+			let endRefreshing: (() -> Void) = { [weak tableView] in
+				tableView?.refreshControl?.endRefreshing()
+			}
+			parent.onPullToRefresh?(endRefreshing)
 		}
 
 		public func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat
@@ -408,19 +439,59 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	}
 }
 
-/*
- class ASTableViewDataSource<SectionIdentifierType, ItemIdentifierType>: UITableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType : Hashable, ItemIdentifierType : Hashable {
- public typealias HeaderFooterViewProvider = (_ sectionIndex: Int) -> UITableViewHeaderFooterView?
+// MARK: ASTableView specific header modifiers
+public extension ASTableViewSection {
+	
+	func sectionHeaderInsetGrouped<Content: View>(content: () -> Content?) -> Self
+	{
+		var section = self
+		let insetGroupedContent =
+			HStack {
+				content()
+				Spacer()
+			}
+			.font(.headline)
+			.padding(EdgeInsets(top: 12, leading: 0, bottom: 6, trailing: 0))
+		
+		section.setHeaderView(insetGroupedContent)
+		return section
+	}
+}
 
- public var headerViewProvider: HeaderFooterViewProvider?
- public var footerViewProvider: HeaderFooterViewProvider?
-
- func headerView(forSection section: Int) -> UITableViewHeaderFooterView? {
- 	headerViewProvider?(section)
- }
-
- func footerView(forSection section: Int) -> UITableViewHeaderFooterView? {
- 	footerViewProvider?(section)
- }
- }
- */
+public class AS_TableViewController: UIViewController
+{
+	var style: UITableView.Style
+	
+	lazy var tableView: UITableView = {
+		let tableView = UITableView(frame: .zero, style: style)
+		tableView.tableHeaderView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) //Remove unnecessary padding in Style.grouped/insetGrouped
+		tableView.tableFooterView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) //Remove separators for non-existent cells
+		return tableView
+	}()
+	
+	public init(style: UITableView.Style)
+	{
+		self.style = style
+		super.init(nibName: nil, bundle: nil)
+	}
+	
+	required init?(coder: NSCoder)
+	{
+		fatalError("init(coder:) has not been implemented")
+	}
+	
+	public override func viewDidLoad()
+	{
+		super.viewDidLoad()
+		view.backgroundColor = .clear
+		view.addSubview(tableView)
+		
+		tableView.translatesAutoresizingMaskIntoConstraints = false
+		NSLayoutConstraint.activate([
+			tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
+			tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
+			tableView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
+			tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
+		])
+	}
+}

@@ -23,6 +23,11 @@ struct EnvironmentKeyASTableViewSeparatorsEnabled: EnvironmentKey
 	static let defaultValue: Bool = true
 }
 
+struct EnvironmentKeyASTableViewOnPullToRefresh: EnvironmentKey
+{
+	static let defaultValue: (((_ endRefreshing: @escaping (() -> Void)) -> Void)?) = nil
+}
+
 struct EnvironmentKeyASTableViewOnReachedBottom: EnvironmentKey
 {
 	static let defaultValue: (() -> Void) = {}
@@ -72,6 +77,12 @@ public extension EnvironmentValues
 	{
 		get { return self[EnvironmentKeyASTableViewSeparatorsEnabled.self] }
 		set { self[EnvironmentKeyASTableViewSeparatorsEnabled.self] = newValue }
+	}
+	
+	var tableViewOnPullToRefresh: (((_ endRefreshing: @escaping (() -> Void)) -> Void)?)
+	{
+		get { return self[EnvironmentKeyASTableViewOnPullToRefresh.self] }
+		set { self[EnvironmentKeyASTableViewOnPullToRefresh.self] = newValue }
 	}
 
 	var tableViewOnReachedBottom: () -> Void
@@ -123,6 +134,12 @@ public extension View
 	func tableViewSeparatorsEnabled(_ enabled: Bool) -> some View
 	{
 		environment(\.tableViewSeparatorsEnabled, enabled)
+	}
+	
+	/// Set a closure that is called when the tableView is pulled to refresh
+	func onTableViewPullToRefresh(_ onPullToRefresh: (((_ endRefreshing: @escaping (() -> Void)) -> Void))?) -> some View
+	{
+		environment(\.tableViewOnPullToRefresh, onPullToRefresh)
 	}
 
 	/// Set a closure that is called whenever the tableView is scrolled to the bottom.

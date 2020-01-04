@@ -74,18 +74,30 @@ extension ASCollectionView where SectionID == Int
 
 public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentable, ContentSize
 {
+	// MARK: Type definitions
 	public typealias Section = ASCollectionViewSection<SectionID>
 	public typealias Layout = ASCollectionLayout<SectionID>
+	
+	// MARK: Key variables
 	public var layout: Layout = .default
 	public var sections: [Section]
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
-
-	var contentSize: Binding<CGSize?>?
-
+	
+	// MARK: Internal variables modified by modifier functions
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
+	
+	var contentSize: Binding<CGSize?>?
+	
+	var shouldInvalidateLayoutOnStateChange: Bool = false
+	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
+	
+	var shouldRecreateLayoutOnStateChange: Bool = false
+	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
+	
+	// MARK: Other private variables
+	private let forceRefresh = UUID() //This is a workaround for SwiftUI failing to call updateUIViewController.
 
 	// MARK: Environment variables
-
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
@@ -93,14 +105,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	@Environment(\.initialScrollPosition) private var initialScrollPosition
 	@Environment(\.collectionViewOnReachedBoundary) private var onReachedBoundary
 	@Environment(\.editMode) private var editMode
-
-	// MARK: Internal variables modified by modifier functions
-
-	var shouldInvalidateLayoutOnStateChange: Bool = false
-	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
-
-	var shouldRecreateLayoutOnStateChange: Bool = false
-	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
 
 	// MARK: Init for multi-section CVs
 
