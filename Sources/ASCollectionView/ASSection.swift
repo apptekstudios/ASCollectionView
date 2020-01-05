@@ -23,7 +23,7 @@ public struct ASCollectionViewItemUniqueID: Hashable
 }
 
 public typealias ASCollectionViewSection = ASSection
-public struct ASSection<SectionID: Hashable>: Hashable
+public struct ASSection<SectionID: Hashable>
 {
 	public var id: SectionID
 
@@ -35,8 +35,6 @@ public struct ASSection<SectionID: Hashable>: Hashable
 	{
 		dataSource.getUniqueItemIDs(withSectionID: id)
 	}
-	
-	private var forceRefresh: UUID? = nil //This is used as a workaround for SwiftUI failing to call updateUIViewController for static sections.
 
 	// Only relevant for ASTableView
 	var estimatedRowHeight: CGFloat?
@@ -90,17 +88,6 @@ public struct ASSection<SectionID: Hashable>: Hashable
 		where DataCollection.Index == Int
 	{
 		self.init(id: id, data: data, dataID: dataIDKeyPath, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
-	}
-
-	public func hash(into hasher: inout Hasher)
-	{
-		hasher.combine(id)
-		hasher.combine(forceRefresh)
-	}
-
-	public static func ==(lhs: ASCollectionViewSection<SectionID>, rhs: ASCollectionViewSection<SectionID>) -> Bool
-	{
-		lhs.id == rhs.id && lhs.forceRefresh == rhs.forceRefresh
 	}
 }
 
@@ -189,7 +176,6 @@ public extension ASCollectionViewSection
 	init<Container: View>(id: SectionID, container: @escaping ((AnyView) -> Container), @ViewArrayBuilder content: () -> [AnyView])
 	{
 		self.id = id
-		self.forceRefresh = UUID()
 		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView, Container>(
 			data: content().enumerated().map
 			{
@@ -214,7 +200,6 @@ public extension ASCollectionViewSection
 	init<Content: View, Container: View>(id: SectionID, container: @escaping ((AnyView) -> Container), content: () -> Content)
 	{
 		self.id = id
-		self.forceRefresh = UUID()
 		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView, Container>(
 			data: [ASCollectionViewStaticContent(index: 0, view: AnyView(content()))],
 			dataIDKeyPath: \.id,
