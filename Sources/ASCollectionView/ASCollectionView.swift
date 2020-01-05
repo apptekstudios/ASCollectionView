@@ -195,6 +195,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		private var hasDoneInitialSetup = false
 		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
+		
+		private var haveRegisteredForSupplementaryOfKind: Set<String> = []
 
 		typealias Cell = ASCollectionViewCell
 
@@ -216,7 +218,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func supplementaryKinds() -> Set<String>
 		{
-			parent.sections.reduce(into: Set<String>()) { result, section in result.formUnion(section.supplementaryKinds) }
+			let emptyKindSet: Set<String> = [supplementaryEmptyKind] // Used to prevent crash if supplementaries defined in layout but not provided by the section
+			return parent.sections.reduce(into: emptyKindSet) { result, section in
+				result.formUnion(section.supplementaryKinds)
+			}
 		}
 
 		@discardableResult
@@ -226,16 +231,20 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			hostingControllerCache[itemID] = controller
 			return controller
 		}
+		
+		func registerSupplementaries(forCollectionView cv: UICollectionView) {
+			supplementaryKinds().subtracting(self.haveRegisteredForSupplementaryOfKind).forEach
+				{ kind in
+					cv.register(ASCollectionViewSupplementaryView.self, forSupplementaryViewOfKind: kind, withReuseIdentifier: supplementaryReuseID)
+					self.haveRegisteredForSupplementaryOfKind.insert(kind) // We don't need to register this kind again now.
+			}
+		}
 
 		func setupDataSource(forCollectionView cv: UICollectionView)
 		{
 			cv.register(Cell.self, forCellWithReuseIdentifier: cellReuseID)
-			cv.register(ASCollectionViewSupplementaryView.self, forSupplementaryViewOfKind: supplementaryEmptyKind, withReuseIdentifier: supplementaryReuseID) // Used to prevent crash if supplementaries defined in layout but not provided by the section
-			supplementaryKinds().forEach
-			{ kind in
-				cv.register(ASCollectionViewSupplementaryView.self, forSupplementaryViewOfKind: kind, withReuseIdentifier: supplementaryReuseID)
-			}
-
+			registerSupplementaries(forCollectionView: cv)
+			
 			dataSource = .init(collectionView: cv)
 			{ (collectionView, indexPath, itemID) -> UICollectionViewCell? in
 				guard
@@ -296,6 +305,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func updateContent(_ cv: UICollectionView, animated: Bool, refreshExistingCells: Bool)
 		{
 			guard collectionViewController?.parent != nil else { return }
+			registerSupplementaries(forCollectionView: cv) // New sections might involve new types of supplementary...
 			if refreshExistingCells
 			{
 				cv.visibleCells.forEach
