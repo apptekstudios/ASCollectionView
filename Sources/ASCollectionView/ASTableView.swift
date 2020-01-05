@@ -60,7 +60,7 @@ extension ASTableView where SectionID == Int
 	}
 }
 
-public typealias ASTableViewSection<SectionID: Hashable> = ASCollectionViewSection<SectionID>
+public typealias ASTableViewSection = ASSection
 
 public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 {

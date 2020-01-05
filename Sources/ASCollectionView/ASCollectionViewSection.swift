@@ -22,7 +22,8 @@ public struct ASCollectionViewItemUniqueID: Hashable
 	}
 }
 
-public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
+public typealias ASCollectionViewSection = ASSection
+public struct ASSection<SectionID: Hashable>: Hashable
 {
 	public var id: SectionID
 
