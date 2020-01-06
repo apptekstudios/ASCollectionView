@@ -3,6 +3,7 @@
 import Foundation
 import SwiftUI
 
+@available(iOS 13.0, *)
 internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
@@ -16,10 +17,13 @@ internal protocol ASSectionDataSourceProtocol
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	func removeItem(from indexPath: IndexPath)
 	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
+	func supportsDelete(at indexPath: IndexPath) -> Bool
+	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 }
 
+@available(iOS 13.0, *)
 public enum CellEvent<Data>
 {
 	/// Respond by starting necessary prefetch operations for this data to be displayed soon (eg. download images)
@@ -35,16 +39,26 @@ public enum CellEvent<Data>
 	case onDisappear(item: Data)
 }
 
+@available(iOS 13.0, *)
 public enum DragDrop<Data>
 {
 	case onRemoveItem(indexPath: IndexPath)
 	case onAddItems(items: [Data], atIndexPath: IndexPath)
 }
 
+@available(iOS 13.0, *)
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
+
+@available(iOS 13.0, *)
 public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
+
+@available(iOS 13.0, *)
 public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
 
+@available(iOS 13.0, *)
+public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: (Bool) -> Void) -> Void)
+
+@available(iOS 13.0, *)
 public struct CellContext
 {
 	public var isSelected: Bool
@@ -52,14 +66,17 @@ public struct CellContext
 	public var isLastInSection: Bool
 }
 
-internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID, Content>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View, DataCollection.Index == Int
+@available(iOS 13.0, *)
+internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID, Content, Container>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View, Container: View, DataCollection.Index == Int
 {
 	typealias Data = DataCollection.Element
 	var data: DataCollection
 	var dataIDKeyPath: KeyPath<Data, DataID>
+	var container: (Content) -> Container
 	var onCellEvent: OnCellEvent<Data>?
 	var onDragDrop: OnDragDrop<Data>?
 	var itemProvider: ItemProvider<Data>?
+	var onSwipeToDelete: OnSwipeToDelete<Data>?
 	var content: (Data, CellContext) -> Content
 
 	var dragEnabled: Bool { onDragDrop != nil }
@@ -77,23 +94,23 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
 		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
+		let containedView = container(view)
 
-		if let existingHC = reusingController as? ASHostingController<Content>
+		if let existingHC = reusingController as? ASHostingController<Container>
 		{
-			existingHC.setView(view)
+			existingHC.setView(containedView)
 			return existingHC
 		}
 		else
 		{
-			let newHC = ASHostingController<Content>(view)
+			let newHC = ASHostingController<Container>(containedView)
 			return newHC
 		}
 	}
 
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	{
-		guard indexPath.item < data.endIndex else { return nil }
-		return data[indexPath.item]
+		data[safe: indexPath.item]
 	}
 
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
@@ -111,15 +128,13 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func onAppear(_ indexPath: IndexPath)
 	{
-		guard indexPath.item < data.endIndex else { return }
-		let item = data[indexPath.item]
+		guard let item = data[safe: indexPath.item] else { return }
 		onCellEvent?(.onAppear(item: item))
 	}
 
 	func onDisappear(_ indexPath: IndexPath)
 	{
-		guard indexPath.item < data.endIndex else { return }
-		let item = data[indexPath.item]
+		guard let item = data[safe: indexPath.item] else { return }
 		onCellEvent?(.onDisappear(item: item))
 	}
 
@@ -127,8 +142,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		let dataToPrefetch: [Data] = indexPaths.compactMap
 		{
-			guard $0.item < data.endIndex else { return nil }
-			return data[$0.item]
+			data[safe: $0.item]
 		}
 		onCellEvent?(.prefetchForData(data: dataToPrefetch))
 	}
@@ -137,39 +151,49 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		let dataToCancelPrefetch: [Data] = indexPaths.compactMap
 		{
-			guard $0.item < data.endIndex else { return nil }
-			return data[$0.item]
+			data[safe: $0.item]
 		}
 		onCellEvent?(.cancelPrefetchForData(data: dataToCancelPrefetch))
+	}
+
+	func supportsDelete(at indexPath: IndexPath) -> Bool
+	{
+		onSwipeToDelete != nil
+	}
+
+	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
+	{
+		guard let item = data[safe: indexPath.item] else { return }
+		onSwipeToDelete?(item, completionHandler)
 	}
 
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	{
 		guard dragEnabled else { return nil }
-		guard indexPath.item < data.endIndex else { return nil }
-		let item = data[indexPath.item]
+		guard let item = data[safe: indexPath.item] else { return nil }
 
 		let itemProvider: NSItemProvider = self.itemProvider?(item) ?? NSItemProvider()
 		let dragItem = UIDragItem(itemProvider: itemProvider)
-		dragItem.localObject = data[indexPath.item]
+		dragItem.localObject = item
 		return dragItem
 	}
 
 	func removeItem(from indexPath: IndexPath)
 	{
-		guard indexPath.item < data.endIndex else { return }
+		guard data.containsIndex(indexPath.item) else { return }
 		onDragDrop?(.onRemoveItem(indexPath: indexPath))
 	}
 
 	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
 	{
 		guard dropEnabled else { return }
-		let index = IndexPath(item: min(indexPath.item, data.endIndex), section: indexPath.section)
+		let index = max(data.startIndex, min(indexPath.item, data.endIndex))
+		let indexPath = IndexPath(item: index, section: indexPath.section)
 		let dataItems = items.compactMap
 		{ (dragItem) -> Data? in
 			guard let item = dragItem.localObject as? Data else { return nil }
 			return item
 		}
-		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: index))
+		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: indexPath))
 	}
 }

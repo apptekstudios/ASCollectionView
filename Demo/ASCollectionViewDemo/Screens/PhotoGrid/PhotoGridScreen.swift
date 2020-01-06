@@ -110,14 +110,15 @@ struct PhotoGridScreen: View
 			}
 		}
 	}
-	
-	func destinationForItem(_ item: Post) -> some View {
+
+	func destinationForItem(_ item: Post) -> some View
+	{
 		ScrollView {
 			PostView(post: item)
 				.onAppear {
 					ASRemoteImageManager.shared.load(item.url)
 					ASRemoteImageManager.shared.load(item.usernamePhotoURL)
-			}
+				}
 		}
 	}
 

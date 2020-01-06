@@ -3,7 +3,7 @@
 import Foundation
 import UIKit
 
-/// WORK IN PROGRESS
+@available(iOS 13.0, *)
 public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol
 {
 	public var estimatedItemHeight: CGFloat = 400 // Only needed if using auto-sizing. SwiftUI seems to only return smaller sizes (so make this bigger than needed)
@@ -117,7 +117,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		guard let sections = collectionView.allSections else { return }
 		for section in sections
 		{
-			let sectionMinY = (0..<section).reduce(into: collectionView.adjustedContentInset.top) { $0 += cachedSectionHeight[$1] ?? 0 }
+			let sectionMinY = (0 ..< section).reduce(into: collectionView.adjustedContentInset.top) { $0 += cachedSectionHeight[$1] ?? 0 }
 			var columnHeights: [CGFloat] = .init(repeating: 0, count: calculatedNumberOfColumns)
 
 			for indexPath in collectionView.allIndexPaths(inSection: section)
@@ -145,7 +145,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 			}
 			cachedSectionHeight[section] = (columnHeights.max() ?? 0) + (section != (sections.count - 1) ? sectionSpacing : 0)
 		}
-		contentHeight = cachedSectionHeight.reduce(into: collectionView.adjustedContentInset.top, { $0 += $1.value })
+		contentHeight = cachedSectionHeight.reduce(into: collectionView.adjustedContentInset.top) { $0 += $1.value }
 	}
 
 	public override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]?
@@ -204,7 +204,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 	{
 		guard !hasDelegate else { return false }
 		guard
-			let height = self.cachedHeight[originalAttributes.indexPath],
+			let height = cachedHeight[originalAttributes.indexPath],
 			height == preferredAttributes.size.height
 		else { return true } // Either no cached height, or has changed...
 		return false
@@ -230,6 +230,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 
 // MARK: Delegate
 
+@available(iOS 13.0, *)
 public protocol ASWaterfallLayoutDelegate
 {
 	func heightForCell(at indexPath: IndexPath, context: ASWaterfallLayout.CellLayoutContext) -> CGFloat
@@ -258,6 +259,8 @@ extension Array where Element: Comparable
 {
 	public func indexOfMin() -> Int?
 	{
+		// swiftformat:disable redundantSelf
 		self.min().flatMap(firstIndex(of:))
+		// swiftformat:enable redundantSelf
 	}
 }

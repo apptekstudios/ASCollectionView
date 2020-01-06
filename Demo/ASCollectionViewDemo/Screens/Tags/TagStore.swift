@@ -25,7 +25,7 @@ class TagStore: ObservableObject
 
 	static func randomItems() -> [Item]
 	{
-		TagStore.allWords.indices.shuffled()[0...Int.random(in: 8...18)].map
+		TagStore.allWords.indices.shuffled()[0 ... Int.random(in: 8 ... 18)].map
 		{
 			Item(id: $0, displayString: TagStore.allWords[$0])
 		}

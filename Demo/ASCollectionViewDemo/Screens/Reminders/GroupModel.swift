@@ -7,7 +7,7 @@ struct GroupModel: Identifiable
 {
 	var icon: String
 	var title: String
-	var contentCount: Int? = Int.random(in: 0...20)
+	var contentCount: Int? = Int.random(in: 0 ... 20)
 	var color: Color = [Color.red, Color.orange, Color.blue, Color.purple].randomElement()!
 
 	static var demo = GroupModel(icon: "paperplane", title: "Test category", contentCount: 19)

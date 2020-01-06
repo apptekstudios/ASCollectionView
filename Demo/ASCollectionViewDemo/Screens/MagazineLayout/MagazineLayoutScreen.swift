@@ -7,7 +7,7 @@ import UIKit
 
 struct MagazineLayoutScreen: View
 {
-	@State var data: [[Post]] = (0...5).map
+	@State var data: [[Post]] = (0 ... 5).map
 	{
 		DataSource.postsForGridSection($0, number: 10)
 	}

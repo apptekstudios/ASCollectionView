@@ -3,12 +3,16 @@
 import Foundation
 import SwiftUI
 
+@available(iOS 13.0, *)
 public struct ASCollectionViewStaticContent: Identifiable
 {
-	public var id: Int
-	public var view: AnyView
+	public var index: Int
+	var view: AnyView
+
+	public var id: Int { index }
 }
 
+@available(iOS 13.0, *)
 public struct ASCollectionViewItemUniqueID: Hashable
 {
 	var sectionIDHash: Int
@@ -20,7 +24,11 @@ public struct ASCollectionViewItemUniqueID: Hashable
 	}
 }
 
-public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
+@available(iOS 13.0, *)
+public typealias ASCollectionViewSection = ASSection
+
+@available(iOS 13.0, *)
+public struct ASSection<SectionID: Hashable>
 {
 	public var id: SectionID
 
@@ -49,39 +57,48 @@ public struct ASCollectionViewSection<SectionID: Hashable>: Hashable
 	 - onDragDropEvent: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
 	 */
-	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View> (
+	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View, Container: View>(
+		id: SectionID,
+		data: DataCollection,
+		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
+		container: @escaping ((Content) -> Container),
+		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
+		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
+		itemProvider: ItemProvider<DataCollection.Element>? = nil,
+		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+		where DataCollection.Index == Int
+	{
+		self.id = id
+		dataSource = ASSectionDataSource<DataCollection, DataID, Content, Container>(
+			data: data,
+			dataIDKeyPath: dataIDKeyPath,
+			container: container,
+			onCellEvent: onCellEvent,
+			onDragDrop: onDragDropEvent,
+			itemProvider: itemProvider,
+			onSwipeToDelete: onSwipeToDelete,
+			content: contentBuilder)
+	}
+
+	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
 		id: SectionID,
 		data: DataCollection,
 		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
 		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
 		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
 		itemProvider: ItemProvider<DataCollection.Element>? = nil,
+		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
 		where DataCollection.Index == Int
 	{
-		self.id = id
-		dataSource = ASSectionDataSource<DataCollection, DataID, Content>(
-			data: data,
-			dataIDKeyPath: dataIDKeyPath,
-			onCellEvent: onCellEvent,
-			onDragDrop: onDragDropEvent,
-			itemProvider: itemProvider,
-			content: contentBuilder)
-	}
-
-	public func hash(into hasher: inout Hasher)
-	{
-		hasher.combine(id)
-	}
-
-	public static func ==(lhs: ASCollectionViewSection<SectionID>, rhs: ASCollectionViewSection<SectionID>) -> Bool
-	{
-		lhs.id == rhs.id
+		self.init(id: id, data: data, dataID: dataIDKeyPath, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
 	}
 }
 
 // MARK: SUPPLEMENTARY VIEWS - INTERNAL
 
+@available(iOS 13.0, *)
 internal extension ASCollectionViewSection
 {
 	mutating func setHeaderView<Content: View>(_ view: Content?)
@@ -118,6 +135,7 @@ internal extension ASCollectionViewSection
 
 // MARK: SUPPLEMENTARY VIEWS - PUBLIC MODIFIERS
 
+@available(iOS 13.0, *)
 public extension ASCollectionViewSection
 {
 	func sectionHeader<Content: View>(content: () -> Content?) -> Self
@@ -153,6 +171,7 @@ public extension ASCollectionViewSection
 
 // MARK: STATIC CONTENT SECTION
 
+@available(iOS 13.0, *)
 public extension ASCollectionViewSection
 {
 	/**
@@ -162,16 +181,21 @@ public extension ASCollectionViewSection
 	 - id: The id for this section
 	 - content: A closure returning a number of SwiftUI views to display in the collection view
 	 */
-	init(id: SectionID, @ViewArrayBuilder content: () -> [AnyView])
+	init<Container: View>(id: SectionID, container: @escaping ((AnyView) -> Container), @ViewArrayBuilder content: () -> [AnyView])
 	{
 		self.id = id
-		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView>(
+		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView, Container>(
 			data: content().enumerated().map
 			{
-				ASCollectionViewStaticContent(id: $0.offset, view: $0.element)
+				ASCollectionViewStaticContent(index: $0.offset, view: $0.element)
 			},
 			dataIDKeyPath: \.id,
+			container: container,
 			content: { staticContent, _ in staticContent.view })
+	}
+
+	init(id: SectionID, @ViewArrayBuilder content: () -> [AnyView]) {
+		self.init(id: id, container: { $0 }, content: content)
 	}
 
 	/**
@@ -181,18 +205,24 @@ public extension ASCollectionViewSection
 	 - id: The id for this section
 	 - content: A single SwiftUI views to display in the collection view
 	 */
-	init<Content: View>(id: SectionID, content: () -> Content)
+	init<Content: View, Container: View>(id: SectionID, container: @escaping ((AnyView) -> Container), content: () -> Content)
 	{
 		self.id = id
-		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView>(
-			data: [ASCollectionViewStaticContent(id: 0, view: AnyView(content()))],
+		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView, Container>(
+			data: [ASCollectionViewStaticContent(index: 0, view: AnyView(content()))],
 			dataIDKeyPath: \.id,
+			container: container,
 			content: { staticContent, _ in staticContent.view })
+	}
+
+	init<Content: View>(id: SectionID, content: () -> Content) {
+		self.init(id: id, container: { $0 }, content: content)
 	}
 }
 
 // MARK: IDENTIFIABLE DATA SECTION
 
+@available(iOS 13.0, *)
 public extension ASCollectionViewSection
 {
 	/**
@@ -205,14 +235,28 @@ public extension ASCollectionViewSection
 	 - onDragDropEvent: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
 	 */
+	@inlinable init<Content: View, Container: View, Data: Identifiable>(
+		id: SectionID,
+		data: [Data],
+		container: @escaping ((Content) -> Container),
+		onCellEvent: OnCellEvent<Data>? = nil,
+		onDragDropEvent: OnDragDrop<Data>? = nil,
+		itemProvider: ItemProvider<Data>? = nil,
+		onSwipeToDelete: OnSwipeToDelete<Data>? = nil,
+		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
+	{
+		self.init(id: id, data: data, dataID: \.id, container: container, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
+	}
+
 	@inlinable init<Content: View, Data: Identifiable>(
 		id: SectionID,
 		data: [Data],
 		onCellEvent: OnCellEvent<Data>? = nil,
 		onDragDropEvent: OnDragDrop<Data>? = nil,
 		itemProvider: ItemProvider<Data>? = nil,
+		onSwipeToDelete: OnSwipeToDelete<Data>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
 	{
-		self.init(id: id, data: data, dataID: \.id, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
 	}
 }

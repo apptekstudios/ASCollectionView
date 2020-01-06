@@ -20,9 +20,6 @@
 --fractiongrouping disabled
 --ifdef outdent
 --importgrouping testable-top
---operatorfunc no-space
---ranges no-space
---selfrequired validate
 --stripunusedargs closure-only
 --wraparguments before-first
---wrapcollections before-first
+--wrapcollections after-first

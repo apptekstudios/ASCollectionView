@@ -116,6 +116,6 @@ struct PostView_Previews: PreviewProvider
 {
 	static var previews: some View
 	{
-		PostView(post: Post.randomPost(Int.random(in: 0...1000), aspectRatio: 1))
+		PostView(post: Post.randomPost(Int.random(in: 0 ... 1000), aspectRatio: 1))
 	}
 }
