@@ -27,6 +27,6 @@ struct StoryView_Previews: PreviewProvider
 {
 	static var previews: some View
 	{
-		StoryView(post: Post.randomPost(Int.random(in: 0...1000), aspectRatio: 1))
+		StoryView(post: Post.randomPost(Int.random(in: 0 ... 1000), aspectRatio: 1))
 	}
 }

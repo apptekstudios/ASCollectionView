@@ -8,7 +8,7 @@ public struct ASCollectionViewStaticContent: Identifiable
 {
 	public var index: Int
 	var view: AnyView
-	
+
 	public var id: Int { index }
 }
 
@@ -57,7 +57,7 @@ public struct ASSection<SectionID: Hashable>
 	 - onDragDropEvent: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
 	 */
-	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View, Container: View> (
+	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View, Container: View>(
 		id: SectionID,
 		data: DataCollection,
 		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
@@ -80,8 +80,8 @@ public struct ASSection<SectionID: Hashable>
 			onSwipeToDelete: onSwipeToDelete,
 			content: contentBuilder)
 	}
-	
-	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View> (
+
+	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
 		id: SectionID,
 		data: DataCollection,
 		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
@@ -97,6 +97,7 @@ public struct ASSection<SectionID: Hashable>
 }
 
 // MARK: SUPPLEMENTARY VIEWS - INTERNAL
+
 @available(iOS 13.0, *)
 internal extension ASCollectionViewSection
 {
@@ -133,6 +134,7 @@ internal extension ASCollectionViewSection
 }
 
 // MARK: SUPPLEMENTARY VIEWS - PUBLIC MODIFIERS
+
 @available(iOS 13.0, *)
 public extension ASCollectionViewSection
 {
@@ -168,6 +170,7 @@ public extension ASCollectionViewSection
 }
 
 // MARK: STATIC CONTENT SECTION
+
 @available(iOS 13.0, *)
 public extension ASCollectionViewSection
 {
@@ -190,9 +193,9 @@ public extension ASCollectionViewSection
 			container: container,
 			content: { staticContent, _ in staticContent.view })
 	}
-	
+
 	init(id: SectionID, @ViewArrayBuilder content: () -> [AnyView]) {
-		self.init(id: id, container:  { $0 }, content: content)
+		self.init(id: id, container: { $0 }, content: content)
 	}
 
 	/**
@@ -211,13 +214,14 @@ public extension ASCollectionViewSection
 			container: container,
 			content: { staticContent, _ in staticContent.view })
 	}
-	
+
 	init<Content: View>(id: SectionID, content: () -> Content) {
 		self.init(id: id, container: { $0 }, content: content)
 	}
 }
 
 // MARK: IDENTIFIABLE DATA SECTION
+
 @available(iOS 13.0, *)
 public extension ASCollectionViewSection
 {
@@ -243,7 +247,7 @@ public extension ASCollectionViewSection
 	{
 		self.init(id: id, data: data, dataID: \.id, container: container, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
 	}
-	
+
 	@inlinable init<Content: View, Data: Identifiable>(
 		id: SectionID,
 		data: [Data],

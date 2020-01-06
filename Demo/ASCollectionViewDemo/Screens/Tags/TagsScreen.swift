@@ -138,7 +138,7 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 		}
 		guard
 			indexPath.item > 0,
-			let previousAttributes = self.layoutAttributesForItem(at: IndexPath(item: indexPath.item - 1, section: indexPath.section))
+			let previousAttributes = layoutAttributesForItem(at: IndexPath(item: indexPath.item - 1, section: indexPath.section))
 		else
 		{
 			attributes.frame.origin.x = leftEdge // first item of the section should always be left aligned

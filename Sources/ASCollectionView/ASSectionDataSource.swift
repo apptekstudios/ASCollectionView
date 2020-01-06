@@ -18,7 +18,7 @@ internal protocol ASSectionDataSourceProtocol
 	func removeItem(from indexPath: IndexPath)
 	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
 	func supportsDelete(at indexPath: IndexPath) -> Bool
-	func onDelete(indexPath: IndexPath, completionHandler: ((Bool) -> Void))
+	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 }
@@ -56,7 +56,7 @@ public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
 public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
 
 @available(iOS 13.0, *)
-public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: ((Bool) -> Void)) -> Void)
+public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: (Bool) -> Void) -> Void)
 
 @available(iOS 13.0, *)
 public struct CellContext
@@ -72,7 +72,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	typealias Data = DataCollection.Element
 	var data: DataCollection
 	var dataIDKeyPath: KeyPath<Data, DataID>
-	var container: ((Content) -> Container)
+	var container: (Content) -> Container
 	var onCellEvent: OnCellEvent<Data>?
 	var onDragDrop: OnDragDrop<Data>?
 	var itemProvider: ItemProvider<Data>?
@@ -95,7 +95,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
 		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
 		let containedView = container(view)
-		
+
 		if let existingHC = reusingController as? ASHostingController<Container>
 		{
 			existingHC.setView(containedView)
@@ -110,7 +110,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	{
-		return data[safe: indexPath.item]
+		data[safe: indexPath.item]
 	}
 
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
@@ -142,7 +142,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		let dataToPrefetch: [Data] = indexPaths.compactMap
 		{
-			return data[safe: $0.item]
+			data[safe: $0.item]
 		}
 		onCellEvent?(.prefetchForData(data: dataToPrefetch))
 	}
@@ -151,16 +151,18 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		let dataToCancelPrefetch: [Data] = indexPaths.compactMap
 		{
-			return data[safe: $0.item]
+			data[safe: $0.item]
 		}
 		onCellEvent?(.cancelPrefetchForData(data: dataToCancelPrefetch))
 	}
-	
-	func supportsDelete(at indexPath: IndexPath) -> Bool {
+
+	func supportsDelete(at indexPath: IndexPath) -> Bool
+	{
 		onSwipeToDelete != nil
 	}
-	
-	func onDelete(indexPath: IndexPath, completionHandler: ((Bool) -> Void)) {
+
+	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
+	{
 		guard let item = data[safe: indexPath.item] else { return }
 		onSwipeToDelete?(item, completionHandler)
 	}
@@ -169,7 +171,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		guard dragEnabled else { return nil }
 		guard let item = data[safe: indexPath.item] else { return nil }
-		
+
 		let itemProvider: NSItemProvider = self.itemProvider?(item) ?? NSItemProvider()
 		let dragItem = UIDragItem(itemProvider: itemProvider)
 		dragItem.localObject = item

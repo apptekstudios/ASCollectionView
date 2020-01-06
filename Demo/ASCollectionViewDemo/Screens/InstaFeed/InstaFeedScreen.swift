@@ -7,9 +7,10 @@ import UIKit
 struct InstaFeedScreen: View
 {
 	@State var storiesData: [Post] = DataSource.postsForInstaSection(0, number: 12)
-	@State var data: [[Post]] = (0...1).map { DataSource.postsForInstaSection($0 + 1) }
+	@State var data: [[Post]] = (0 ... 1).map { DataSource.postsForInstaSection($0 + 1) }
 
-	var storiesCollectionView: some View {
+	var storiesCollectionView: some View
+	{
 		ASCollectionView(
 			section:
 			ASCollectionViewSection(
@@ -20,52 +21,54 @@ struct InstaFeedScreen: View
 				StoryView(post: item)
 		})
 			.layout(scrollDirection: .horizontal)
-			{
-				.list(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
+		{
+			.list(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
 		}
 		.frame(height: 100)
 		.scrollIndicatorsEnabled(false)
 		.onCollectionViewReachedBoundary
-			{ boundary in
-				print("Reached the \(boundary) boundary")
+		{ boundary in
+			print("Reached the \(boundary) boundary")
 		}
 	}
-	
-	var storiesSection: ASTableViewSection<Int> {
-		return ASTableViewSection(id: 0)
+
+	var storiesSection: ASTableViewSection<Int>
+	{
+		ASTableViewSection(id: 0)
 		{
 			storiesCollectionView
 		}
 	}
-	
-	var postSections: [ASTableViewSection<Int>] {
+
+	var postSections: [ASTableViewSection<Int>]
+	{
 		data.enumerated().map
-			{ i, sectionData in
-				return ASTableViewSection(
-					id: i + 1,
-					data: sectionData,
-					onCellEvent: onCellEventPosts)
-				{ item, _ in
-					PostView(post: item)
-				}
-					.tableViewSetEstimatedSizes(rowHeight: 500, headerHeight: 50) // Optional: Provide reasonable estimated heights for this section
-					.sectionHeader
+		{ i, sectionData in
+			ASTableViewSection(
+				id: i + 1,
+				data: sectionData,
+				onCellEvent: onCellEventPosts)
+			{ item, _ in
+				PostView(post: item)
+			}
+			.tableViewSetEstimatedSizes(rowHeight: 500, headerHeight: 50) // Optional: Provide reasonable estimated heights for this section
+			.sectionHeader
+			{
+				VStack(spacing: 0)
+				{
+					HStack
 					{
-						VStack(spacing: 0)
-						{
-							HStack
-								{
-									Text("Demo sticky header view")
-										.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
-									Spacer()
-							}
-							Divider()
-						}
-						.background(Color(.secondarySystemBackground))
+						Text("Demo sticky header view")
+							.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+						Spacer()
+					}
+					Divider()
 				}
+				.background(Color(.secondarySystemBackground))
+			}
 		}
 	}
-	
+
 	var sections: [ASTableViewSection<Int>]
 	{
 		[storiesSection] + postSections
@@ -77,13 +80,13 @@ struct InstaFeedScreen: View
 			.tableViewSeparatorsEnabled(false)
 			.onTableViewPullToRefresh { endRefreshing in
 				print("PULL TO REFRESH")
-				Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { (_) in
+				Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
 					endRefreshing()
 				}
-		}
+			}
 			.onTableViewReachedBottom
-			{
-				self.loadMoreContent() // REACHED BOTTOM, LOADING MORE CONTENT
+		{
+			self.loadMoreContent() // REACHED BOTTOM, LOADING MORE CONTENT
 		}
 		.navigationBarTitle("Insta Feed (tableview)", displayMode: .inline)
 	}
@@ -91,7 +94,7 @@ struct InstaFeedScreen: View
 	func loadMoreContent()
 	{
 		let a = data.count
-		data.append(DataSource.postsForInstaSection(a+1))
+		data.append(DataSource.postsForInstaSection(a + 1))
 	}
 
 	func onCellEventStories(_ event: CellEvent<Post>)

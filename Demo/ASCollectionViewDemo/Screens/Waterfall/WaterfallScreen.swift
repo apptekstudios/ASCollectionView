@@ -76,7 +76,7 @@ struct WaterfallScreen: View
 				HStack
 				{
 					Text("Min. column size")
-					Slider(value: self.$columnMinSize, in: 60...200)
+					Slider(value: self.$columnMinSize, in: 60 ... 200)
 				}.padding()
 			}
 

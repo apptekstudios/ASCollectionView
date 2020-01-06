@@ -52,7 +52,7 @@ public final class Lorem
 	/// Generates a single sentence.
 	public static var sentence: String
 	{
-		let numberOfWords = Int.random(in: minWordsCountInSentence...maxWordsCountInSentence)
+		let numberOfWords = Int.random(in: minWordsCountInSentence ... maxWordsCountInSentence)
 
 		return _compose(
 			word,
@@ -95,7 +95,7 @@ public final class Lorem
 	/// Generates a single paragraph.
 	public static var paragraph: String
 	{
-		let numberOfSentences = Int.random(in: minSentencesCountInParagraph...maxSentencesCountInParagraph)
+		let numberOfSentences = Int.random(in: minSentencesCountInParagraph ... maxSentencesCountInParagraph)
 
 		return _compose(
 			sentence,
@@ -142,7 +142,7 @@ public final class Lorem
 	/// Generates a capitalized title.
 	public static var title: String
 	{
-		let numberOfWords = Int.random(in: minWordsCountInTitle...maxWordsCountInTitle)
+		let numberOfWords = Int.random(in: minWordsCountInTitle ... maxWordsCountInTitle)
 
 		return _compose(
 			word,
@@ -218,7 +218,7 @@ public final class Lorem
 
 	public static var caption: String
 	{
-		let numberOfWords = Int.random(in: 2...4)
+		let numberOfWords = Int.random(in: 2 ... 4)
 		return _compose(
 			word,
 			count: numberOfWords,
@@ -247,7 +247,7 @@ extension Lorem
 	{
 		var string = ""
 
-		for index in 0..<count
+		for index in 0 ..< count
 		{
 			string += provider()
 

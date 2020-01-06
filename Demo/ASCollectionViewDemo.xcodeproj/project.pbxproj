@@ -256,6 +256,7 @@
 				B86C6F0F234B078600522AEF /* Sources */,
 				B86C6F10234B078600522AEF /* Frameworks */,
 				B86C6F11234B078600522AEF /* Resources */,
+				B8E6691323C2C8700034A9C1 /* SwiftFormat */,
 			);
 			buildRules = (
 			);
@@ -318,6 +319,27 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		B8E6691323C2C8700034A9C1 /* SwiftFormat */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftFormat;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd BuildTools\n\n#Temporarily uncomment the following line to update your packages (based on the versions defined in BuildTools/Package.swift)\n#swift package update\n\n#swift run -c release swiftformat \"$SRCROOT/../\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		B86C6F0F234B078600522AEF /* Sources */ = {

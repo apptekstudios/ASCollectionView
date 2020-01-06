@@ -68,37 +68,37 @@ public extension EnvironmentValues
 {
 	var invalidateCellLayout: () -> Void
 	{
-		get { return self[EnvironmentKeyInvalidateCellLayout.self] }
+		get { self[EnvironmentKeyInvalidateCellLayout.self] }
 		set { self[EnvironmentKeyInvalidateCellLayout.self] = newValue }
 	}
 
 	var scrollIndicatorsEnabled: Bool
 	{
-		get { return self[EnvironmentKeyASScrollIndicatorsEnabled.self] }
+		get { self[EnvironmentKeyASScrollIndicatorsEnabled.self] }
 		set { self[EnvironmentKeyASScrollIndicatorsEnabled.self] = newValue }
 	}
 
 	var contentInsets: UIEdgeInsets
 	{
-		get { return self[EnvironmentKeyASContentInsets.self] }
+		get { self[EnvironmentKeyASContentInsets.self] }
 		set { self[EnvironmentKeyASContentInsets.self] = newValue }
 	}
 
 	var tableViewSeparatorsEnabled: Bool
 	{
-		get { return self[EnvironmentKeyASTableViewSeparatorsEnabled.self] }
+		get { self[EnvironmentKeyASTableViewSeparatorsEnabled.self] }
 		set { self[EnvironmentKeyASTableViewSeparatorsEnabled.self] = newValue }
 	}
-	
-	var tableViewOnPullToRefresh: (((_ endRefreshing: @escaping (() -> Void)) -> Void)?)
+
+	var tableViewOnPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
 	{
-		get { return self[EnvironmentKeyASTableViewOnPullToRefresh.self] }
+		get { self[EnvironmentKeyASTableViewOnPullToRefresh.self] }
 		set { self[EnvironmentKeyASTableViewOnPullToRefresh.self] = newValue }
 	}
 
 	var tableViewOnReachedBottom: () -> Void
 	{
-		get { return self[EnvironmentKeyASTableViewOnReachedBottom.self] }
+		get { self[EnvironmentKeyASTableViewOnReachedBottom.self] }
 		set { self[EnvironmentKeyASTableViewOnReachedBottom.self] = newValue }
 	}
 
@@ -110,19 +110,19 @@ public extension EnvironmentValues
 
 	var alwaysBounceVertical: Bool
 	{
-		get { return self[EnvironmentKeyASAlwaysBounceVertical.self] }
+		get { self[EnvironmentKeyASAlwaysBounceVertical.self] }
 		set { self[EnvironmentKeyASAlwaysBounceVertical.self] = newValue }
 	}
 
 	var alwaysBounceHorizontal: Bool
 	{
-		get { return self[EnvironmentKeyASAlwaysBounceHorizontal.self] }
+		get { self[EnvironmentKeyASAlwaysBounceHorizontal.self] }
 		set { self[EnvironmentKeyASAlwaysBounceHorizontal.self] = newValue }
 	}
 
 	var initialScrollPosition: ASCollectionViewScrollPosition?
 	{
-		get { return self[EnvironmentKeyASInitialScrollPosition.self] }
+		get { self[EnvironmentKeyASInitialScrollPosition.self] }
 		set { self[EnvironmentKeyASInitialScrollPosition.self] = newValue }
 	}
 }
@@ -147,9 +147,9 @@ public extension View
 	{
 		environment(\.tableViewSeparatorsEnabled, enabled)
 	}
-	
+
 	/// Set a closure that is called when the tableView is pulled to refresh
-	func onTableViewPullToRefresh(_ onPullToRefresh: (((_ endRefreshing: @escaping (() -> Void)) -> Void))?) -> some View
+	func onTableViewPullToRefresh(_ onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?) -> some View
 	{
 		environment(\.tableViewOnPullToRefresh, onPullToRefresh)
 	}
@@ -160,7 +160,7 @@ public extension View
 	{
 		environment(\.tableViewOnReachedBottom, onReachedBottom)
 	}
-	
+
 	/// Set a closure that is called whenever the collectionView is scrolled to a boundary. eg. the bottom.
 	/// This is useful to enable loading more data when scrolling to bottom
 	func onCollectionViewReachedBoundary(_ onReachedBoundary: @escaping ((Boundary) -> Void)) -> some View

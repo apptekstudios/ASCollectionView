@@ -9,13 +9,13 @@ extension UICollectionView
 	{
 		let sectionCount = dataSource?.numberOfSections?(in: self) ?? 1
 		guard sectionCount > 0 else { return nil }
-		return (0..<sectionCount)
+		return (0 ..< sectionCount)
 	}
 
 	func allIndexPaths(inSection section: Int) -> [IndexPath]
 	{
 		guard let itemCount = dataSource?.collectionView(self, numberOfItemsInSection: section), itemCount > 0 else { return [] }
-		return (0..<itemCount).map
+		return (0 ..< itemCount).map
 		{ item in
 			IndexPath(item: item, section: section)
 		}
@@ -33,7 +33,7 @@ extension UICollectionView
 	func allIndexPaths(after afterIndexPath: IndexPath) -> [IndexPath]
 	{
 		guard let sectionCount = dataSource?.numberOfSections?(in: self), sectionCount > 0 else { return [] }
-		return (afterIndexPath.section..<sectionCount).flatMap
+		return (afterIndexPath.section ..< sectionCount).flatMap
 		{ section -> [IndexPath] in
 			guard let itemCount = dataSource?.collectionView(self, numberOfItemsInSection: section), itemCount > 0 else { return [] }
 			let startIndex: Int
@@ -46,7 +46,7 @@ extension UICollectionView
 				startIndex = 0
 			}
 			guard startIndex < itemCount else { return [] }
-			return (startIndex..<itemCount).map
+			return (startIndex ..< itemCount).map
 			{ item in
 				IndexPath(item: item, section: section)
 			}

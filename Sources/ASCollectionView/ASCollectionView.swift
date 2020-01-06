@@ -30,14 +30,12 @@ extension ASCollectionView where SectionID == Int
 	 */
 	public init(@ViewArrayBuilder staticContent: () -> [AnyView])
 	{
-		self.init(sections:  [
-			ASCollectionViewSection(id: 0, content: staticContent)
-		])
+		self.init(sections: [ASCollectionViewSection(id: 0, content: staticContent)])
 	}
-	
+
 	/**
-	Initializes a  collection view with a single section.
-	*/
+	 Initializes a  collection view with a single section.
+	 */
 	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
 		data: DataCollection,
 		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
@@ -52,16 +50,16 @@ extension ASCollectionView where SectionID == Int
 			contentBuilder: contentBuilder)
 		sections = [section]
 		self.selectedItems = selectedItems.map
-			{ selectedItems in
-				Binding(
-					get: { [:] },
-					set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
+		{ selectedItems in
+			Binding(
+				get: { [:] },
+				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
 		}
 	}
-	
+
 	/**
-	Initializes a  collection view with a single section with identifiable data
-	*/
+	 Initializes a  collection view with a single section with identifiable data
+	 */
 	public init<DataCollection: RandomAccessCollection, Content: View>(
 		data: DataCollection,
 		selectedItems: Binding<IndexSet>? = nil,
@@ -76,26 +74,30 @@ extension ASCollectionView where SectionID == Int
 public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentable, ContentSize
 {
 	// MARK: Type definitions
+
 	public typealias Section = ASCollectionViewSection<SectionID>
 	public typealias Layout = ASCollectionLayout<SectionID>
-	
+
 	// MARK: Key variables
+
 	public var layout: Layout = .default
 	public var sections: [Section]
 	public var selectedItems: Binding<[SectionID: IndexSet]>?
-	
+
 	// MARK: Internal variables modified by modifier functions
+
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
-	
+
 	var contentSize: Binding<CGSize?>?
-	
+
 	var shouldInvalidateLayoutOnStateChange: Bool = false
 	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
-	
+
 	var shouldRecreateLayoutOnStateChange: Bool = false
 	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
 
 	// MARK: Environment variables
+
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
@@ -196,7 +198,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		private var hasDoneInitialSetup = false
 		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
-		
+
 		private var haveRegisteredForSupplementaryOfKind: Set<String> = []
 
 		typealias Cell = ASCollectionViewCell
@@ -232,12 +234,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			hostingControllerCache[itemID] = controller
 			return controller
 		}
-		
-		func registerSupplementaries(forCollectionView cv: UICollectionView) {
-			supplementaryKinds().subtracting(self.haveRegisteredForSupplementaryOfKind).forEach
-				{ kind in
-					cv.register(ASCollectionViewSupplementaryView.self, forSupplementaryViewOfKind: kind, withReuseIdentifier: supplementaryReuseID)
-					self.haveRegisteredForSupplementaryOfKind.insert(kind) // We don't need to register this kind again now.
+
+		func registerSupplementaries(forCollectionView cv: UICollectionView)
+		{
+			supplementaryKinds().subtracting(haveRegisteredForSupplementaryOfKind).forEach
+			{ kind in
+				cv.register(ASCollectionViewSupplementaryView.self, forSupplementaryViewOfKind: kind, withReuseIdentifier: supplementaryReuseID)
+				self.haveRegisteredForSupplementaryOfKind.insert(kind) // We don't need to register this kind again now.
 			}
 		}
 
@@ -245,7 +248,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			cv.register(Cell.self, forCellWithReuseIdentifier: cellReuseID)
 			registerSupplementaries(forCollectionView: cv)
-			
+
 			dataSource = .init(collectionView: cv)
 			{ (collectionView, indexPath, itemID) -> UICollectionViewCell? in
 				guard
@@ -335,12 +338,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func onMoveToParent(_ parentController: AS_CollectionViewController)
 		{
-			if !hasDoneInitialSetup {
+			if !hasDoneInitialSetup
+			{
 				hasDoneInitialSetup = true
-				
+
 				// Populate data source
 				populateDataSource(animated: false)
-				
+
 				// Set initial scroll position
 				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
 			}
@@ -660,6 +664,7 @@ public extension ASCollectionView
 }
 
 // MARK: Coordinator Protocol
+
 @available(iOS 13.0, *)
 internal protocol ASCollectionViewCoordinator: AnyObject
 {
@@ -683,6 +688,7 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 }
 
 // MARK: Custom Prefetching Implementation
+
 @available(iOS 13.0, *)
 extension ASCollectionView.Coordinator
 {
@@ -708,11 +714,11 @@ extension ASCollectionView.Coordinator
 				guard let sectionIndexPaths = self.parent.sections[safe: item.section]?.dataSource.getIndexPaths(withSectionIndex: item.section) else { return nil }
 				let nextItemsInSection: ArraySlice<IndexPath> = {
 					guard (item.last + 1) < sectionIndexPaths.endIndex else { return [] }
-					return sectionIndexPaths[(item.last + 1)..<min(item.last + numberToPreload + 1, sectionIndexPaths.endIndex)]
+					return sectionIndexPaths[(item.last + 1) ..< min(item.last + numberToPreload + 1, sectionIndexPaths.endIndex)]
 				}()
 				let previousItemsInSection: ArraySlice<IndexPath> = {
 					guard (item.first - 1) >= sectionIndexPaths.startIndex else { return [] }
-					return sectionIndexPaths[max(sectionIndexPaths.startIndex, item.first - numberToPreload)..<item.first]
+					return sectionIndexPaths[max(sectionIndexPaths.startIndex, item.first - numberToPreload) ..< item.first]
 				}()
 				return Array(nextItemsInSection) + Array(previousItemsInSection)
 			}
@@ -803,12 +809,10 @@ public class AS_CollectionViewController: UIViewController
 		collectionView.backgroundColor = .clear
 
 		collectionView.translatesAutoresizingMaskIntoConstraints = false
-		NSLayoutConstraint.activate([
-			collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
-			collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
-			collectionView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
-			collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)
-		])
+		NSLayoutConstraint.activate([collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
+									 collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
+									 collectionView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
+									 collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)])
 	}
 
 	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
@@ -900,4 +904,3 @@ public extension ASCollectionView
 		return this
 	}
 }
-
