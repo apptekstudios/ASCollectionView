@@ -3,7 +3,7 @@
 import Foundation
 import UIKit
 
-/// WORK IN PROGRESS
+@available(iOS 13.0, *)
 public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol
 {
 	public var estimatedItemHeight: CGFloat = 400 // Only needed if using auto-sizing. SwiftUI seems to only return smaller sizes (so make this bigger than needed)
@@ -230,6 +230,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 
 // MARK: Delegate
 
+@available(iOS 13.0, *)
 public protocol ASWaterfallLayoutDelegate
 {
 	func heightForCell(at indexPath: IndexPath, context: ASWaterfallLayout.CellLayoutContext) -> CGFloat

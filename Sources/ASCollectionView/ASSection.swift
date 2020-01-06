@@ -3,6 +3,7 @@
 import Foundation
 import SwiftUI
 
+@available(iOS 13.0, *)
 public struct ASCollectionViewStaticContent: Identifiable
 {
 	public var index: Int
@@ -11,6 +12,7 @@ public struct ASCollectionViewStaticContent: Identifiable
 	public var id: Int { index }
 }
 
+@available(iOS 13.0, *)
 public struct ASCollectionViewItemUniqueID: Hashable
 {
 	var sectionIDHash: Int
@@ -22,7 +24,10 @@ public struct ASCollectionViewItemUniqueID: Hashable
 	}
 }
 
+@available(iOS 13.0, *)
 public typealias ASCollectionViewSection = ASSection
+
+@available(iOS 13.0, *)
 public struct ASSection<SectionID: Hashable>
 {
 	public var id: SectionID
@@ -92,7 +97,7 @@ public struct ASSection<SectionID: Hashable>
 }
 
 // MARK: SUPPLEMENTARY VIEWS - INTERNAL
-
+@available(iOS 13.0, *)
 internal extension ASCollectionViewSection
 {
 	mutating func setHeaderView<Content: View>(_ view: Content?)
@@ -128,7 +133,7 @@ internal extension ASCollectionViewSection
 }
 
 // MARK: SUPPLEMENTARY VIEWS - PUBLIC MODIFIERS
-
+@available(iOS 13.0, *)
 public extension ASCollectionViewSection
 {
 	func sectionHeader<Content: View>(content: () -> Content?) -> Self
@@ -163,7 +168,7 @@ public extension ASCollectionViewSection
 }
 
 // MARK: STATIC CONTENT SECTION
-
+@available(iOS 13.0, *)
 public extension ASCollectionViewSection
 {
 	/**
@@ -213,7 +218,7 @@ public extension ASCollectionViewSection
 }
 
 // MARK: IDENTIFIABLE DATA SECTION
-
+@available(iOS 13.0, *)
 public extension ASCollectionViewSection
 {
 	/**

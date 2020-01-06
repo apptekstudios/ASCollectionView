@@ -2,12 +2,13 @@
 
 import SwiftUI
 
+@available(iOS 13.0, *)
 protocol ContentSize
 {
 	var contentSize: Binding<CGSize?>? { get set }
 }
 
-
+@available(iOS 13.0, *)
 public enum ShrinkDimension
 {
 	case horizontal
@@ -24,6 +25,7 @@ public enum ShrinkDimension
 	}
 }
 
+@available(iOS 13.0, *)
 struct SelfSizingWrapper<Content: View & ContentSize>: View
 {
 	var contentSize: Binding<CGSize?>
@@ -53,6 +55,7 @@ struct SelfSizingWrapper<Content: View & ContentSize>: View
 	}
 }
 
+@available(iOS 13.0, *)
 public extension ASCollectionView
 {
 	func shrinkToContentSize(isEnabled: Bool, _ contentSize: Binding<CGSize?>, dimensionToShrink: ShrinkDimension) -> some View

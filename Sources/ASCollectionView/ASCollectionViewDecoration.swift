@@ -3,11 +3,13 @@
 import Foundation
 import SwiftUI
 
+@available(iOS 13.0, *)
 public protocol Decoration: View
 {
 	init()
 }
 
+@available(iOS 13.0, *)
 class ASCollectionViewDecoration<Content: Decoration>: ASCollectionViewSupplementaryView
 {
 	override init(frame: CGRect)
