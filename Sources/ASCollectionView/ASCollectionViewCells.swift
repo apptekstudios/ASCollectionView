@@ -3,6 +3,7 @@
 import Foundation
 import SwiftUI
 
+@available(iOS 13.0, *)
 class ASCollectionViewCell: UICollectionViewCell
 {
 	var hostingController: ASHostingControllerProtocol?
@@ -94,6 +95,7 @@ class ASCollectionViewCell: UICollectionViewCell
 	}
 }
 
+@available(iOS 13.0, *)
 class ASCollectionViewSupplementaryView: UICollectionReusableView
 {
 	var hostingController: ASHostingControllerProtocol?

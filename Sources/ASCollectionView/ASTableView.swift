@@ -3,6 +3,7 @@
 import Combine
 import SwiftUI
 
+@available(iOS 13.0, *)
 extension ASTableView where SectionID == Int
 {
 	/**
@@ -60,8 +61,10 @@ extension ASTableView where SectionID == Int
 	}
 }
 
+@available(iOS 13.0, *)
 public typealias ASTableViewSection = ASSection
 
+@available(iOS 13.0, *)
 public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 {
 	// MARK: Type definitions
@@ -475,11 +478,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	}
 }
 
+@available(iOS 13.0, *)
 protocol ASTableViewCoordinator: class {
 	func onMoveToParent(_ parentController: AS_TableViewController)
 }
 
 // MARK: ASTableView specific header modifiers
+@available(iOS 13.0, *)
 public extension ASTableViewSection {
 	
 	func sectionHeaderInsetGrouped<Content: View>(content: () -> Content?) -> Self
@@ -498,6 +503,7 @@ public extension ASTableViewSection {
 	}
 }
 
+@available(iOS 13.0, *)
 public class AS_TableViewController: UIViewController
 {
 	weak var coordinator: ASTableViewCoordinator?
@@ -544,6 +550,7 @@ public class AS_TableViewController: UIViewController
 	}
 }
 
+@available(iOS 13.0, *)
 class ASTableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: UITableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType : Hashable, ItemIdentifierType : Hashable {
 	override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
 		return true

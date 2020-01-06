@@ -3,6 +3,7 @@
 import Foundation
 import SwiftUI
 
+@available(iOS 13.0, *)
 internal struct ASHostingControllerModifier: ViewModifier
 {
 	var invalidateCellLayout: (() -> Void) = {}
@@ -13,6 +14,7 @@ internal struct ASHostingControllerModifier: ViewModifier
 	}
 }
 
+@available(iOS 13.0, *)
 internal protocol ASHostingControllerProtocol
 {
 	var viewController: UIViewController { get }
@@ -20,6 +22,7 @@ internal protocol ASHostingControllerProtocol
 	func sizeThatFits(in size: CGSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize
 }
 
+@available(iOS 13.0, *)
 internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 {
 	init(_ view: ViewType)

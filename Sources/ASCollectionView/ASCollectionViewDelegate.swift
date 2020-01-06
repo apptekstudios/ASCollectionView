@@ -4,6 +4,7 @@ import Foundation
 import SwiftUI
 
 /// ASCollectionViewDelegate: Subclass this to create a custom delegate (eg. for supporting UICollectionViewLayouts that default to using the collectionView delegate)
+@available(iOS 13.0, *)
 open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout
 {
 	weak var coordinator: ASCollectionViewCoordinator?
@@ -70,6 +71,7 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 	 */
 }
 
+@available(iOS 13.0, *)
 extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionViewDropDelegate
 {
 	public func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
