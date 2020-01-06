@@ -28,10 +28,9 @@ extension ASCollectionView where SectionID == Int
 	/**
 	 Initializes a  collection view with a single section of static content
 	 */
-	public func `static`(@ViewArrayBuilder staticContent: () -> [AnyView]) -> ASCollectionView
+	public init(@ViewArrayBuilder staticContent: () -> [AnyView])
 	{
-		//NOTE: using function instead of init, as this clashed with the SectionBuilder function
-		ASCollectionView(sections:  [
+		self.init(sections:  [
 			ASCollectionViewSection(id: 0, content: staticContent)
 		])
 	}

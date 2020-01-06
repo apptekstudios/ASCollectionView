@@ -32,12 +32,12 @@ struct RemindersScreen: View
 	{
 		ASCollectionView
 		{
-			ASCollectionViewSection(id: Section.upper, data: self.upperData)
+			ASCollectionViewSection<Section>(id: .upper, data: self.upperData)
 			{ model, _ in
 				GroupLarge(model: model)
 			}
 
-			ASCollectionViewSection(id: Section.list, data: self.lowerData)
+			ASCollectionViewSection<Section>(id: .list, data: self.lowerData)
 			{ model, info in
 				VStack(spacing: 0)
 				{
@@ -60,12 +60,12 @@ struct RemindersScreen: View
 				}
 			}
 
-			ASCollectionViewSection(id: Section.addNew)
+			ASCollectionViewSection<Section>(id: .addNew)
 			{
 				GroupSmall(model: self.addNewModel)
 			}
 			
-			ASCollectionViewSection(id: Section.footnote)
+			ASCollectionViewSection<Section>(id: .footnote)
 			{
 				HStack
 					{
