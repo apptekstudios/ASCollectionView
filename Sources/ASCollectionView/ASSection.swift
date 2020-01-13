@@ -235,27 +235,29 @@ public extension ASCollectionViewSection
 	 - onDragDropEvent: Define this closure to enable drag/drop and respond to events (default is nil: drag/drop disabled)
 	 	- contentBuilder: A closure returning a SwiftUI view for the given data item
 	 */
-	@inlinable init<Content: View, Container: View, Data: Identifiable>(
+	@inlinable init<Content: View, Container: View, DataCollection: RandomAccessCollection>(
 		id: SectionID,
-		data: [Data],
+		data: DataCollection,
 		container: @escaping ((Content) -> Container),
-		onCellEvent: OnCellEvent<Data>? = nil,
-		onDragDropEvent: OnDragDrop<Data>? = nil,
-		itemProvider: ItemProvider<Data>? = nil,
-		onSwipeToDelete: OnSwipeToDelete<Data>? = nil,
-		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
+		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
+		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
+		itemProvider: ItemProvider<DataCollection.Element>? = nil,
+		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+		 where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
 		self.init(id: id, data: data, dataID: \.id, container: container, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
 	}
 
-	@inlinable init<Content: View, Data: Identifiable>(
+	@inlinable init<Content: View, DataCollection: RandomAccessCollection>(
 		id: SectionID,
-		data: [Data],
-		onCellEvent: OnCellEvent<Data>? = nil,
-		onDragDropEvent: OnDragDrop<Data>? = nil,
-		itemProvider: ItemProvider<Data>? = nil,
-		onSwipeToDelete: OnSwipeToDelete<Data>? = nil,
-		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
+		data: DataCollection,
+		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
+		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
+		itemProvider: ItemProvider<DataCollection.Element>? = nil,
+		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+		 where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
 		self.init(id: id, data: data, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
 	}
