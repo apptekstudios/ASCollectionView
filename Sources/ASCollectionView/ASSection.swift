@@ -66,6 +66,7 @@ public struct ASSection<SectionID: Hashable>
 		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
 		itemProvider: ItemProvider<DataCollection.Element>? = nil,
 		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
+		contextMenuProvider: ContextMenuProvider<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
 		where DataCollection.Index == Int
 	{
@@ -78,6 +79,7 @@ public struct ASSection<SectionID: Hashable>
 			onDragDrop: onDragDropEvent,
 			itemProvider: itemProvider,
 			onSwipeToDelete: onSwipeToDelete,
+			contextMenuProvider: contextMenuProvider,
 			content: contentBuilder)
 	}
 
@@ -89,10 +91,11 @@ public struct ASSection<SectionID: Hashable>
 		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
 		itemProvider: ItemProvider<DataCollection.Element>? = nil,
 		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
+		contextMenuProvider: ContextMenuProvider<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
 		where DataCollection.Index == Int
 	{
-		self.init(id: id, data: data, dataID: dataIDKeyPath, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: dataIDKeyPath, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}
 }
 
@@ -243,10 +246,11 @@ public extension ASCollectionViewSection
 		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
 		itemProvider: ItemProvider<DataCollection.Element>? = nil,
 		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
+		contextMenuProvider: ContextMenuProvider<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
 		 where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
-		self.init(id: id, data: data, dataID: \.id, container: container, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: \.id, container: container, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}
 
 	@inlinable init<Content: View, DataCollection: RandomAccessCollection>(
@@ -256,9 +260,10 @@ public extension ASCollectionViewSection
 		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
 		itemProvider: ItemProvider<DataCollection.Element>? = nil,
 		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
+		contextMenuProvider: ContextMenuProvider<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
 		 where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
-		self.init(id: id, data: data, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}
 }

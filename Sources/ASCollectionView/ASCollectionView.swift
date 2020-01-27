@@ -621,6 +621,15 @@ extension ASCollectionView.Coordinator
 	}
 }
 
+// MARK: Context Menu Support
+@available(iOS 13.0, *)
+public extension ASCollectionView.Coordinator {
+	public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+		guard !indexPath.isEmpty else { return nil }
+		return parent.sections[safe: indexPath.section]?.dataSource.getContextMenu(for: indexPath)
+	}
+}
+
 // MARK: Modifer: Custom Delegate
 
 @available(iOS 13.0, *)
@@ -678,6 +687,7 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
+	func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
 	func dragItem(for indexPath: IndexPath) -> UIDragItem?
 	func canDrop(at indexPath: IndexPath) -> Bool
 	func removeItem(from indexPath: IndexPath)

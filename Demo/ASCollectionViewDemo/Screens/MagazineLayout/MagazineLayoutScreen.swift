@@ -16,15 +16,10 @@ struct MagazineLayoutScreen: View
 	{
 		data.enumerated().map
 		{ (offset, sectionData) -> ASCollectionViewSection<Int> in
-			ASCollectionViewSection(id: offset, data: sectionData, onCellEvent: onCellEvent)
+			ASCollectionViewSection(id: offset, data: sectionData, onCellEvent: onCellEvent, contextMenuProvider: contextMenuProvider)
 			{ item, _ in
 				ASRemoteImageView(item.url)
 					.aspectRatio(1, contentMode: .fit)
-					.contextMenu
-				{
-					Text("Test item")
-					Text("Another item")
-				}
 			}
 			.sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader)
 			{
@@ -71,6 +66,16 @@ struct MagazineLayoutScreen: View
 				ASRemoteImageManager.shared.cancelLoad(for: item.url)
 			}
 		}
+	}
+	
+	func contextMenuProvider(_ post: Post) -> UIContextMenuConfiguration? {
+		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { (suggestedActions) -> UIMenu? in
+			let testAction = UIAction(title: "Test") { (action) in
+				//
+			}
+			return UIMenu(title: "", image: nil, identifier: nil, options: [], children: [testAction])
+		}
+		return configuration
 	}
 }
 

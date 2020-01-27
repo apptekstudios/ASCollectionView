@@ -19,6 +19,7 @@ internal protocol ASSectionDataSourceProtocol
 	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
+	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 }
@@ -59,6 +60,9 @@ public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
 public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: (Bool) -> Void) -> Void)
 
 @available(iOS 13.0, *)
+public typealias ContextMenuProvider<Data> = ((_ item: Data) -> UIContextMenuConfiguration?)
+
+@available(iOS 13.0, *)
 public struct CellContext
 {
 	public var isSelected: Bool
@@ -77,6 +81,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var onDragDrop: OnDragDrop<Data>?
 	var itemProvider: ItemProvider<Data>?
 	var onSwipeToDelete: OnSwipeToDelete<Data>?
+	var contextMenuProvider: ContextMenuProvider<Data>?
 	var content: (Data, CellContext) -> Content
 
 	var dragEnabled: Bool { onDragDrop != nil }
@@ -195,5 +200,15 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			return item
 		}
 		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: indexPath))
+	}
+	
+	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
+	{
+		guard
+			let menuProvider = contextMenuProvider,
+			let item = data[safe: indexPath.item]
+			else { return nil }
+		
+		return menuProvider(item)
 	}
 }
