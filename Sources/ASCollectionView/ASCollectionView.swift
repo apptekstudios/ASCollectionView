@@ -624,7 +624,7 @@ extension ASCollectionView.Coordinator
 // MARK: Context Menu Support
 @available(iOS 13.0, *)
 public extension ASCollectionView.Coordinator {
-	public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+	func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
 		guard !indexPath.isEmpty else { return nil }
 		return parent.sections[safe: indexPath.section]?.dataSource.getContextMenu(for: indexPath)
 	}
