@@ -52,10 +52,12 @@ extension ASTableView where SectionID == Int
 	/**
 	 Initializes a  table view with a single section of static content
 	 */
-	init(@ViewArrayBuilder staticContent: () -> [AnyView]) // Clashing with above functions in Swift 5.1, therefore internal for time being
+	public static func `static`(@ViewArrayBuilder staticContent: () -> ViewArrayBuilder.Wrapper) -> ASTableView
 	{
-		style = .plain
-		sections = [ASTableViewSection(id: 0, content: staticContent)]
+		ASTableView(
+			style: .plain,
+			sections: [ASTableViewSection(id: 0, content: staticContent)]
+		)
 	}
 }
 

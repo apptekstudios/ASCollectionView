@@ -184,11 +184,11 @@ public extension ASCollectionViewSection
 	 - id: The id for this section
 	 - content: A closure returning a number of SwiftUI views to display in the collection view
 	 */
-	init<Container: View>(id: SectionID, container: @escaping ((AnyView) -> Container), @ViewArrayBuilder content: () -> [AnyView])
+	init<Container: View>(id: SectionID, container: @escaping ((AnyView) -> Container), @ViewArrayBuilder content: () -> ViewArrayBuilder.Wrapper)
 	{
 		self.id = id
 		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView, Container>(
-			data: content().enumerated().map
+			data: content().flattened().enumerated().map
 			{
 				ASCollectionViewStaticContent(index: $0.offset, view: $0.element)
 			},
@@ -197,7 +197,7 @@ public extension ASCollectionViewSection
 			content: { staticContent, _ in staticContent.view })
 	}
 
-	init(id: SectionID, @ViewArrayBuilder content: () -> [AnyView]) {
+	init(id: SectionID, @ViewArrayBuilder content: () -> ViewArrayBuilder.Wrapper) {
 		self.init(id: id, container: { $0 }, content: content)
 	}
 

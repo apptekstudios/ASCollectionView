@@ -28,7 +28,7 @@ extension ASCollectionView where SectionID == Int
 	/**
 	 Initializes a  collection view with a single section of static content
 	 */
-	public init(@ViewArrayBuilder staticContent: () -> [AnyView])
+	public init(@ViewArrayBuilder staticContent: () -> ViewArrayBuilder.Wrapper)
 	{
 		self.init(sections: [ASCollectionViewSection(id: 0, content: staticContent)])
 	}
@@ -336,7 +336,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			updateSelectionBindings(cv)
 		}
 
-		func onMoveToParent(_ parentController: AS_CollectionViewController)
+		func onMoveToParent()
 		{
 			if !hasDoneInitialSetup
 			{
@@ -694,7 +694,7 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
 	func didUpdateContentSize(_ size: CGSize)
 	func scrollViewDidScroll(_ scrollView: UIScrollView)
-	func onMoveToParent(_ collectionViewController: AS_CollectionViewController)
+	func onMoveToParent()
 }
 
 // MARK: Custom Prefetching Implementation
@@ -787,11 +787,15 @@ public enum ASCollectionViewScrollPosition
 @available(iOS 13.0, *)
 public class AS_CollectionViewController: UIViewController
 {
-	weak var coordinator: ASCollectionViewCoordinator?
+	weak var coordinator: ASCollectionViewCoordinator? {
+		didSet {
+			collectionView.coordinator = coordinator
+		}
+	}
 
 	var collectionViewLayout: UICollectionViewLayout
-	lazy var collectionView: UICollectionView = {
-		UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
+	lazy var collectionView: AS_UICollectionView = {
+		AS_UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
 	}()
 
 	public init(collectionViewLayout layout: UICollectionViewLayout)
@@ -808,7 +812,7 @@ public class AS_CollectionViewController: UIViewController
 	public override func didMove(toParent parent: UIViewController?)
 	{
 		super.didMove(toParent: parent)
-		coordinator?.onMoveToParent(self)
+		coordinator?.onMoveToParent()
 	}
 
 	public override func viewDidLoad()
@@ -861,6 +865,19 @@ public class AS_CollectionViewController: UIViewController
 	{
 		super.viewDidLayoutSubviews()
 		coordinator?.didUpdateContentSize(collectionView.contentSize)
+	}
+}
+
+
+@available(iOS 13.0, *)
+public class AS_UICollectionView: UICollectionView {
+	weak var coordinator: ASCollectionViewCoordinator? = nil
+	
+	public override func didMoveToWindow() {
+		super.didMoveToWindow()
+		
+		//Intended as a temporary workaround for a SwiftUI bug present in 13.3 -> the UIViewController is not moved to a parent when embedded in a list/scrollview
+		coordinator?.onMoveToParent()
 	}
 }
 

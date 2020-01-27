@@ -7,80 +7,114 @@ import SwiftUI
 @_functionBuilder
 public struct ViewArrayBuilder
 {
-	public typealias Output = [AnyView]
+	public enum Wrapper: View {
+		case empty
+		case view(AnyView)
+		case group([Wrapper])
+		
+		init<Content: View>(_ view: Content) {
+			//If this is actually a wrapper (not a view, unwrap it...)
+			if let wrapper = view as? Wrapper {
+				self = wrapper
+				return
+			}
+			self = .view(AnyView(view))
+		}
+		
+		func flattened() -> [AnyView] {
+			switch self {
+			case .empty:
+				return []
+			case .view(let theView):
+				return [theView]
+			case .group(let wrappers):
+				return wrappers.flatMap { $0.flattened() }
+			}
+		}
+		
+		// This type conforms to view to allow it to be passed into the C0/C1/C2/C3... buildBlocks - this allows using if statements correctly
+		public typealias Body = Never
+		public var body: Never { fatalError() }
+	}
+	public typealias Output = Wrapper
 
 	public static func buildEither<Content: View>(first: Content) -> Output
 	{
-		[AnyView(first)]
+		Wrapper(first)
 	}
 
 	public static func buildEither<Content: View>(second: Content) -> Output
 	{
-		[AnyView(second)]
+		Wrapper(second)
 	}
 
 	public static func buildIf<Content: View>(_ item: Content?) -> Output
 	{
-		[item].compactMap { $0.map(AnyView.init) }
+		return item.map { Wrapper($0) } ?? .empty
+	}
+	
+	public static func buildIf(_ subgroup: Wrapper?) -> Output
+	{
+		subgroup ?? .empty
+	}
+	
+	public static func buildBlock(_ subgroup: Wrapper) -> Output
+	{
+		subgroup
 	}
 
 	public static func buildBlock<C0: View>(_ item0: C0) -> Output
 	{
-		[AnyView(item0)]
+		Wrapper(item0)
 	}
 
 	public static func buildBlock<C0: View>(_ item0: [C0]) -> Output
 	{
-		item0.map(AnyView.init)
+		.group(item0.map { Wrapper($0) })
 	}
-
-	public static func buildBlock(_ item0: [AnyView]) -> Output
-	{
-		item0
-	}
-
+	
 	public static func buildBlock<C0: View, C1: View>(_ item0: C0, _ item1: C1) -> Output
 	{
-		[AnyView(item0), AnyView(item1)]
+		.group([Wrapper(item0), Wrapper(item1)])
 	}
-
+	
 	public static func buildBlock<C0: View, C1: View, C2: View>(_ item0: C0, _ item1: C1, _ item2: C2) -> Output
 	{
-		[AnyView(item0), AnyView(item1), AnyView(item2)]
+		.group([Wrapper(item0), Wrapper(item1), Wrapper(item2)])
 	}
-
+	
 	public static func buildBlock<C0: View, C1: View, C2: View, C3: View>(_ item0: C0, _ item1: C1, _ item2: C2, _ item3: C3) -> Output
 	{
-		[AnyView(item0), AnyView(item1), AnyView(item2), AnyView(item3)]
+		.group([Wrapper(item0), Wrapper(item1), Wrapper(item2), Wrapper(item3)])
 	}
-
+	
 	public static func buildBlock<C0: View, C1: View, C2: View, C3: View, C4: View>(_ item0: C0, _ item1: C1, _ item2: C2, _ item3: C3, _ item4: C4) -> Output
 	{
-		[AnyView(item0), AnyView(item1), AnyView(item2), AnyView(item3), AnyView(item4)]
+		.group([Wrapper(item0), Wrapper(item1), Wrapper(item2), Wrapper(item3), Wrapper(item4)])
 	}
-
+	
 	public static func buildBlock<C0: View, C1: View, C2: View, C3: View, C4: View, C5: View>(_ item0: C0, _ item1: C1, _ item2: C2, _ item3: C3, _ item4: C4, _ item5: C5) -> Output
 	{
-		[AnyView(item0), AnyView(item1), AnyView(item2), AnyView(item3), AnyView(item4), AnyView(item5)]
+		.group([Wrapper(item0), Wrapper(item1), Wrapper(item2), Wrapper(item3), Wrapper(item4), Wrapper(item5)])
 	}
-
+	
 	public static func buildBlock<C0: View, C1: View, C2: View, C3: View, C4: View, C5: View, C6: View>(_ item0: C0, _ item1: C1, _ item2: C2, _ item3: C3, _ item4: C4, _ item5: C5, _ item6: C6) -> Output
 	{
-		[AnyView(item0), AnyView(item1), AnyView(item2), AnyView(item3), AnyView(item4), AnyView(item5), AnyView(item6)]
+		.group([Wrapper(item0), Wrapper(item1), Wrapper(item2), Wrapper(item3), Wrapper(item4), Wrapper(item5), Wrapper(item6)])
 	}
-
+	
 	public static func buildBlock<C0: View, C1: View, C2: View, C3: View, C4: View, C5: View, C6: View, C7: View>(_ item0: C0, _ item1: C1, _ item2: C2, _ item3: C3, _ item4: C4, _ item5: C5, _ item6: C6, _ item7: C7) -> Output
 	{
-		[AnyView(item0), AnyView(item1), AnyView(item2), AnyView(item3), AnyView(item4), AnyView(item5), AnyView(item6), AnyView(item7)]
+		.group([Wrapper(item0), Wrapper(item1), Wrapper(item2), Wrapper(item3), Wrapper(item4), Wrapper(item5), Wrapper(item6), Wrapper(item7)])
 	}
-
+	
 	public static func buildBlock<C0: View, C1: View, C2: View, C3: View, C4: View, C5: View, C6: View, C7: View, C8: View>(_ item0: C0, _ item1: C1, _ item2: C2, _ item3: C3, _ item4: C4, _ item5: C5, _ item6: C6, _ item7: C7, _ item8: C8) -> Output
 	{
-		[AnyView(item0), AnyView(item1), AnyView(item2), AnyView(item3), AnyView(item4), AnyView(item5), AnyView(item6), AnyView(item7), AnyView(item8)]
+		.group([Wrapper(item0), Wrapper(item1), Wrapper(item2), Wrapper(item3), Wrapper(item4), Wrapper(item5), Wrapper(item6), Wrapper(item7), Wrapper(item8)])
 	}
-
+	
 	public static func buildBlock<C0: View, C1: View, C2: View, C3: View, C4: View, C5: View, C6: View, C7: View, C8: View, C9: View>(_ item0: C0, _ item1: C1, _ item2: C2, _ item3: C3, _ item4: C4, _ item5: C5, _ item6: C6, _ item7: C7, _ item8: C8, _ item9: C9) -> Output
 	{
-		[AnyView(item0), AnyView(item1), AnyView(item2), AnyView(item3), AnyView(item4), AnyView(item5), AnyView(item6), AnyView(item7), AnyView(item8), AnyView(item9)]
+		.group([Wrapper(item0), Wrapper(item1), Wrapper(item2), Wrapper(item3), Wrapper(item4), Wrapper(item5), Wrapper(item6), Wrapper(item7), Wrapper(item8), Wrapper(item9)])
 	}
 }

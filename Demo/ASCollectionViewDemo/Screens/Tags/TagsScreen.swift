@@ -19,10 +19,14 @@ struct TagsScreen: View
 			HStack
 			{
 				Spacer()
-				Text("Tap screen to reload new tags")
+				Text("Tap this button to reload new tags")
 					.padding()
 					.background(Color(.secondarySystemBackground))
 				Spacer()
+			}
+			.onTapGesture
+				{
+					self.store.refreshStore()
 			}
 			Text("Tags:")
 				.font(.title)
@@ -56,10 +60,6 @@ struct TagsScreen: View
 			}
 		}
 		.padding()
-		.onTapGesture
-		{
-			self.store.refreshStore()
-		}
 		.navigationBarTitle("Tags", displayMode: .inline)
 	}
 }
