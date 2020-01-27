@@ -7,7 +7,7 @@ import UIKit
 /// THIS IS A WORK IN PROGRESS
 struct WaterfallScreen: View
 {
-	@State var data: [Post] = DataSource.postsForWaterfallSection(1, number: 1000)
+	@State var data: [[Post]] = (0...10).map { DataSource.postsForWaterfallSection($0, number: 100) }
 	@State var selectedItems: [SectionID: IndexSet] = [:]
 	@State var columnMinSize: CGFloat = 150
 
@@ -19,50 +19,57 @@ struct WaterfallScreen: View
 
 	typealias SectionID = Int
 
-	var section: ASCollectionViewSection<SectionID>
+	var sections: [ASCollectionViewSection<SectionID>]
 	{
-		ASCollectionViewSection(
-			id: 0,
-			data: data,
-			onCellEvent: onCellEvent)
-		{ item, state in
-			GeometryReader
-			{ geom in
-				ZStack(alignment: .bottomTrailing)
-				{
-					ASRemoteImageView(item.url)
-						.scaledToFill()
-						.frame(width: geom.size.width, height: geom.size.height)
-						.opacity(state.isSelected ? 0.7 : 1.0)
-
-					if state.isSelected
-					{
-						ZStack
+		data.enumerated().map { (offset, sectionData) in
+			ASCollectionViewSection(
+				id: offset,
+				data: sectionData,
+				onCellEvent: onCellEvent)
+			{ item, state in
+				GeometryReader
+					{ geom in
+						ZStack(alignment: .bottomTrailing)
 						{
-							Circle()
-								.fill(Color.blue)
-							Circle()
-								.strokeBorder(Color.white, lineWidth: 2)
-							Image(systemName: "checkmark")
-								.font(.system(size: 10, weight: .bold))
-								.foregroundColor(.white)
+							ASRemoteImageView(item.url)
+								.scaledToFill()
+								.frame(width: geom.size.width, height: geom.size.height)
+								.opacity(state.isSelected ? 0.7 : 1.0)
+							
+							if state.isSelected
+							{
+								ZStack
+									{
+										Circle()
+											.fill(Color.blue)
+										Circle()
+											.strokeBorder(Color.white, lineWidth: 2)
+										Image(systemName: "checkmark")
+											.font(.system(size: 10, weight: .bold))
+											.foregroundColor(.white)
+								}
+								.frame(width: 20, height: 20)
+								.padding(10)
+							}
+							else
+							{
+								Text("\(item.offset)")
+									.font(.title)
+									.bold()
+									.padding(2)
+									.background(Color(.systemBackground).opacity(0.5))
+									.cornerRadius(4)
+									.padding(10)
+							}
 						}
-						.frame(width: 20, height: 20)
-						.padding(10)
-					}
-					else
-					{
-						Text("\(item.offset)")
-							.font(.title)
-							.bold()
-							.padding(2)
-							.background(Color(.systemBackground).opacity(0.5))
-							.cornerRadius(4)
-							.padding(10)
-					}
+						.frame(width: geom.size.width, height: geom.size.height)
+						.clipped()
 				}
-				.frame(width: geom.size.width, height: geom.size.height)
-				.clipped()
+			}.sectionHeader {
+				Text("Section \(offset)")
+					.padding()
+					.frame(idealWidth: .infinity, maxWidth: .infinity, idealHeight: .infinity, maxHeight: .infinity, alignment: .leading)
+					.background(Color.blue)
 			}
 		}
 	}
@@ -82,7 +89,7 @@ struct WaterfallScreen: View
 
 			ASCollectionView(
 				selectedItems: $selectedItems,
-				sections: [section])
+				sections: sections)
 				.layout(self.layout)
 				.customDelegate(WaterfallScreenLayoutDelegate.init)
 				.contentInsets(.init(top: 0, left: 10, bottom: 10, right: 10))
@@ -160,6 +167,10 @@ struct WaterfallScreen_Previews: PreviewProvider
 
 class WaterfallScreenLayoutDelegate: ASCollectionViewDelegate, ASWaterfallLayoutDelegate
 {
+	func heightForHeader(sectionIndex: Int) -> CGFloat? {
+		60
+	}
+	
 	/// We explicitely provide a height here. If providing no delegate, this layout will use auto-sizing, however this causes problems if rotating the device (due to limitaitons in UICollecitonView and autosizing cells that are not visible)
 	func heightForCell(at indexPath: IndexPath, context: ASWaterfallLayout.CellLayoutContext) -> CGFloat
 	{
