@@ -64,6 +64,12 @@ struct EnvironmentKeyASInitialScrollPosition: EnvironmentKey
 }
 
 @available(iOS 13.0, *)
+struct EnvironmentKeyASAnimateOnDataRefresh: EnvironmentKey
+{
+	static let defaultValue: Bool = false
+}
+
+@available(iOS 13.0, *)
 public extension EnvironmentValues
 {
 	var invalidateCellLayout: () -> Void
@@ -125,6 +131,12 @@ public extension EnvironmentValues
 		get { self[EnvironmentKeyASInitialScrollPosition.self] }
 		set { self[EnvironmentKeyASInitialScrollPosition.self] = newValue }
 	}
+
+	var animateOnDataRefresh: Bool
+	{
+		get { self[EnvironmentKeyASAnimateOnDataRefresh.self] }
+		set { self[EnvironmentKeyASAnimateOnDataRefresh.self] = newValue }
+	}
 }
 
 @available(iOS 13.0, *)
@@ -184,5 +196,11 @@ public extension View
 	func initialScrollPosition(_ scrollPosition: ASCollectionViewScrollPosition?) -> some View
 	{
 		environment(\.initialScrollPosition, scrollPosition)
+	}
+
+	/// Set whether the ASCollectionView/ASTableView should animate on data refresh
+	func animateOnDataRefresh(_ animateOnDataRefresh: Bool = true) -> some View
+	{
+		environment(\.animateOnDataRefresh, animateOnDataRefresh)
 	}
 }
