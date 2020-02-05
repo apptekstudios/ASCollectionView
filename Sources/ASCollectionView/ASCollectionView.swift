@@ -350,6 +350,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 		}
 
+		// MARK: Functions for determining scroll position (on appear, and also on orientation change)
 		func scrollToPosition(_ scrollPosition: ASCollectionViewScrollPosition, animated: Bool = false)
 		{
 			switch scrollPosition
@@ -411,6 +412,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				y: max(0, min(maxOffset.y, centerCellFrame.midY - (collectionView.bounds.height / 2))))
 			return newOffset
 		}
+		
+		// MARK: Functions for updating layout
 
 		func updateLayout()
 		{
@@ -449,6 +452,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 		}
 
+		// MARK: CollectionViewDelegate functions
+		// NOTE: These are not called directly, but rather forwarded to the Coordinator by the ASCollectionViewDelegate class
+		
 		public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 		{
 			collectionViewController.map { (cell as? Cell)?.willAppear(in: $0) }
@@ -543,6 +549,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			return parent.sections[safe: indexPath.section]?.dataSource.getTypeErasedData(for: indexPath)
 		}
 
+		// MARK: Functions for updating contentSize binding
 		var lastContentSize: CGSize = .zero
 		func didUpdateContentSize(_ size: CGSize)
 		{
@@ -566,6 +573,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 		}
 
+		// MARK: Variables used for the custom prefetching implementation
 		private let queuePrefetch = PassthroughSubject<Void, Never>()
 		private var prefetchSubscription: AnyCancellable?
 		private var currentlyPrefetching: Set<IndexPath> = []
@@ -881,6 +889,7 @@ public class AS_UICollectionView: UICollectionView {
 	}
 }
 
+// MARK: PUBLIC layout modifier functions
 @available(iOS 13.0, *)
 public extension ASCollectionView
 {
