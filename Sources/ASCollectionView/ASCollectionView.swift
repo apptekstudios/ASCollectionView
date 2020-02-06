@@ -28,7 +28,7 @@ extension ASCollectionView where SectionID == Int
 	/**
 	 Initializes a  collection view with a single section of static content
 	 */
-	public init(@ViewArrayBuilder staticContent: () -> [AnyView])
+	public init(@ViewArrayBuilder staticContent: () -> ViewArrayBuilder.Wrapper)
 	{
 		self.init(sections: [ASCollectionViewSection(id: 0, content: staticContent)])
 	}
@@ -98,14 +98,20 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	// MARK: Environment variables
 
+	//SwiftUI environment
+	@Environment(\.editMode) private var editMode
+	
+	//ASCollectionView environment
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.initialScrollPosition) private var initialScrollPosition
 	@Environment(\.collectionViewOnReachedBoundary) private var onReachedBoundary
-	@Environment(\.editMode) private var editMode
 	@Environment(\.animateOnDataRefresh) private var animateOnDataRefresh
+	@Environment(\.attemptToMaintainScrollPositionOnOrientationChange) private var attemptToMaintainScrollPositionOnOrientationChange
+	@Environment(\.allowCellWidthToExceedCollectionContentSize) private var allowCellWidthToExceedCollectionContentSize
+	@Environment(\.allowCellHeightToExceedCollectionContentSize) private var allowCellHeightToExceedCollectionContentSize
 
 	// MARK: Init for multi-section CVs
 
@@ -261,6 +267,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				cell.invalidateLayout = {
 					collectionView.collectionViewLayout.invalidateLayout()
 				}
+				cell.maxSizeForSelfSizing = ASOptionalSize(width: self.parent.allowCellWidthToExceedCollectionContentSize ? nil : collectionView.contentSize.width,
+														   height: self.parent.allowCellHeightToExceedCollectionContentSize ? nil : collectionView.contentSize.height)
 				cell.selfSizeHorizontal =
 					self.delegate?.collectionView(cellShouldSelfSizeHorizontallyForItemAt: indexPath)
 					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizeHorizontally
@@ -337,7 +345,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			updateSelectionBindings(cv)
 		}
 
-		func onMoveToParent(_ parentController: AS_CollectionViewController)
+		func onMoveToParent()
 		{
 			if !hasDoneInitialSetup
 			{
@@ -351,6 +359,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 		}
 
+		// MARK: Functions for determining scroll position (on appear, and also on orientation change)
 		func scrollToPosition(_ scrollPosition: ASCollectionViewScrollPosition, animated: Bool = false)
 		{
 			switch scrollPosition
@@ -372,27 +381,34 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func prepareForOrientationChange()
 		{
 			guard let collectionView = collectionViewController?.collectionView else { return }
-			// Get centremost cell
-			if let indexPath = collectionView.indexPathForItem(at: CGPoint(x: collectionView.bounds.midX, y: collectionView.bounds.midY))
-			{
-				// Item at centre
-				transitionCentralIndexPath = indexPath
-			}
-			else if let visibleCells = collectionViewController?.collectionView.indexPathsForVisibleItems, !visibleCells.isEmpty
-			{
-				// Approximate item at centre
-				transitionCentralIndexPath = visibleCells[visibleCells.count / 2]
-			}
-			else
-			{
-				transitionCentralIndexPath = nil
+			
+			if parent.attemptToMaintainScrollPositionOnOrientationChange {
+				// Get centremost cell
+				if let indexPath = collectionView.indexPathForItem(at: CGPoint(x: collectionView.bounds.midX, y: collectionView.bounds.midY))
+				{
+					// Item at centre
+					transitionCentralIndexPath = indexPath
+				}
+				else if let visibleCells = collectionViewController?.collectionView.indexPathsForVisibleItems, !visibleCells.isEmpty
+				{
+					// Approximate item at centre
+					transitionCentralIndexPath = visibleCells[visibleCells.count / 2]
+				}
+				else
+				{
+					transitionCentralIndexPath = nil
+				}
 			}
 		}
 
 		var transitionCentralIndexPath: IndexPath?
 		func getContentOffsetForOrientationChange() -> CGPoint?
 		{
-			transitionCentralIndexPath.flatMap(getContentOffsetToCenterCell)
+			if parent.attemptToMaintainScrollPositionOnOrientationChange {
+				return transitionCentralIndexPath.flatMap(getContentOffsetToCenterCell)
+			} else {
+				return nil
+			}
 		}
 
 		func completedOrientationChange()
@@ -412,6 +428,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				y: max(0, min(maxOffset.y, centerCellFrame.midY - (collectionView.bounds.height / 2))))
 			return newOffset
 		}
+		
+		// MARK: Functions for updating layout
 
 		func updateLayout()
 		{
@@ -450,6 +468,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 		}
 
+		// MARK: CollectionViewDelegate functions
+		// NOTE: These are not called directly, but rather forwarded to the Coordinator by the ASCollectionViewDelegate class
+		
 		public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 		{
 			collectionViewController.map { (cell as? Cell)?.willAppear(in: $0) }
@@ -544,6 +565,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			return parent.sections[safe: indexPath.section]?.dataSource.getTypeErasedData(for: indexPath)
 		}
 
+		// MARK: Functions for updating contentSize binding
 		var lastContentSize: CGSize = .zero
 		func didUpdateContentSize(_ size: CGSize)
 		{
@@ -567,6 +589,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 		}
 
+		// MARK: Variables used for the custom prefetching implementation
 		private let queuePrefetch = PassthroughSubject<Void, Never>()
 		private var prefetchSubscription: AnyCancellable?
 		private var currentlyPrefetching: Set<IndexPath> = []
@@ -619,6 +642,15 @@ extension ASCollectionView.Coordinator
 				hasFiredBoundaryNotificationForBoundary.remove(boundary)
 			}
 		}
+	}
+}
+
+// MARK: Context Menu Support
+@available(iOS 13.0, *)
+public extension ASCollectionView.Coordinator {
+	func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+		guard !indexPath.isEmpty else { return nil }
+		return parent.sections[safe: indexPath.section]?.dataSource.getContextMenu(for: indexPath)
 	}
 }
 
@@ -679,13 +711,14 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
+	func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
 	func dragItem(for indexPath: IndexPath) -> UIDragItem?
 	func canDrop(at indexPath: IndexPath) -> Bool
 	func removeItem(from indexPath: IndexPath)
 	func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
 	func didUpdateContentSize(_ size: CGSize)
 	func scrollViewDidScroll(_ scrollView: UIScrollView)
-	func onMoveToParent(_ collectionViewController: AS_CollectionViewController)
+	func onMoveToParent()
 }
 
 // MARK: Custom Prefetching Implementation
@@ -778,11 +811,15 @@ public enum ASCollectionViewScrollPosition
 @available(iOS 13.0, *)
 public class AS_CollectionViewController: UIViewController
 {
-	weak var coordinator: ASCollectionViewCoordinator?
+	weak var coordinator: ASCollectionViewCoordinator? {
+		didSet {
+			collectionView.coordinator = coordinator
+		}
+	}
 
 	var collectionViewLayout: UICollectionViewLayout
-	lazy var collectionView: UICollectionView = {
-		UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
+	lazy var collectionView: AS_UICollectionView = {
+		AS_UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
 	}()
 
 	public init(collectionViewLayout layout: UICollectionViewLayout)
@@ -799,7 +836,7 @@ public class AS_CollectionViewController: UIViewController
 	public override func didMove(toParent parent: UIViewController?)
 	{
 		super.didMove(toParent: parent)
-		coordinator?.onMoveToParent(self)
+		coordinator?.onMoveToParent()
 	}
 
 	public override func viewDidLoad()
@@ -855,6 +892,20 @@ public class AS_CollectionViewController: UIViewController
 	}
 }
 
+
+@available(iOS 13.0, *)
+public class AS_UICollectionView: UICollectionView {
+	weak var coordinator: ASCollectionViewCoordinator? = nil
+	
+	public override func didMoveToWindow() {
+		super.didMoveToWindow()
+		
+		//Intended as a temporary workaround for a SwiftUI bug present in 13.3 -> the UIViewController is not moved to a parent when embedded in a list/scrollview
+		coordinator?.onMoveToParent()
+	}
+}
+
+// MARK: PUBLIC layout modifier functions
 @available(iOS 13.0, *)
 public extension ASCollectionView
 {

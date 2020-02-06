@@ -21,7 +21,7 @@ class TagStore: ObservableObject
 		items = TagStore.randomItems()
 	}
 
-	fileprivate static let allWords = ["alias", "consequatur", "aut", "perferendis", "sit", "voluptatem", "accusantium", "doloremque", "aperiam", "eaque", "ipsa", "quae", "ab", "illo", "inventore", "veritatis", "et", "quasi", "architecto", "beatae", "vitae", "dicta", "sunt", "explicabo", "aspernatur", "aut", "maiores", "doloribus", "asperiores", "repellat"]
+	fileprivate static let allWords = ["thisisaveryverylongtagthatshouldrequiremorethanonelinetofit", "alias", "consequatur", "aut", "perferendis", "sit", "voluptatem", "accusantium", "doloremque", "aperiam", "eaque", "ipsa", "quae", "ab", "illo", "inventore", "veritatis", "et", "quasi", "architecto", "beatae", "vitae", "dicta", "sunt", "explicabo", "aspernatur", "aut", "maiores", "doloribus", "asperiores", "repellat"]
 
 	static func randomItems() -> [Item]
 	{

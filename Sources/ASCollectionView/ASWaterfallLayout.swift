@@ -7,6 +7,7 @@ import UIKit
 public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutProtocol
 {
 	public var estimatedItemHeight: CGFloat = 400 // Only needed if using auto-sizing. SwiftUI seems to only return smaller sizes (so make this bigger than needed)
+	public var estimatedHeaderHeight: CGFloat = 50
 
 	public struct CellLayoutContext
 	{
@@ -56,6 +57,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 
 	public let selfSizeHorizontally = false
 
+	private var cachedHeaderHeight: [Int: CGFloat] = [:]
 	private var cachedHeight: [IndexPath: CGFloat] = [:]
 	private var cachedSectionHeight: [Int: CGFloat] = [:]
 
@@ -106,6 +108,16 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		}
 		return cachedHeight[indexPath] ?? estimatedItemHeight
 	}
+	
+	func getHeightForHeader(sectionIndex: Int) -> CGFloat
+	{
+		let delegate = (collectionView?.delegate as? ASWaterfallLayoutDelegate)
+		
+		return
+			delegate?.heightForHeader(sectionIndex: sectionIndex)
+			?? cachedHeaderHeight[sectionIndex]
+			?? estimatedHeaderHeight
+	}
 
 	public override func prepare()
 	{
@@ -119,14 +131,27 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		{
 			let sectionMinY = (0 ..< section).reduce(into: collectionView.adjustedContentInset.top) { $0 += cachedSectionHeight[$1] ?? 0 }
 			var columnHeights: [CGFloat] = .init(repeating: 0, count: calculatedNumberOfColumns)
+			
+			let headerHeight = getHeightForHeader(sectionIndex: section)
+			
+			//Set header attributes
+			let headerIndexPath = IndexPath(item: -1, section: section)
+			let headerAttributes = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, with: headerIndexPath)
+			headerAttributes.frame = CGRect(
+				x: 0,
+				y: sectionMinY,
+				width: contentWidth,
+				height: headerHeight)
+			cachedAttributes[headerIndexPath] = headerAttributes
+			
+			let sectionContentMinY = sectionMinY + headerHeight + itemSpacing
 
 			for indexPath in collectionView.allIndexPaths(inSection: section)
 			{
 				let targetColumn = columnHeights.indexOfMin() ?? 0
 
-				let minY = columnHeights[targetColumn]
+				let minY = sectionContentMinY + columnHeights[targetColumn]
 				let sizeY = getHeight(for: indexPath)
-				let maxY = minY + sizeY + itemSpacing
 
 				let minX = (columnWidth + columnSpacing) * CGFloat(targetColumn)
 				let sizeX = columnWidth
@@ -135,15 +160,15 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 				let attributes = UICollectionViewLayoutAttributes(forCellWith: indexPath)
 				attributes.frame = CGRect(
 					x: minX,
-					y: sectionMinY + minY,
+					y: minY,
 					width: sizeX,
 					height: sizeY)
 				cachedAttributes.append((indexPath, attributes))
 
 				// Update height of column
-				columnHeights[targetColumn] = maxY
+				columnHeights[targetColumn] = columnHeights[targetColumn] + sizeY + itemSpacing
 			}
-			cachedSectionHeight[section] = (columnHeights.max() ?? 0) + (section != (sections.count - 1) ? sectionSpacing : 0)
+			cachedSectionHeight[section] = headerHeight + (columnHeights.max() ?? 0) + (section != (sections.count - 1) ? sectionSpacing : 0)
 		}
 		contentHeight = cachedSectionHeight.reduce(into: collectionView.adjustedContentInset.top) { $0 += $1.value }
 	}
@@ -190,6 +215,15 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 	{
 		cachedAttributes[indexPath]
 	}
+	
+	public override func layoutAttributesForSupplementaryView(ofKind elementKind: String, at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
+		switch elementKind {
+		case UICollectionView.elementKindSectionHeader:
+			return cachedAttributes[IndexPath(item: -1, section: indexPath.section)]
+		default:
+			return nil
+		}
+	}
 
 	public override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool
 	{
@@ -233,6 +267,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 @available(iOS 13.0, *)
 public protocol ASWaterfallLayoutDelegate
 {
+	func heightForHeader(sectionIndex: Int) -> CGFloat?
 	func heightForCell(at indexPath: IndexPath, context: ASWaterfallLayout.CellLayoutContext) -> CGFloat
 }
 

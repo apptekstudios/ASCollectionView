@@ -17,6 +17,8 @@ class ASCollectionViewCell: UICollectionViewCell
 			hostingController?.applyModifier(modifier)
 		}
 	}
+	
+	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	var invalidateLayout: (() -> Void)?
 	var shouldInvalidateLayout: Bool = false
@@ -78,6 +80,7 @@ class ASCollectionViewCell: UICollectionViewCell
 		} // Can't return .zero as UICollectionViewLayout will crash
 		let size = hc.sizeThatFits(
 			in: targetSize,
+			maxSize: maxSizeForSelfSizing,
 			selfSizeHorizontal: selfSizeHorizontal,
 			selfSizeVertical: selfSizeVertical)
 		return size
@@ -99,8 +102,9 @@ class ASCollectionViewCell: UICollectionViewCell
 class ASCollectionViewSupplementaryView: UICollectionReusableView
 {
 	var hostingController: ASHostingControllerProtocol?
-
 	private(set) var id: Int?
+	
+	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	func setupFor<Content: View>(id: Int, view: Content)
 	{
@@ -151,6 +155,7 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 		guard let hc = hostingController else { return CGSize(width: 1, height: 1) }
 		let size = hc.sizeThatFits(
 			in: targetSize,
+			maxSize: maxSizeForSelfSizing,
 			selfSizeHorizontal: true,
 			selfSizeVertical: true)
 		return size

@@ -19,10 +19,14 @@ struct TagsScreen: View
 			HStack
 			{
 				Spacer()
-				Text("Tap screen to reload new tags")
+				Text("Tap this button to reload new tags")
 					.padding()
 					.background(Color(.secondarySystemBackground))
 				Spacer()
+			}
+			.onTapGesture
+				{
+					self.store.refreshStore()
 			}
 			Text("Tags:")
 				.font(.title)
@@ -32,7 +36,7 @@ struct TagsScreen: View
 				ASCollectionViewSection(id: 0, data: store.items)
 				{ item, _ in
 					Text(item.displayString)
-						.fixedSize()
+						.fixedSize(horizontal: false, vertical: true)
 						.padding(5)
 						.background(Color(.systemGray))
 						.cornerRadius(5)
@@ -44,7 +48,8 @@ struct TagsScreen: View
 				return fl
 			}
 			.shrinkToContentSize(isEnabled: shrinkToSize, $contentSize, dimensionToShrink: .vertical)
-
+			.collectionViewAllowCellWidthToExceedCollectionContentSize(false)
+			
 			if shrinkToSize
 			{
 				Rectangle().fill(Color(.secondarySystemBackground))
@@ -56,10 +61,6 @@ struct TagsScreen: View
 			}
 		}
 		.padding()
-		.onTapGesture
-		{
-			self.store.refreshStore()
-		}
 		.navigationBarTitle("Tags", displayMode: .inline)
 	}
 }

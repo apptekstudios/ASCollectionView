@@ -17,6 +17,8 @@ class ASTableViewCell: UITableViewCell
 			hostingController?.applyModifier(modifier)
 		}
 	}
+	
+	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	var invalidateLayout: (() -> Void)?
 	var shouldInvalidateLayout: Bool = false
@@ -73,6 +75,7 @@ class ASTableViewCell: UITableViewCell
 		guard let hc = hostingController else { return .zero }
 		let size = hc.sizeThatFits(
 			in: targetSize,
+			maxSize: maxSizeForSelfSizing,
 			selfSizeHorizontal: false,
 			selfSizeVertical: selfSizeVertical)
 		return size
@@ -88,8 +91,9 @@ class ASTableViewCell: UITableViewCell
 class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 {
 	var hostingController: ASHostingControllerProtocol?
-
 	private(set) var id: Int?
+	
+	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	override init(reuseIdentifier: String?)
 	{
@@ -158,6 +162,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		guard let hc = hostingController else { return CGSize(width: 1, height: 1) }
 		let size = hc.sizeThatFits(
 			in: targetSize,
+			maxSize: maxSizeForSelfSizing,
 			selfSizeHorizontal: true,
 			selfSizeVertical: true)
 		return size
