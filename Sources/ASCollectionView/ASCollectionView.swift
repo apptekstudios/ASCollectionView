@@ -105,6 +105,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	@Environment(\.initialScrollPosition) private var initialScrollPosition
 	@Environment(\.collectionViewOnReachedBoundary) private var onReachedBoundary
 	@Environment(\.editMode) private var editMode
+	@Environment(\.animateOnDataRefresh) private var animateOnDataRefresh
 
 	// MARK: Init for multi-section CVs
 
@@ -151,7 +152,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		context.coordinator.parent = self
 		updateCollectionViewSettings(collectionViewController.collectionView, delegate: context.coordinator.delegate)
 		context.coordinator.updateLayout()
-		context.coordinator.updateContent(collectionViewController.collectionView, animated: true, refreshExistingCells: true)
+		context.coordinator.updateContent(collectionViewController.collectionView, animated: animateOnDataRefresh, refreshExistingCells: true)
 	}
 
 	func updateCollectionViewSettings(_ collectionView: UICollectionView, delegate: ASCollectionViewDelegate?)

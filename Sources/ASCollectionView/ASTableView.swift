@@ -86,6 +86,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.editMode) private var editMode
+	@Environment(\.animateOnDataRefresh) private var animateOnDataRefresh
 
 	/**
 	 Initializes a  table view with the given sections
@@ -125,7 +126,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	{
 		context.coordinator.parent = self
 		updateTableViewSettings(tableViewController.tableView)
-		context.coordinator.updateContent(tableViewController.tableView, animated: true, refreshExistingCells: true)
+		context.coordinator.updateContent(tableViewController.tableView, animated: animateOnDataRefresh, refreshExistingCells: true)
 	}
 
 	func updateTableViewSettings(_ tableView: UITableView)
