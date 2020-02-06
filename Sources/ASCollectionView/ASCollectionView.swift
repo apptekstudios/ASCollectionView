@@ -98,14 +98,20 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	// MARK: Environment variables
 
+	//SwiftUI environment
+	@Environment(\.editMode) private var editMode
+	
+	//ASCollectionView environment
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.initialScrollPosition) private var initialScrollPosition
 	@Environment(\.collectionViewOnReachedBoundary) private var onReachedBoundary
-	@Environment(\.editMode) private var editMode
 	@Environment(\.animateOnDataRefresh) private var animateOnDataRefresh
+	@Environment(\.attemptToMaintainScrollPositionOnOrientationChange) private var attemptToMaintainScrollPositionOnOrientationChange
+	@Environment(\.allowCellWidthToExceedCollectionContentSize) private var allowCellWidthToExceedCollectionContentSize
+	@Environment(\.allowCellHeightToExceedCollectionContentSize) private var allowCellHeightToExceedCollectionContentSize
 
 	// MARK: Init for multi-section CVs
 
@@ -261,6 +267,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				cell.invalidateLayout = {
 					collectionView.collectionViewLayout.invalidateLayout()
 				}
+				cell.maxSizeForSelfSizing = ASOptionalSize(width: self.parent.allowCellWidthToExceedCollectionContentSize ? nil : collectionView.contentSize.width,
+														   height: self.parent.allowCellHeightToExceedCollectionContentSize ? nil : collectionView.contentSize.height)
 				cell.selfSizeHorizontal =
 					self.delegate?.collectionView(cellShouldSelfSizeHorizontallyForItemAt: indexPath)
 					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizeHorizontally
@@ -373,27 +381,34 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func prepareForOrientationChange()
 		{
 			guard let collectionView = collectionViewController?.collectionView else { return }
-			// Get centremost cell
-			if let indexPath = collectionView.indexPathForItem(at: CGPoint(x: collectionView.bounds.midX, y: collectionView.bounds.midY))
-			{
-				// Item at centre
-				transitionCentralIndexPath = indexPath
-			}
-			else if let visibleCells = collectionViewController?.collectionView.indexPathsForVisibleItems, !visibleCells.isEmpty
-			{
-				// Approximate item at centre
-				transitionCentralIndexPath = visibleCells[visibleCells.count / 2]
-			}
-			else
-			{
-				transitionCentralIndexPath = nil
+			
+			if parent.attemptToMaintainScrollPositionOnOrientationChange {
+				// Get centremost cell
+				if let indexPath = collectionView.indexPathForItem(at: CGPoint(x: collectionView.bounds.midX, y: collectionView.bounds.midY))
+				{
+					// Item at centre
+					transitionCentralIndexPath = indexPath
+				}
+				else if let visibleCells = collectionViewController?.collectionView.indexPathsForVisibleItems, !visibleCells.isEmpty
+				{
+					// Approximate item at centre
+					transitionCentralIndexPath = visibleCells[visibleCells.count / 2]
+				}
+				else
+				{
+					transitionCentralIndexPath = nil
+				}
 			}
 		}
 
 		var transitionCentralIndexPath: IndexPath?
 		func getContentOffsetForOrientationChange() -> CGPoint?
 		{
-			transitionCentralIndexPath.flatMap(getContentOffsetToCenterCell)
+			if parent.attemptToMaintainScrollPositionOnOrientationChange {
+				return transitionCentralIndexPath.flatMap(getContentOffsetToCenterCell)
+			} else {
+				return nil
+			}
 		}
 
 		func completedOrientationChange()

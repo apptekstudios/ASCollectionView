@@ -70,7 +70,7 @@ struct PhotoGridScreen: View
 			selectedItems: $selectedItems,
 			section: section)
 			.layout(self.layout)
-			.initialScrollPosition(startingAtBottom ? .bottom : nil)
+			.collectionViewInitialScrollPosition(startingAtBottom ? .bottom : nil)
 			.navigationBarTitle("Explore", displayMode: .inline)
 			.navigationBarItems(
 				trailing:

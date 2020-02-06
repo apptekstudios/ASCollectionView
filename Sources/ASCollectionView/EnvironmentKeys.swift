@@ -3,6 +3,92 @@
 import Foundation
 import SwiftUI
 
+//MARK: PUBLIC MODIFIERS
+@available(iOS 13.0, *)
+public extension View
+{
+	/// Set whether to show scroll indicators for the ASCollectionView/ASTableView
+	func collectionViewScrollIndicatorsEnabled(_ enabled: Bool) -> some View
+	{
+		environment(\.scrollIndicatorsEnabled, enabled)
+	}
+	
+	/// Set insets for the ASCollectionView/ASTableView
+	func collectionViewContentInsets(_ insets: UIEdgeInsets) -> some View
+	{
+		environment(\.contentInsets, insets)
+	}
+	
+	/// Set whether the ASTableView should show separators
+	func tableViewSeparatorsEnabled(_ enabled: Bool) -> some View
+	{
+		environment(\.tableViewSeparatorsEnabled, enabled)
+	}
+	
+	/// Set a closure that is called when the tableView is pulled to refresh
+	func tableViewOnPullToRefresh(_ onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?) -> some View
+	{
+		environment(\.tableViewOnPullToRefresh, onPullToRefresh)
+	}
+	
+	/// Set a closure that is called whenever the tableView is scrolled to the bottom.
+	/// This is useful to enable loading more data when scrolling to bottom
+	func tableViewOnReachedBottom(_ onReachedBottom: @escaping (() -> Void)) -> some View
+	{
+		environment(\.tableViewOnReachedBottom, onReachedBottom)
+	}
+	
+	/// Set a closure that is called whenever the collectionView is scrolled to a boundary. eg. the bottom.
+	/// This is useful to enable loading more data when scrolling to bottom
+	func collectionViewOnReachedBoundary(_ onReachedBoundary: @escaping ((Boundary) -> Void)) -> some View
+	{
+		environment(\.collectionViewOnReachedBoundary, onReachedBoundary)
+	}
+	
+	/// Set whether the ASCollectionView should always allow horizontal bounce
+	func collectionViewAlwaysBounceHorizontal(_ alwaysBounce: Bool = true) -> some View
+	{
+		environment(\.alwaysBounceHorizontal, alwaysBounce)
+	}
+	
+	/// Set whether the ASCollectionView/ASTableView should always allow horizontal bounce
+	func collectionViewAlwaysBounceVertical(_ alwaysBounce: Bool = true) -> some View
+	{
+		environment(\.alwaysBounceVertical, alwaysBounce)
+	}
+	
+	/// Set an initial scroll position for the ASCollectionView
+	func collectionViewInitialScrollPosition(_ scrollPosition: ASCollectionViewScrollPosition?) -> some View
+	{
+		environment(\.initialScrollPosition, scrollPosition)
+	}
+	
+	/// Set whether the ASCollectionView/ASTableView should animate on data refresh
+	func collectionViewAnimateOnDataRefresh(_ animateOnDataRefresh: Bool = true) -> some View
+	{
+		environment(\.animateOnDataRefresh, animateOnDataRefresh)
+	}
+	
+	/// Set whether the ASCollectionView should attempt to maintain scroll position on orientation change, default is true
+	func collectionViewAttemptToMaintainScrollPositionOnOrientationChange(_ attemptToMaintainScrollPositionOnOrientationChange: Bool = true) -> some View
+	{
+		environment(\.attemptToMaintainScrollPositionOnOrientationChange, attemptToMaintainScrollPositionOnOrientationChange)
+	}
+	
+	/// Set whether the ASCollectionView should allow a cell's width to exceed the contentSize.width of the collectionView, default is true.
+	func collectionViewAllowCellWidthToExceedCollectionContentSize(_ allowCellWidthToExceedCollectionContentSize: Bool) -> some View
+	{
+		environment(\.allowCellWidthToExceedCollectionContentSize, allowCellWidthToExceedCollectionContentSize)
+	}
+	
+	/// Set whether the ASCollectionView should allow a cell's height to exceed the contentSize.height of the collectionView, default is true.
+	func collectionViewAllowCellHeightToExceedCollectionContentSize(_ allowCellHeightToExceedCollectionContentSize: Bool) -> some View
+	{
+		environment(\.allowCellHeightToExceedCollectionContentSize, allowCellHeightToExceedCollectionContentSize)
+	}
+}
+
+//MARK: Internal Key Definitions
 @available(iOS 13.0, *)
 struct EnvironmentKeyInvalidateCellLayout: EnvironmentKey
 {
@@ -69,6 +155,25 @@ struct EnvironmentKeyASAnimateOnDataRefresh: EnvironmentKey
 	static let defaultValue: Bool = false
 }
 
+@available(iOS 13.0, *)
+struct EnvironmentKeyASMaintainScrollPositionOnOrientationChange: EnvironmentKey
+{
+	static let defaultValue: Bool = true
+}
+
+@available(iOS 13.0, *)
+struct EnvironmentKeyASAllowCellWidthToExceedCollectionContentSize: EnvironmentKey
+{
+	static let defaultValue: Bool = true
+}
+
+@available(iOS 13.0, *)
+struct EnvironmentKeyASAllowCellHeightToExceedCollectionContentSize: EnvironmentKey
+{
+	static let defaultValue: Bool = true
+}
+
+//MARK: Internal Helpers
 @available(iOS 13.0, *)
 public extension EnvironmentValues
 {
@@ -137,70 +242,22 @@ public extension EnvironmentValues
 		get { self[EnvironmentKeyASAnimateOnDataRefresh.self] }
 		set { self[EnvironmentKeyASAnimateOnDataRefresh.self] = newValue }
 	}
-}
-
-@available(iOS 13.0, *)
-public extension View
-{
-	/// Set whether to show scroll indicators for the ASCollectionView/ASTableView
-	func scrollIndicatorsEnabled(_ enabled: Bool) -> some View
+	
+	var attemptToMaintainScrollPositionOnOrientationChange: Bool
 	{
-		environment(\.scrollIndicatorsEnabled, enabled)
+		get { self[EnvironmentKeyASMaintainScrollPositionOnOrientationChange.self] }
+		set { self[EnvironmentKeyASMaintainScrollPositionOnOrientationChange.self] = newValue }
 	}
-
-	/// Set insets for the ASCollectionView/ASTableView
-	func contentInsets(_ insets: UIEdgeInsets) -> some View
+	
+	var allowCellWidthToExceedCollectionContentSize: Bool
 	{
-		environment(\.contentInsets, insets)
+		get { self[EnvironmentKeyASAllowCellWidthToExceedCollectionContentSize.self] }
+		set { self[EnvironmentKeyASAllowCellWidthToExceedCollectionContentSize.self] = newValue }
 	}
-
-	/// Set whether the ASTableView should show separators
-	func tableViewSeparatorsEnabled(_ enabled: Bool) -> some View
+	
+	var allowCellHeightToExceedCollectionContentSize: Bool
 	{
-		environment(\.tableViewSeparatorsEnabled, enabled)
-	}
-
-	/// Set a closure that is called when the tableView is pulled to refresh
-	func onTableViewPullToRefresh(_ onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?) -> some View
-	{
-		environment(\.tableViewOnPullToRefresh, onPullToRefresh)
-	}
-
-	/// Set a closure that is called whenever the tableView is scrolled to the bottom.
-	/// This is useful to enable loading more data when scrolling to bottom
-	func onTableViewReachedBottom(_ onReachedBottom: @escaping (() -> Void)) -> some View
-	{
-		environment(\.tableViewOnReachedBottom, onReachedBottom)
-	}
-
-	/// Set a closure that is called whenever the collectionView is scrolled to a boundary. eg. the bottom.
-	/// This is useful to enable loading more data when scrolling to bottom
-	func onCollectionViewReachedBoundary(_ onReachedBoundary: @escaping ((Boundary) -> Void)) -> some View
-	{
-		environment(\.collectionViewOnReachedBoundary, onReachedBoundary)
-	}
-
-	/// Set whether the ASCollectionView should always allow horizontal bounce
-	func alwaysBounceHorizontal(_ alwaysBounce: Bool = true) -> some View
-	{
-		environment(\.alwaysBounceHorizontal, alwaysBounce)
-	}
-
-	/// Set whether the ASCollectionView/ASTableView should always allow horizontal bounce
-	func alwaysBounceVertical(_ alwaysBounce: Bool = true) -> some View
-	{
-		environment(\.alwaysBounceVertical, alwaysBounce)
-	}
-
-	/// Set an initial scroll position for the ASCollectionView
-	func initialScrollPosition(_ scrollPosition: ASCollectionViewScrollPosition?) -> some View
-	{
-		environment(\.initialScrollPosition, scrollPosition)
-	}
-
-	/// Set whether the ASCollectionView/ASTableView should animate on data refresh
-	func animateOnDataRefresh(_ animateOnDataRefresh: Bool = true) -> some View
-	{
-		environment(\.animateOnDataRefresh, animateOnDataRefresh)
+		get { self[EnvironmentKeyASAllowCellHeightToExceedCollectionContentSize.self] }
+		set { self[EnvironmentKeyASAllowCellHeightToExceedCollectionContentSize.self] = newValue }
 	}
 }

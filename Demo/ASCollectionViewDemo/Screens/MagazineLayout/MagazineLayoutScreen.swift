@@ -41,7 +41,7 @@ struct MagazineLayoutScreen: View
 			.customDelegate(ASCollectionViewMagazineLayoutDelegate.init)
 			.edgesIgnoringSafeArea(.all)
 			.navigationBarTitle("Magazine Layout (custom delegate)", displayMode: .inline)
-			.onCollectionViewReachedBoundary
+			.collectionViewOnReachedBoundary
 		{ boundary in
 			print("Reached the \(boundary) boundary")
 		}

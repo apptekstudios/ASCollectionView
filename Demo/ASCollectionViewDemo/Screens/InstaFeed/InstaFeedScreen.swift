@@ -25,8 +25,8 @@ struct InstaFeedScreen: View
 			.list(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
 		}
 		.frame(height: 100)
-		.scrollIndicatorsEnabled(false)
-		.onCollectionViewReachedBoundary
+		.collectionViewScrollIndicatorsEnabled(false)
+		.collectionViewOnReachedBoundary
 		{ boundary in
 			print("Reached the \(boundary) boundary")
 		}
@@ -78,13 +78,13 @@ struct InstaFeedScreen: View
 	{
 		ASTableView(sections: sections)
 			.tableViewSeparatorsEnabled(false)
-			.onTableViewPullToRefresh { endRefreshing in
+			.tableViewOnPullToRefresh { endRefreshing in
 				print("PULL TO REFRESH")
 				Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
 					endRefreshing()
 				}
 			}
-			.onTableViewReachedBottom
+		.tableViewOnReachedBottom
 		{
 			self.loadMoreContent() // REACHED BOTTOM, LOADING MORE CONTENT
 		}

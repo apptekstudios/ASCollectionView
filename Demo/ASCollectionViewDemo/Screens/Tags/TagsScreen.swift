@@ -36,7 +36,7 @@ struct TagsScreen: View
 				ASCollectionViewSection(id: 0, data: store.items)
 				{ item, _ in
 					Text(item.displayString)
-						.fixedSize()
+						.fixedSize(horizontal: false, vertical: true)
 						.padding(5)
 						.background(Color(.systemGray))
 						.cornerRadius(5)
@@ -48,7 +48,8 @@ struct TagsScreen: View
 				return fl
 			}
 			.shrinkToContentSize(isEnabled: shrinkToSize, $contentSize, dimensionToShrink: .vertical)
-
+			.collectionViewAllowCellWidthToExceedCollectionContentSize(false)
+			
 			if shrinkToSize
 			{
 				Rectangle().fill(Color(.secondarySystemBackground))

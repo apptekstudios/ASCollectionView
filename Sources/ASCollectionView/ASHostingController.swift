@@ -19,7 +19,7 @@ internal protocol ASHostingControllerProtocol
 {
 	var viewController: UIViewController { get }
 	func applyModifier(_ modifier: ASHostingControllerModifier)
-	func sizeThatFits(in size: CGSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize
+	func sizeThatFits(in size: CGSize, maxSize: ASOptionalSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize
 }
 
 @available(iOS 13.0, *)
@@ -59,11 +59,12 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 		self.modifier = modifier
 	}
 
-	func sizeThatFits(in size: CGSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize
+	func sizeThatFits(in size: CGSize, maxSize: ASOptionalSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize
 	{
 		let fittingSize = CGSize(
 			width: selfSizeHorizontal ? .infinity : size.width,
-			height: selfSizeVertical ? .infinity : size.height)
+			height: selfSizeVertical ? .infinity : size.height
+		).applyMaxSize(maxSize)
 		// Find the desired size
 		var desiredSize = uiHostingController.sizeThatFits(in: fittingSize)
 
@@ -83,6 +84,6 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 		if !selfSizeHorizontal { desiredSize.width = size.width }
 		if !selfSizeVertical { desiredSize.height = size.height }
 
-		return desiredSize
+		return desiredSize.applyMaxSize(maxSize)
 	}
 }
