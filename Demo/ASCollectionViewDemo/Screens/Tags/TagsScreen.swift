@@ -52,12 +52,12 @@ struct TagsScreen: View
 			
 			if shrinkToSize
 			{
-				Rectangle().fill(Color(.secondarySystemBackground))
-					.overlay(
-						Text("This is another view in the VStack, it shows how the collectionView above fits itself to the content.")
-							.foregroundColor(Color(.secondaryLabel))
-							.padding(),
-						alignment: .topLeading)
+				Text("This is another view in the VStack, it shows how the collectionView above fits itself to the content.")
+					.padding()
+					.frame(idealWidth: .infinity, maxWidth: .infinity)
+					.foregroundColor(Color(.secondaryLabel))
+					.fixedSize(horizontal: false, vertical: true)
+					.background(Color(.secondarySystemBackground))
 			}
 		}
 		.padding()
