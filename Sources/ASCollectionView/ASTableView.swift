@@ -229,7 +229,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 		func updateContent(_ tv: UITableView, animated: Bool, refreshExistingCells: Bool)
 		{
-			guard tableViewController?.parent != nil else { return }
+			guard hasDoneInitialSetup else { return }
 			if refreshExistingCells
 			{
 				tv.visibleCells.forEach
