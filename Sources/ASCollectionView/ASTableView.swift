@@ -567,4 +567,14 @@ class ASTableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: 
 	{
 		true
 	}
+	
+	override func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil) {
+		if animatingDifferences {
+			super.apply(snapshot, animatingDifferences: true, completion: completion)
+		} else {
+			UIView.performWithoutAnimation {
+				super.apply(snapshot, animatingDifferences: false, completion: completion)
+			}
+		}
+	}
 }
