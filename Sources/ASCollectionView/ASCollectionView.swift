@@ -193,7 +193,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		var collectionViewController: AS_CollectionViewController?
 
-		var dataSource: UICollectionViewDiffableDataSource<SectionID, ASCollectionViewItemUniqueID>?
+		var dataSource: ASCollectionViewDiffableDataSource<SectionID, ASCollectionViewItemUniqueID>?
 
 		let cellReuseID = UUID().uuidString
 		let supplementaryReuseID = UUID().uuidString
@@ -954,5 +954,20 @@ public extension ASCollectionView
 		var this = self
 		this.layout = Layout(createCustomLayout: createCustomLayout, configureCustomLayout: configureCustomLayout)
 		return this
+	}
+}
+
+
+@available(iOS 13.0, *)
+class ASCollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: UICollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType: Hashable, ItemIdentifierType: Hashable
+{
+	override func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil) {
+		if animatingDifferences {
+			super.apply(snapshot, animatingDifferences: true, completion: completion)
+		} else {
+			UIView.performWithoutAnimation {
+				super.apply(snapshot, animatingDifferences: false, completion: completion)
+			}
+		}
 	}
 }
