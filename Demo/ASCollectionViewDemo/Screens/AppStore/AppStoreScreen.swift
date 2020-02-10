@@ -60,7 +60,7 @@ struct AppStoreScreen: View
 		ASCollectionView(sections: self.sections)
 			.layout(self.layout)
 			.edgesIgnoringSafeArea(.all)
-			.navigationBarTitle("Apps", displayMode: .inline)
+			.navigationBarTitle("Apps", displayMode: .large)
 	}
 
 	func onCellEvent(_ event: CellEvent<App>, sectionID: Int)
