@@ -35,14 +35,20 @@ class ASTableViewCell: UITableViewCell
 	func willAppear(in vc: UIViewController?)
 	{
 		hostingController.map
-		{
-			$0.viewController.removeFromParent()
-			vc?.addChild($0.viewController)
-			contentView.addSubview($0.viewController.view)
-
-			setNeedsLayout()
-
-			vc.map { hostingController?.viewController.didMove(toParent: $0) }
+			{
+				if $0.viewController.parent != vc {
+					$0.viewController.removeFromParent()
+					vc?.addChild($0.viewController)
+				}
+				if $0.viewController.view.superview != contentView {
+					$0.viewController.view.removeFromSuperview()
+					contentView.subviews.forEach { $0.removeFromSuperview() }
+					contentView.addSubview($0.viewController.view)
+				}
+				
+				setNeedsLayout()
+				
+				vc.map { hostingController?.viewController.didMove(toParent: $0) }
 		}
 	}
 
@@ -54,7 +60,6 @@ class ASTableViewCell: UITableViewCell
 	override func prepareForReuse()
 	{
 		hostingController = nil
-		contentView.subviews.forEach { $0.removeFromSuperview() }
 	}
 
 	override func layoutSubviews()
@@ -129,14 +134,20 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	func willAppear(in vc: UIViewController?)
 	{
 		hostingController.map
-		{
-			$0.viewController.removeFromParent()
-			vc?.addChild($0.viewController)
-			contentView.addSubview($0.viewController.view)
-
-			setNeedsLayout()
-
-			vc.map { hostingController?.viewController.didMove(toParent: $0) }
+			{
+				if $0.viewController.parent != vc {
+					$0.viewController.removeFromParent()
+					vc?.addChild($0.viewController)
+				}
+				if $0.viewController.view.superview != contentView {
+					$0.viewController.view.removeFromSuperview()
+					contentView.subviews.forEach { $0.removeFromSuperview() }
+					contentView.addSubview($0.viewController.view)
+				}
+				
+				setNeedsLayout()
+				
+				vc.map { hostingController?.viewController.didMove(toParent: $0) }
 		}
 	}
 
@@ -148,7 +159,6 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	override func prepareForReuse()
 	{
 		hostingController = nil
-		contentView.subviews.forEach { $0.removeFromSuperview() }
 	}
 
 	override func layoutSubviews()

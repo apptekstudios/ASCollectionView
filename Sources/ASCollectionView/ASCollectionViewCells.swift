@@ -34,14 +34,20 @@ class ASCollectionViewCell: UICollectionViewCell
 	func willAppear(in vc: UIViewController)
 	{
 		hostingController.map
-		{
-			$0.viewController.removeFromParent()
-			vc.addChild($0.viewController)
-			contentView.addSubview($0.viewController.view)
-
-			setNeedsLayout()
-
-			hostingController?.viewController.didMove(toParent: vc)
+			{
+				if $0.viewController.parent != vc {
+					$0.viewController.removeFromParent()
+					vc.addChild($0.viewController)
+				}
+				if $0.viewController.view.superview != contentView {
+					$0.viewController.view.removeFromSuperview()
+					contentView.subviews.forEach { $0.removeFromSuperview() }
+					contentView.addSubview($0.viewController.view)
+				}
+				
+				setNeedsLayout()
+				
+				hostingController?.viewController.didMove(toParent: vc)
 		}
 	}
 
@@ -54,7 +60,6 @@ class ASCollectionViewCell: UICollectionViewCell
 	{
 		isSelected = false
 		hostingController = nil
-		contentView.subviews.forEach { $0.removeFromSuperview() }
 	}
 
 	override func layoutSubviews()
@@ -111,6 +116,11 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 		self.id = id
 		hostingController = ASHostingController<Content>(view)
 	}
+	
+	func setupAsEmptyView() {
+		hostingController = nil
+		subviews.forEach { $0.removeFromSuperview() }
+	}
 
 	func updateView<Content: View>(_ view: Content)
 	{
@@ -122,9 +132,15 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 	{
 		hostingController.map
 		{
-			$0.viewController.removeFromParent()
-			vc?.addChild($0.viewController)
-			addSubview($0.viewController.view)
+			if $0.viewController.parent != vc {
+				$0.viewController.removeFromParent()
+				vc?.addChild($0.viewController)
+			}
+			if $0.viewController.view.superview != self {
+				$0.viewController.view.removeFromSuperview()
+				subviews.forEach { $0.removeFromSuperview() }
+				addSubview($0.viewController.view)
+			}
 
 			setNeedsLayout()
 
@@ -140,7 +156,6 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 	override func prepareForReuse()
 	{
 		hostingController = nil
-		subviews.forEach { $0.removeFromSuperview() }
 	}
 
 	override func layoutSubviews()

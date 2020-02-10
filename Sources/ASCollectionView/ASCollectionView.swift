@@ -286,6 +286,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				guard self.supplementaryKinds().contains(kind) else
 				{
 					let emptyView = cv.dequeueReusableSupplementaryView(ofKind: self.supplementaryEmptyKind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
+					emptyView?.setupAsEmptyView()
 					return emptyView
 				}
 				guard let reusableView = cv.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
@@ -295,6 +296,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					reusableView.setupFor(
 						id: indexPath.section,
 						view: supplementaryView)
+				} else {
+					reusableView.setupAsEmptyView()
 				}
 				return reusableView
 			}

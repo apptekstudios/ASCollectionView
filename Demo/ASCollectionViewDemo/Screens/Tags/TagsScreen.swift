@@ -58,6 +58,7 @@ struct TagsScreen: View
 					.foregroundColor(Color(.secondaryLabel))
 					.fixedSize(horizontal: false, vertical: true)
 					.background(Color(.secondarySystemBackground))
+				Spacer()
 			}
 		}
 		.padding()
