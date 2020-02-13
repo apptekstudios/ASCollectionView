@@ -127,6 +127,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		context.coordinator.parent = self
 		updateTableViewSettings(tableViewController.tableView)
 		context.coordinator.updateContent(tableViewController.tableView, animated: animateOnDataRefresh, refreshExistingCells: true)
+		context.coordinator.configureRefreshControl(for: tableViewController.tableView)
 	}
 
 	func updateTableViewSettings(_ tableView: UITableView)
