@@ -25,10 +25,10 @@ public extension View
 		environment(\.tableViewSeparatorsEnabled, enabled)
 	}
 	
-	/// Set a closure that is called when the tableView is pulled to refresh
-	func tableViewOnPullToRefresh(_ onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?) -> some View
+	/// Set a closure that is called when the tableView or the collectionView is pulled to refresh
+	func onPullToRefresh(_ onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?) -> some View
 	{
-		environment(\.tableViewOnPullToRefresh, onPullToRefresh)
+		environment(\.onPullToRefresh, onPullToRefresh)
 	}
 	
 	/// Set a closure that is called whenever the tableView is scrolled to the bottom.
@@ -114,7 +114,7 @@ struct EnvironmentKeyASTableViewSeparatorsEnabled: EnvironmentKey
 }
 
 @available(iOS 13.0, *)
-struct EnvironmentKeyASTableViewOnPullToRefresh: EnvironmentKey
+struct EnvironmentKeyASViewOnPullToRefresh: EnvironmentKey
 {
 	static let defaultValue: (((_ endRefreshing: @escaping (() -> Void)) -> Void)?) = nil
 }
@@ -201,10 +201,10 @@ public extension EnvironmentValues
 		set { self[EnvironmentKeyASTableViewSeparatorsEnabled.self] = newValue }
 	}
 
-	var tableViewOnPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
+	var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
 	{
-		get { self[EnvironmentKeyASTableViewOnPullToRefresh.self] }
-		set { self[EnvironmentKeyASTableViewOnPullToRefresh.self] = newValue }
+		get { self[EnvironmentKeyASViewOnPullToRefresh.self] }
+		set { self[EnvironmentKeyASViewOnPullToRefresh.self] = newValue }
 	}
 
 	var tableViewOnReachedBottom: () -> Void

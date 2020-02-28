@@ -80,7 +80,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	// MARK: Environment variables
 
 	@Environment(\.tableViewSeparatorsEnabled) private var separatorsEnabled
-	@Environment(\.tableViewOnPullToRefresh) private var onPullToRefresh
+	@Environment(\.onPullToRefresh) private var onPullToRefresh
 	@Environment(\.tableViewOnReachedBottom) private var onReachedBottom
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
