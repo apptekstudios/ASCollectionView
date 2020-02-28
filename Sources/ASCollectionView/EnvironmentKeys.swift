@@ -86,6 +86,11 @@ public extension View
 	{
 		environment(\.allowCellHeightToExceedCollectionContentSize, allowCellHeightToExceedCollectionContentSize)
 	}
+    
+    func animateOnDataRefresh(_ animateOnDataRefresh: Bool = true) -> some View
+    {
+        environment(\.animateOnDataRefresh, animateOnDataRefresh)
+    }
 }
 
 //MARK: Internal Key Definitions
