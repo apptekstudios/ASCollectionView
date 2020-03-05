@@ -37,10 +37,12 @@ struct AppStoreScreen: View
 					self.onCellEvent($0, sectionID: sectionID)
 			})
 			{ item, _ in
-				if sectionID == 0 {
+				if sectionID == 0
+				{
 					AppViewFeature(app: item)
 				}
-				else if sectionID == 1 {
+				else if sectionID == 1
+				{
 					AppViewLarge(app: item)
 				}
 				else

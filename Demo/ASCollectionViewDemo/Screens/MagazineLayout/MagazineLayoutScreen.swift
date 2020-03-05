@@ -67,10 +67,11 @@ struct MagazineLayoutScreen: View
 			}
 		}
 	}
-	
-	func contextMenuProvider(_ post: Post) -> UIContextMenuConfiguration? {
-		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { (suggestedActions) -> UIMenu? in
-			let testAction = UIAction(title: "Test") { (action) in
+
+	func contextMenuProvider(_ post: Post) -> UIContextMenuConfiguration?
+	{
+		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { (_) -> UIMenu? in
+			let testAction = UIAction(title: "Test") { _ in
 				//
 			}
 			return UIMenu(title: "", image: nil, identifier: nil, options: [], children: [testAction])

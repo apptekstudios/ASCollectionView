@@ -196,7 +196,8 @@ public extension ASCollectionViewSection
 			content: { staticContent, _ in staticContent.view })
 	}
 
-	init(id: SectionID, @ViewArrayBuilder content: () -> ViewArrayBuilder.Wrapper) {
+	init(id: SectionID, @ViewArrayBuilder content: () -> ViewArrayBuilder.Wrapper)
+	{
 		self.init(id: id, container: { $0 }, content: content)
 	}
 
@@ -223,6 +224,7 @@ public extension ASCollectionViewSection
 }
 
 // MARK: Self-sizing config
+
 @available(iOS 13.0, *)
 public extension ASSection
 {
@@ -234,8 +236,8 @@ public extension ASSection
 	}
 }
 
-
 // MARK: IDENTIFIABLE DATA SECTION
+
 @available(iOS 13.0, *)
 public extension ASCollectionViewSection
 {
@@ -258,7 +260,7 @@ public extension ASCollectionViewSection
 		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
 		contextMenuProvider: ContextMenuProvider<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
-		 where DataCollection.Index == Int, DataCollection.Element: Identifiable
+		where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
 		self.init(id: id, data: data, dataID: \.id, container: container, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}
@@ -272,7 +274,7 @@ public extension ASCollectionViewSection
 		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
 		contextMenuProvider: ContextMenuProvider<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
-		 where DataCollection.Index == Int, DataCollection.Element: Identifiable
+		where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
 		self.init(id: id, data: data, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}

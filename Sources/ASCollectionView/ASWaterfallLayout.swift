@@ -18,7 +18,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 	{
 		case fixed(Int)
 		case adaptive(minWidth: CGFloat)
-		case perSection(((Int) -> ColumnCount))
+		case perSection((Int) -> ColumnCount)
 	}
 
 	public var numberOfColumns: ColumnCount = .adaptive(minWidth: 150)
@@ -50,11 +50,11 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		}
 	}
 
-	public var selfSizingConfig: ASSelfSizingConfig {
+	public var selfSizingConfig: ASSelfSizingConfig
+	{
 		ASSelfSizingConfig(
 			selfSizeHorizontally: false,
-			selfSizeVertically: hasDelegate ? false : true
-		)
+			selfSizeVertically: hasDelegate ? false : true)
 	}
 
 	private var cachedHeaderHeight: [Int: CGFloat] = [:]
@@ -112,15 +112,15 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		}
 		return cachedHeight[indexPath] ?? estimatedItemHeight
 	}
-	
+
 	func getHeightForHeader(sectionIndex: Int) -> CGFloat
 	{
 		let delegate = (collectionView?.delegate as? ASWaterfallLayoutDelegate)
-		
+
 		return
 			delegate?.heightForHeader(sectionIndex: sectionIndex)
-			?? cachedHeaderHeight[sectionIndex]
-			?? estimatedHeaderHeight
+				?? cachedHeaderHeight[sectionIndex]
+				?? estimatedHeaderHeight
 	}
 
 	public override func prepare()
@@ -135,10 +135,10 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		{
 			let sectionMinY = (0 ..< section).reduce(into: collectionView.adjustedContentInset.top) { $0 += cachedSectionHeight[$1] ?? 0 }
 			var columnHeights: [CGFloat] = .init(repeating: 0, count: calculateNumberOfColumns(sectionIndex: section, setting: numberOfColumns))
-			
+
 			let headerHeight = getHeightForHeader(sectionIndex: section)
-			
-			//Set header attributes
+
+			// Set header attributes
 			let headerIndexPath = IndexPath(item: -1, section: section)
 			let headerAttributes = UICollectionViewLayoutAttributes(forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, with: headerIndexPath)
 			headerAttributes.frame = CGRect(
@@ -147,9 +147,9 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 				width: contentWidth,
 				height: headerHeight)
 			cachedAttributes[headerIndexPath] = headerAttributes
-			
+
 			let sectionContentMinY = sectionMinY + headerHeight + itemSpacing
-			
+
 			let sectionColumnWidth = calculateColumnWidth(sectionIndex: section)
 
 			for indexPath in collectionView.allIndexPaths(inSection: section)
@@ -221,9 +221,11 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 	{
 		cachedAttributes[indexPath]
 	}
-	
-	public override func layoutAttributesForSupplementaryView(ofKind elementKind: String, at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
-		switch elementKind {
+
+	public override func layoutAttributesForSupplementaryView(ofKind elementKind: String, at indexPath: IndexPath) -> UICollectionViewLayoutAttributes?
+	{
+		switch elementKind
+		{
 		case UICollectionView.elementKindSectionHeader:
 			return cachedAttributes[IndexPath(item: -1, section: indexPath.section)]
 		default:

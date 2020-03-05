@@ -56,8 +56,7 @@ extension ASTableView where SectionID == Int
 	{
 		ASTableView(
 			style: .plain,
-			sections: [ASTableViewSection(id: 0, content: staticContent)]
-		)
+			sections: [ASTableViewSection(id: 0, content: staticContent)])
 	}
 }
 
@@ -195,22 +194,22 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				guard
 					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell
 				else { return nil }
-				
-				//Cell layout invalidation callback
+
+				// Cell layout invalidation callback
 				cell.invalidateLayout = { [weak tv] in
 					tv?.beginUpdates()
 					tv?.endUpdates()
 				}
 
-				//Self Sizing Settings
+				// Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .content, indexPath: indexPath)
 				cell.selfSizingConfig =
 					self.parent.sections[safe: indexPath.section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
-					?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
-				
-				//Configure cell
+						?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
+
+				// Configure cell
 				self.section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: isSelected)
-		
+
 				return cell
 			}
 			dataSource?.defaultRowAnimation = .fade
@@ -239,7 +238,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 						let itemID = cell.id
 					else { return }
 
-					//Configure cell
+					// Configure cell
 					section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
 				}
 			}
@@ -260,8 +259,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				checkIfReachedBottom(tableViewController.tableView)
 			}
 		}
-		
-		func onMoveFromParent() {
+
+		func onMoveFromParent()
+		{
 			hasDoneInitialSetup = false
 		}
 
@@ -378,7 +378,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				let itemID = cell.id
 			else { return }
 			updateSelectionBindings(tableView)
-			//Configure cell
+			// Configure cell
 			section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
@@ -389,7 +389,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				let itemID = cell.id
 			else { return }
 			updateSelectionBindings(tableView)
-			//Configure cell
+			// Configure cell
 			section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
@@ -453,13 +453,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			else { return nil }
 			if let supplementaryView = parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionHeader)
 			{
-				//Self Sizing Settings
+				// Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(UICollectionView.elementKindSectionHeader), indexPath: IndexPath(row: 0, section: section))
 				reusableView.selfSizingConfig =
-					self.parent.sections[safe: section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
-					?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
-				
-				//Cell Content Setup
+					parent.sections[safe: section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
+						?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
+
+				// Cell Content Setup
 				reusableView.setupFor(
 					id: section,
 					view: supplementaryView)
@@ -473,13 +473,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			else { return nil }
 			if let supplementaryView = parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionFooter)
 			{
-				//Self Sizing Settings
+				// Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(UICollectionView.elementKindSectionFooter), indexPath: IndexPath(row: 0, section: section))
 				reusableView.selfSizingConfig =
-					self.parent.sections[safe: section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
-					?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
-				
-				//Cell Content Setup
+					parent.sections[safe: section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
+						?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
+
+				// Cell Content Setup
 				reusableView.setupFor(
 					id: section,
 					view: supplementaryView)
@@ -578,9 +578,12 @@ public class AS_TableViewController: UIViewController
 	public override func didMove(toParent parent: UIViewController?)
 	{
 		super.didMove(toParent: parent)
-		if parent != nil {
+		if parent != nil
+		{
 			coordinator?.onMoveToParent(tableViewController: self)
-		} else {
+		}
+		else
+		{
 			coordinator?.onMoveFromParent()
 		}
 	}
@@ -593,11 +596,15 @@ class ASTableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: 
 	{
 		true
 	}
-	
-	override func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil) {
-		if animatingDifferences {
+
+	override func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil)
+	{
+		if animatingDifferences
+		{
 			super.apply(snapshot, animatingDifferences: true, completion: completion)
-		} else {
+		}
+		else
+		{
 			UIView.performWithoutAnimation {
 				super.apply(snapshot, animatingDifferences: false, completion: completion)
 			}

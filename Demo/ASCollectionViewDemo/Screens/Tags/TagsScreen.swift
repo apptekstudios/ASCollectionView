@@ -25,8 +25,8 @@ struct TagsScreen: View
 				Spacer()
 			}
 			.onTapGesture
-				{
-					self.store.refreshStore()
+			{
+				self.store.refreshStore()
 			}
 			Text("Tags:")
 				.font(.title)
@@ -49,7 +49,7 @@ struct TagsScreen: View
 			}
 			.shrinkToContentSize(isEnabled: shrinkToSize, $contentSize, dimensionToShrink: .vertical)
 			.collectionViewAllowCellWidthToExceedCollectionContentSize(false)
-			
+
 			if shrinkToSize
 			{
 				Text("This is another view in the VStack, it shows how the collectionView above fits itself to the content.")

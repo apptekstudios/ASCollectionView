@@ -113,15 +113,17 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
 			isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
 	}
-	
-	func configureCell(_ cell: ASDataSourceConfigurableCell, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) {
-		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else {
+
+	func configureCell(_ cell: ASDataSourceConfigurableCell, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
+	{
+		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else
+		{
 			cell.configureAsEmpty()
 			return
 		}
 		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
 		let content = container(view)
-		
+
 		cell.configureHostingController(forItemID: itemID, content: content)
 	}
 
@@ -213,19 +215,20 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		}
 		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: indexPath))
 	}
-	
+
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	{
 		guard
 			let menuProvider = contextMenuProvider,
 			let item = data[safe: indexPath.item]
-			else { return nil }
-		
+		else { return nil }
+
 		return menuProvider(item)
 	}
-	
-	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig? {
-		return selfSizingConfig?(context)
+
+	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
+	{
+		selfSizingConfig?(context)
 	}
 }
 

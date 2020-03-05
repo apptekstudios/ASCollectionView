@@ -98,16 +98,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	// MARK: Environment variables
 
-	//SwiftUI environment
+	// SwiftUI environment
 	@Environment(\.editMode) private var editMode
-	
-	//ASCollectionView environment
+
+	// ASCollectionView environment
 	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
 	@Environment(\.contentInsets) private var contentInsets
 	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.initialScrollPosition) private var initialScrollPosition
-  @Environment(\.onPullToRefresh) private var onPullToRefresh
+	@Environment(\.onPullToRefresh) private var onPullToRefresh
 	@Environment(\.collectionViewOnReachedBoundary) private var onReachedBoundary
 	@Environment(\.animateOnDataRefresh) private var animateOnDataRefresh
 	@Environment(\.attemptToMaintainScrollPositionOnOrientationChange) private var attemptToMaintainScrollPositionOnOrientationChange
@@ -160,7 +160,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		updateCollectionViewSettings(collectionViewController.collectionView, delegate: context.coordinator.delegate)
 		context.coordinator.updateLayout()
 		context.coordinator.updateContent(collectionViewController.collectionView, animated: animateOnDataRefresh, refreshExistingCells: true)
-        context.coordinator.configureRefreshControl(for: collectionViewController.collectionView)
+		context.coordinator.configureRefreshControl(for: collectionViewController.collectionView)
 	}
 
 	func updateCollectionViewSettings(_ collectionView: UICollectionView, delegate: ASCollectionViewDelegate?)
@@ -251,34 +251,35 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			dataSource = .init(collectionView: cv)
 			{ [weak self] (collectionView, indexPath, itemID) -> UICollectionViewCell? in
 				guard let self = self else { return nil }
-					
+
 				guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: self.cellReuseID, for: indexPath) as? Cell
-					else { return nil }
-				
+				else { return nil }
+
 				let isSelected = collectionView.indexPathsForSelectedItems?.contains(indexPath) ?? false
-		
+
 				cell.invalidateLayout = { [weak collectionView] in
 					collectionView?.collectionViewLayout.invalidateLayout()
 				}
-				cell.maxSizeForSelfSizing = ASOptionalSize(width: self.parent.allowCellWidthToExceedCollectionContentSize ? nil : collectionView.contentSize.width,
-														   height: self.parent.allowCellHeightToExceedCollectionContentSize ? nil : collectionView.contentSize.height)
+				cell.maxSizeForSelfSizing = ASOptionalSize(
+					width: self.parent.allowCellWidthToExceedCollectionContentSize ? nil : collectionView.contentSize.width,
+					height: self.parent.allowCellHeightToExceedCollectionContentSize ? nil : collectionView.contentSize.height)
 
-				//Self Sizing Settings
+				// Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .content, indexPath: indexPath)
 				cell.selfSizingConfig =
 					self.parent.sections[safe: indexPath.section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
-					?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
-					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizingConfig
-					?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
-				
-				//Configure cell
+						?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
+						?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizingConfig
+						?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
+
+				// Configure cell
 				self.section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: isSelected)
 
 				return cell
 			}
 			dataSource?.supplementaryViewProvider = { [weak self] (cv, kind, indexPath) -> UICollectionReusableView? in
-				guard let self = self else { return nil}
-				
+				guard let self = self else { return nil }
+
 				guard self.supplementaryKinds().contains(kind) else
 				{
 					let emptyView = cv.dequeueReusableSupplementaryView(ofKind: self.supplementaryEmptyKind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
@@ -288,22 +289,24 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				guard let reusableView = cv.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
 				else { return nil }
 
-				//Self Sizing Settings
+				// Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(kind), indexPath: indexPath)
 				reusableView.selfSizingConfig =
 					self.parent.sections[safe: indexPath.section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
-					?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
-					?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
-				
+						?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
+						?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
+
 				if let supplementaryView = self.parent.sections[safe: indexPath.section]?.supplementary(ofKind: kind)
 				{
 					reusableView.setupFor(
 						id: indexPath.section,
 						view: supplementaryView)
-				} else {
+				}
+				else
+				{
 					reusableView.setupAsEmptyView()
 				}
-				
+
 				return reusableView
 			}
 			setupPrefetching()
@@ -336,7 +339,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						let itemID = cell.id
 					else { return }
 
-					//Configure cell
+					// Configure cell
 					section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
 				}
 
@@ -367,41 +370,42 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
 			}
 		}
-        
-        func configureRefreshControl(for cv: UICollectionView)
-        {
-            guard parent.onPullToRefresh != nil else
-            {
-                if cv.refreshControl != nil
-                {
-                    cv.refreshControl = nil
-                }
-                return
-            }
-            if cv.refreshControl == nil
-            {
-                let refreshControl = UIRefreshControl()
-                refreshControl.addTarget(self, action: #selector(collectionViewDidPullToRefresh), for: .valueChanged)
-                cv.refreshControl = refreshControl
-            }
-        }
-        
-        @objc
-        public func collectionViewDidPullToRefresh()
-        {
-            guard let collectionView = collectionViewController?.collectionView else { return }
-            let endRefreshing: (() -> Void) = { [weak collectionView] in
-                collectionView?.refreshControl?.endRefreshing()
-            }
-            parent.onPullToRefresh?(endRefreshing)
-        }
 
-		
-		func onMoveFromParent() {
+		func configureRefreshControl(for cv: UICollectionView)
+		{
+			guard parent.onPullToRefresh != nil else
+			{
+				if cv.refreshControl != nil
+				{
+					cv.refreshControl = nil
+				}
+				return
+			}
+			if cv.refreshControl == nil
+			{
+				let refreshControl = UIRefreshControl()
+				refreshControl.addTarget(self, action: #selector(collectionViewDidPullToRefresh), for: .valueChanged)
+				cv.refreshControl = refreshControl
+			}
+		}
+
+		@objc
+		public func collectionViewDidPullToRefresh()
+		{
+			guard let collectionView = collectionViewController?.collectionView else { return }
+			let endRefreshing: (() -> Void) = { [weak collectionView] in
+				collectionView?.refreshControl?.endRefreshing()
+			}
+			parent.onPullToRefresh?(endRefreshing)
+		}
+
+		func onMoveFromParent()
+		{
 			hasDoneInitialSetup = false
 		}
 
 		// MARK: Functions for determining scroll position (on appear, and also on orientation change)
+
 		func scrollToPosition(_ scrollPosition: ASCollectionViewScrollPosition, animated: Bool = false)
 		{
 			switch scrollPosition
@@ -423,8 +427,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func prepareForOrientationChange()
 		{
 			guard let collectionView = collectionViewController?.collectionView else { return }
-			
-			if parent.attemptToMaintainScrollPositionOnOrientationChange {
+
+			if parent.attemptToMaintainScrollPositionOnOrientationChange
+			{
 				// Get centremost cell
 				if let indexPath = collectionView.indexPathForItem(at: CGPoint(x: collectionView.bounds.midX, y: collectionView.bounds.midY))
 				{
@@ -446,9 +451,12 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		var transitionCentralIndexPath: IndexPath?
 		func getContentOffsetForOrientationChange() -> CGPoint?
 		{
-			if parent.attemptToMaintainScrollPositionOnOrientationChange {
+			if parent.attemptToMaintainScrollPositionOnOrientationChange
+			{
 				return transitionCentralIndexPath.flatMap(getContentOffsetToCenterCell)
-			} else {
+			}
+			else
+			{
 				return nil
 			}
 		}
@@ -470,7 +478,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				y: max(0, min(maxOffset.y, centerCellFrame.midY - (collectionView.bounds.height / 2))))
 			return newOffset
 		}
-		
+
 		// MARK: Functions for updating layout
 
 		func updateLayout()
@@ -511,8 +519,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		}
 
 		// MARK: CollectionViewDelegate functions
+
 		// NOTE: These are not called directly, but rather forwarded to the Coordinator by the ASCollectionViewDelegate class
-		
+
 		public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 		{
 			collectionViewController.map { (cell as? Cell)?.willAppear(in: $0) }
@@ -546,7 +555,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				let itemID = cell.id
 			else { return }
 			updateSelectionBindings(collectionView)
-			//Configure cell
+			// Configure cell
 			section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
@@ -557,7 +566,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				let itemID = cell.id
 			else { return }
 			updateSelectionBindings(collectionView)
-			//Configure cell
+			// Configure cell
 			section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
@@ -610,6 +619,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		}
 
 		// MARK: Functions for updating contentSize binding
+
 		var lastContentSize: CGSize = .zero
 		func didUpdateContentSize(_ size: CGSize)
 		{
@@ -634,6 +644,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		}
 
 		// MARK: Variables used for the custom prefetching implementation
+
 		private let queuePrefetch = PassthroughSubject<Void, Never>()
 		private var prefetchSubscription: AnyCancellable?
 		private var currentlyPrefetching: Set<IndexPath> = []
@@ -690,9 +701,11 @@ extension ASCollectionView.Coordinator
 }
 
 // MARK: Context Menu Support
+
 @available(iOS 13.0, *)
 public extension ASCollectionView.Coordinator {
-	func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+	func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
+	{
 		guard !indexPath.isEmpty else { return nil }
 		return parent.sections[safe: indexPath.section]?.dataSource.getContextMenu(for: indexPath)
 	}
@@ -834,7 +847,8 @@ extension ASCollectionView.Coordinator
 					self.parent.sections[safe: sectionIndex]?.dataSource.prefetch(toPrefetch)
 				}
 				let toCancel = self.currentlyPrefetching.filter { $0.section == sectionIndex }.subtracting(toPrefetch)
-				if !toCancel.isEmpty {
+				if !toCancel.isEmpty
+				{
 					self.parent.sections[safe: sectionIndex]?.dataSource.cancelPrefetch(Array(toCancel))
 				}
 			}
@@ -857,8 +871,10 @@ public enum ASCollectionViewScrollPosition
 @available(iOS 13.0, *)
 public class AS_CollectionViewController: UIViewController
 {
-	weak var coordinator: ASCollectionViewCoordinator? {
-		didSet {
+	weak var coordinator: ASCollectionViewCoordinator?
+	{
+		didSet
+		{
 			collectionView.coordinator = coordinator
 		}
 	}
@@ -882,9 +898,12 @@ public class AS_CollectionViewController: UIViewController
 	public override func didMove(toParent parent: UIViewController?)
 	{
 		super.didMove(toParent: parent)
-		if parent != nil {
+		if parent != nil
+		{
 			coordinator?.onMoveToParent()
-		} else {
+		}
+		else
+		{
 			coordinator?.onMoveFromParent()
 		}
 	}
@@ -942,20 +961,22 @@ public class AS_CollectionViewController: UIViewController
 	}
 }
 
-
 @available(iOS 13.0, *)
-public class AS_UICollectionView: UICollectionView {
-	weak var coordinator: ASCollectionViewCoordinator? = nil
-	
-	public override func didMoveToWindow() {
+public class AS_UICollectionView: UICollectionView
+{
+	weak var coordinator: ASCollectionViewCoordinator?
+
+	public override func didMoveToWindow()
+	{
 		super.didMoveToWindow()
-		
-		//Intended as a temporary workaround for a SwiftUI bug present in 13.3 -> the UIViewController is not moved to a parent when embedded in a list/scrollview
+
+		// Intended as a temporary workaround for a SwiftUI bug present in 13.3 -> the UIViewController is not moved to a parent when embedded in a list/scrollview
 		coordinator?.onMoveToParent()
 	}
 }
 
 // MARK: PUBLIC layout modifier functions
+
 @available(iOS 13.0, *)
 public extension ASCollectionView
 {
@@ -1007,14 +1028,17 @@ public extension ASCollectionView
 	}
 }
 
-
 @available(iOS 13.0, *)
 class ASCollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: UICollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType: Hashable, ItemIdentifierType: Hashable
 {
-	override func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil) {
-		if animatingDifferences {
+	override func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil)
+	{
+		if animatingDifferences
+		{
 			super.apply(snapshot, animatingDifferences: true, completion: completion)
-		} else {
+		}
+		else
+		{
 			UIView.performWithoutAnimation {
 				super.apply(snapshot, animatingDifferences: false, completion: completion)
 			}

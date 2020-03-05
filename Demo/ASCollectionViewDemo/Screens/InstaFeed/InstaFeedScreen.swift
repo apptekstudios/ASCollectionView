@@ -84,7 +84,7 @@ struct InstaFeedScreen: View
 					endRefreshing()
 				}
 			}
-		.tableViewOnReachedBottom
+			.tableViewOnReachedBottom
 		{
 			self.loadMoreContent() // REACHED BOTTOM, LOADING MORE CONTENT
 		}

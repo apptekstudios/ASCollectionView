@@ -6,7 +6,8 @@ import UIKit
 
 class ASCollectionViewMagazineLayoutDelegate: ASCollectionViewDelegate, UICollectionViewDelegateMagazineLayout
 {
-	override func collectionViewSelfSizingSettings(forContext: ASSelfSizingContext) -> ASSelfSizingConfig? {
+	override func collectionViewSelfSizingSettings(forContext: ASSelfSizingContext) -> ASSelfSizingConfig?
+	{
 		ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
 	}
 

@@ -15,7 +15,7 @@ internal struct ASHostingControllerModifier: ViewModifier
 }
 
 @available(iOS 13.0, *)
-internal protocol ASHostingControllerProtocol: class
+internal protocol ASHostingControllerProtocol: AnyObject
 {
 	var viewController: UIViewController { get }
 	func applyModifier(_ modifier: ASHostingControllerModifier)
@@ -27,9 +27,9 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 {
 	init(_ view: ViewType, modifier: ASHostingControllerModifier = ASHostingControllerModifier())
 	{
-		self.hostedView = view
+		hostedView = view
 		self.modifier = modifier
-		self.uiHostingController = .init(rootView: view.modifier(modifier))
+		uiHostingController = .init(rootView: view.modifier(modifier))
 	}
 
 	let uiHostingController: UIHostingController<ModifiedContent<ViewType, ASHostingControllerModifier>>
@@ -64,9 +64,8 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 	{
 		let fittingSize = CGSize(
 			width: selfSizeHorizontal ? .infinity : size.width,
-			height: selfSizeVertical ? .infinity : size.height
-		).applyMaxSize(maxSize)
-		
+			height: selfSizeVertical ? .infinity : size.height).applyMaxSize(maxSize)
+
 		// Find the desired size
 		var desiredSize = uiHostingController.sizeThatFits(in: fittingSize)
 

@@ -146,7 +146,8 @@ extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionVi
 
 @available(iOS 13.0, *)
 extension ASCollectionViewDelegate {
-	public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-		self.coordinator?.collectionView(collectionView, contextMenuConfigurationForItemAt: indexPath, point: point)
+	public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
+	{
+		coordinator?.collectionView(collectionView, contextMenuConfigurationForItemAt: indexPath, point: point)
 	}
 }

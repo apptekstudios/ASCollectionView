@@ -14,17 +14,18 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 			if let oldVC = oldValue?.viewController,
 				let oldParent = oldVC.parent
 			{
-				//Replace the old one if it was already visible (added to parent)
+				// Replace the old one if it was already visible (added to parent)
 				oldVC.removeFromParent()
 				oldVC.view.removeFromSuperview()
-				if let newVC = hostingController?.viewController {
+				if let newVC = hostingController?.viewController
+				{
 					oldParent.addChild(newVC)
 					contentView.addSubview(newVC.view)
 				}
 			}
 		}
 	}
-	
+
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
 	var maxSizeForSelfSizing: ASOptionalSize = .none
 
@@ -33,15 +34,15 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 
 	private(set) var id: ASCollectionViewItemUniqueID?
 
-	
-	func configureAsEmpty() {
+	func configureAsEmpty()
+	{
 		hostingController = nil
 	}
-	
+
 	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content)
 	{
-		self.id = itemID
-		
+		id = itemID
+
 		if let existingHC = hostingController as? ASHostingController<Content>
 		{
 			existingHC.setView(content)
@@ -60,20 +61,22 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	func willAppear(in vc: UIViewController?)
 	{
 		hostingController.map
+		{
+			if $0.viewController.parent != vc
 			{
-				if $0.viewController.parent != vc {
-					$0.viewController.removeFromParent()
-					vc?.addChild($0.viewController)
-				}
-				if $0.viewController.view.superview != contentView {
-					$0.viewController.view.removeFromSuperview()
-					contentView.subviews.forEach { $0.removeFromSuperview() }
-					contentView.addSubview($0.viewController.view)
-				}
-				
-				setNeedsLayout()
-				
-				vc.map { hostingController?.viewController.didMove(toParent: $0) }
+				$0.viewController.removeFromParent()
+				vc?.addChild($0.viewController)
+			}
+			if $0.viewController.view.superview != contentView
+			{
+				$0.viewController.view.removeFromSuperview()
+				contentView.subviews.forEach { $0.removeFromSuperview() }
+				contentView.addSubview($0.viewController.view)
+			}
+
+			setNeedsLayout()
+
+			vc.map { hostingController?.viewController.didMove(toParent: $0) }
 		}
 	}
 
@@ -121,7 +124,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 {
 	var hostingController: ASHostingControllerProtocol?
 	private(set) var id: Int?
-	
+
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
 	var maxSizeForSelfSizing: ASOptionalSize = .none
 
@@ -159,20 +162,22 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	func willAppear(in vc: UIViewController?)
 	{
 		hostingController.map
+		{
+			if $0.viewController.parent != vc
 			{
-				if $0.viewController.parent != vc {
-					$0.viewController.removeFromParent()
-					vc?.addChild($0.viewController)
-				}
-				if $0.viewController.view.superview != contentView {
-					$0.viewController.view.removeFromSuperview()
-					contentView.subviews.forEach { $0.removeFromSuperview() }
-					contentView.addSubview($0.viewController.view)
-				}
-				
-				setNeedsLayout()
-				
-				vc.map { hostingController?.viewController.didMove(toParent: $0) }
+				$0.viewController.removeFromParent()
+				vc?.addChild($0.viewController)
+			}
+			if $0.viewController.view.superview != contentView
+			{
+				$0.viewController.view.removeFromSuperview()
+				contentView.subviews.forEach { $0.removeFromSuperview() }
+				contentView.addSubview($0.viewController.view)
+			}
+
+			setNeedsLayout()
+
+			vc.map { hostingController?.viewController.didMove(toParent: $0) }
 		}
 	}
 
