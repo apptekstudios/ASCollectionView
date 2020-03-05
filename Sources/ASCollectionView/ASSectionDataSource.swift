@@ -8,7 +8,7 @@ internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func configureHostingController(reusingController: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
+	func configureCell(_ cell: ASDataSourceConfigurableCell, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
@@ -20,8 +20,16 @@ internal protocol ASSectionDataSourceProtocol
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
+	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
+
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
+
+	mutating func setSelfSizingConfig(config: SelfSizingConfig?)
+
+	var estimatedRowHeight: CGFloat? { get set }
+	var estimatedHeaderHeight: CGFloat? { get set }
+	var estimatedFooterHeight: CGFloat? { get set }
 }
 
 @available(iOS 13.0, *)
@@ -63,6 +71,9 @@ public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: (Bool) -> 
 public typealias ContextMenuProvider<Data> = ((_ item: Data) -> UIContextMenuConfiguration?)
 
 @available(iOS 13.0, *)
+public typealias SelfSizingConfig = ((_ context: ASSelfSizingContext) -> ASSelfSizingConfig?)
+
+@available(iOS 13.0, *)
 public struct CellContext
 {
 	public var isSelected: Bool
@@ -77,12 +88,20 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var data: DataCollection
 	var dataIDKeyPath: KeyPath<Data, DataID>
 	var container: (Content) -> Container
-	var onCellEvent: OnCellEvent<Data>?
-	var onDragDrop: OnDragDrop<Data>?
-	var itemProvider: ItemProvider<Data>?
-	var onSwipeToDelete: OnSwipeToDelete<Data>?
-	var contextMenuProvider: ContextMenuProvider<Data>?
-	var content: (Data, CellContext) -> Content
+	var content: (DataCollection.Element, CellContext) -> Content
+
+	var supplementaryViews: [String: AnyView] = [:]
+	var onCellEvent: OnCellEvent<DataCollection.Element>?
+	var onDragDrop: OnDragDrop<DataCollection.Element>?
+	var itemProvider: ItemProvider<DataCollection.Element>?
+	var onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>?
+	var contextMenuProvider: ContextMenuProvider<DataCollection.Element>?
+	var selfSizingConfig: SelfSizingConfig?
+
+	// Only relevant for ASTableView
+	public var estimatedRowHeight: CGFloat?
+	public var estimatedHeaderHeight: CGFloat?
+	public var estimatedFooterHeight: CGFloat?
 
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
@@ -94,23 +113,16 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
 			isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
 	}
-
-	func configureHostingController(reusingController: ASHostingControllerProtocol? = nil, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> ASHostingControllerProtocol?
-	{
-		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
+	
+	func configureCell(_ cell: ASDataSourceConfigurableCell, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) {
+		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else {
+			cell.configureAsEmpty()
+			return
+		}
 		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
-		let containedView = container(view)
-
-		if let existingHC = reusingController as? ASHostingController<Container>
-		{
-			existingHC.setView(containedView)
-			return existingHC
-		}
-		else
-		{
-			let newHC = ASHostingController<Container>(containedView)
-			return newHC
-		}
+		let content = container(view)
+		
+		cell.configureHostingController(forItemID: itemID, content: content)
 	}
 
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
@@ -210,5 +222,20 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			else { return nil }
 		
 		return menuProvider(item)
+	}
+	
+	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig? {
+		return selfSizingConfig?(context)
+	}
+}
+
+// MARK: SELF SIZING MODIFIERS - INTERNAL
+
+@available(iOS 13.0, *)
+internal extension ASSectionDataSource
+{
+	mutating func setSelfSizingConfig(config: SelfSizingConfig?)
+	{
+		selfSizingConfig = config
 	}
 }

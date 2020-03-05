@@ -19,12 +19,7 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 		coordinator?.typeErasedDataForItem(at: indexPath) as? T
 	}
 
-	open func collectionView(cellShouldSelfSizeHorizontallyForItemAt indexPath: IndexPath) -> Bool?
-	{
-		nil
-	}
-
-	open func collectionView(cellShouldSelfSizeVerticallyForItemAt indexPath: IndexPath) -> Bool?
+	open func collectionViewSelfSizingSettings(forContext: ASSelfSizingContext) -> ASSelfSizingConfig?
 	{
 		nil
 	}

@@ -75,12 +75,11 @@ public struct ASSection<SectionID: Hashable>
 			data: data,
 			dataIDKeyPath: dataIDKeyPath,
 			container: container,
-			onCellEvent: onCellEvent,
+			content: contentBuilder, onCellEvent: onCellEvent,
 			onDragDrop: onDragDropEvent,
 			itemProvider: itemProvider,
 			onSwipeToDelete: onSwipeToDelete,
-			contextMenuProvider: contextMenuProvider,
-			content: contentBuilder)
+			contextMenuProvider: contextMenuProvider)
 	}
 
 	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
@@ -223,14 +222,25 @@ public extension ASCollectionViewSection
 	}
 }
 
-// MARK: IDENTIFIABLE DATA SECTION
+// MARK: Self-sizing config
+@available(iOS 13.0, *)
+public extension ASSection
+{
+	func selfSizingConfig(config: SelfSizingConfig?) -> Self
+	{
+		var section = self
+		section.dataSource.setSelfSizingConfig(config: config)
+		return section
+	}
+}
 
+
+// MARK: IDENTIFIABLE DATA SECTION
 @available(iOS 13.0, *)
 public extension ASCollectionViewSection
 {
 	/**
 	 Initializes a  section with identifiable data
-
 	 - Parameters:
 	 	- id: The id for this section
 	 	- data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'

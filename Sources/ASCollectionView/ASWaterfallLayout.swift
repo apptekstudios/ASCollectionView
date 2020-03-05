@@ -50,13 +50,12 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		}
 	}
 
-	public var selfSizeVertically: Bool
-	{
-		if hasDelegate { return false }
-		else { return true } // No delegate, use autosizing
+	public var selfSizingConfig: ASSelfSizingConfig {
+		ASSelfSizingConfig(
+			selfSizeHorizontally: false,
+			selfSizeVertically: hasDelegate ? false : true
+		)
 	}
-
-	public let selfSizeHorizontally = false
 
 	private var cachedHeaderHeight: [Int: CGFloat] = [:]
 	private var cachedHeight: [IndexPath: CGFloat] = [:]

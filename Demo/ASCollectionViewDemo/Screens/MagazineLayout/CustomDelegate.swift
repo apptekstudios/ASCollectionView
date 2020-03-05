@@ -6,14 +6,8 @@ import UIKit
 
 class ASCollectionViewMagazineLayoutDelegate: ASCollectionViewDelegate, UICollectionViewDelegateMagazineLayout
 {
-	override func collectionView(cellShouldSelfSizeVerticallyForItemAt indexPath: IndexPath) -> Bool
-	{
-		true
-	}
-
-	override func collectionView(cellShouldSelfSizeHorizontallyForItemAt indexPath: IndexPath) -> Bool
-	{
-		false
+	override func collectionViewSelfSizingSettings(forContext: ASSelfSizingContext) -> ASSelfSizingConfig? {
+		ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
 	}
 
 	override var collectionViewContentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior

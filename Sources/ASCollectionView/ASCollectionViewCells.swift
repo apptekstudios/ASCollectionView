@@ -4,20 +4,34 @@ import Foundation
 import SwiftUI
 
 @available(iOS 13.0, *)
-class ASCollectionViewCell: UICollectionViewCell
+protocol ASDataSourceConfigurableCell {
+	func configureAsEmpty()
+	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content)
+}
+
+@available(iOS 13.0, *)
+class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 {
 	var hostingController: ASHostingControllerProtocol?
 	{
 		didSet
 		{
-			let modifier = ASHostingControllerModifier(invalidateCellLayout: {
-				self.shouldInvalidateLayout = true
-				self.setNeedsLayout()
-			})
-			hostingController?.applyModifier(modifier)
+			guard hostingController !== oldValue else { return }
+			if let oldVC = oldValue?.viewController,
+				let oldParent = oldVC.parent
+			{
+				//Replace the old one if it was already visible (added to parent)
+				oldVC.removeFromParent()
+				oldVC.view.removeFromSuperview()
+				if let newVC = hostingController?.viewController {
+					oldParent.addChild(newVC)
+					contentView.addSubview(newVC.view)
+				}
+			}
 		}
 	}
 	
+	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: true, selfSizeVertically: true)
 	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	var invalidateLayout: (() -> Void)?
@@ -25,6 +39,30 @@ class ASCollectionViewCell: UICollectionViewCell
 
 	private(set) var id: ASCollectionViewItemUniqueID?
 
+	func configureAsEmpty() {
+		hostingController = nil
+	}
+	
+	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content)
+	{
+		self.id = itemID
+		
+		if let existingHC = hostingController as? ASHostingController<Content>
+		{
+			existingHC.setView(content)
+		}
+		else
+		{
+			let modifier = ASHostingControllerModifier(invalidateCellLayout: {
+				self.shouldInvalidateLayout = true
+				self.setNeedsLayout()
+			})
+			let newHC = ASHostingController<Content>(content, modifier: modifier)
+			hostingController = newHC
+		}
+	}
+	
+	
 	func setupFor(id: ASCollectionViewItemUniqueID, hostingController: ASHostingControllerProtocol?)
 	{
 		self.hostingController = hostingController
@@ -74,9 +112,6 @@ class ASCollectionViewCell: UICollectionViewCell
 		}
 	}
 
-	var selfSizeHorizontal: Bool = true
-	var selfSizeVertical: Bool = true
-
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
 		guard let hc = hostingController else
@@ -86,8 +121,8 @@ class ASCollectionViewCell: UICollectionViewCell
 		let size = hc.sizeThatFits(
 			in: targetSize,
 			maxSize: maxSizeForSelfSizing,
-			selfSizeHorizontal: selfSizeHorizontal,
-			selfSizeVertical: selfSizeVertical)
+			selfSizeHorizontal: selfSizingConfig.selfSizeHorizontally,
+			selfSizeVertical: selfSizingConfig.selfSizeVertically)
 		return size
 	}
 
@@ -164,6 +199,8 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 		hostingController?.viewController.view.frame = bounds
 		hostingController?.viewController.view.setNeedsLayout()
 	}
+	
+	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: true, selfSizeVertically: true)
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
@@ -171,8 +208,9 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 		let size = hc.sizeThatFits(
 			in: targetSize,
 			maxSize: maxSizeForSelfSizing,
-			selfSizeHorizontal: true,
-			selfSizeVertical: true)
+			selfSizeHorizontal: selfSizingConfig.selfSizeHorizontally,
+			selfSizeVertical: selfSizingConfig.selfSizeVertically)
+		
 		return size
 	}
 

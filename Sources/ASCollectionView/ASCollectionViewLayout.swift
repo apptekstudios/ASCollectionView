@@ -8,8 +8,7 @@ import UIKit
 @available(iOS 13.0, *)
 public protocol ASCollectionViewLayoutProtocol
 {
-	var selfSizeVertically: Bool { get }
-	var selfSizeHorizontally: Bool { get }
+	var selfSizingConfig: ASSelfSizingConfig { get }
 }
 
 // MARK: Public Typealias for layout closures
