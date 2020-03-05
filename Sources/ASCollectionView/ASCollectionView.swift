@@ -107,6 +107,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.initialScrollPosition) private var initialScrollPosition
+  @Environment(\.onPullToRefresh) private var onPullToRefresh
 	@Environment(\.collectionViewOnReachedBoundary) private var onReachedBoundary
 	@Environment(\.animateOnDataRefresh) private var animateOnDataRefresh
 	@Environment(\.attemptToMaintainScrollPositionOnOrientationChange) private var attemptToMaintainScrollPositionOnOrientationChange
@@ -159,6 +160,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		updateCollectionViewSettings(collectionViewController.collectionView, delegate: context.coordinator.delegate)
 		context.coordinator.updateLayout()
 		context.coordinator.updateContent(collectionViewController.collectionView, animated: animateOnDataRefresh, refreshExistingCells: true)
+        context.coordinator.configureRefreshControl(for: collectionViewController.collectionView)
 	}
 
 	func updateCollectionViewSettings(_ collectionView: UICollectionView, delegate: ASCollectionViewDelegate?)
@@ -365,6 +367,35 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
 			}
 		}
+        
+        func configureRefreshControl(for cv: UICollectionView)
+        {
+            guard parent.onPullToRefresh != nil else
+            {
+                if cv.refreshControl != nil
+                {
+                    cv.refreshControl = nil
+                }
+                return
+            }
+            if cv.refreshControl == nil
+            {
+                let refreshControl = UIRefreshControl()
+                refreshControl.addTarget(self, action: #selector(collectionViewDidPullToRefresh), for: .valueChanged)
+                cv.refreshControl = refreshControl
+            }
+        }
+        
+        @objc
+        public func collectionViewDidPullToRefresh()
+        {
+            guard let collectionView = collectionViewController?.collectionView else { return }
+            let endRefreshing: (() -> Void) = { [weak collectionView] in
+                collectionView?.refreshControl?.endRefreshing()
+            }
+            parent.onPullToRefresh?(endRefreshing)
+        }
+
 		
 		func onMoveFromParent() {
 			hasDoneInitialSetup = false
