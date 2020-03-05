@@ -18,6 +18,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 	{
 		case fixed(Int)
 		case adaptive(minWidth: CGFloat)
+		case perSection(((Int) -> ColumnCount))
 	}
 
 	public var numberOfColumns: ColumnCount = .adaptive(minWidth: 150)
@@ -49,13 +50,12 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		}
 	}
 
-	public var selfSizeVertically: Bool
-	{
-		if hasDelegate { return false }
-		else { return true } // No delegate, use autosizing
+	public var selfSizingConfig: ASSelfSizingConfig {
+		ASSelfSizingConfig(
+			selfSizeHorizontally: false,
+			selfSizeVertically: hasDelegate ? false : true
+		)
 	}
-
-	public let selfSizeHorizontally = false
 
 	private var cachedHeaderHeight: [Int: CGFloat] = [:]
 	private var cachedHeight: [IndexPath: CGFloat] = [:]
@@ -77,20 +77,24 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		CGSize(width: contentWidth, height: contentHeight)
 	}
 
-	var calculatedNumberOfColumns: Int
+	func calculateNumberOfColumns(sectionIndex: Int, setting: ColumnCount) -> Int
 	{
-		switch numberOfColumns
+		switch setting
 		{
 		case let .fixed(num):
 			return num
 		case let .adaptive(minWidth):
 			return Int(floor((contentWidth + columnSpacing) / (minWidth + columnSpacing)))
+		case let .perSection(callback):
+			let resolved = callback(sectionIndex)
+			return calculateNumberOfColumns(sectionIndex: sectionIndex, setting: resolved)
 		}
 	}
 
-	var columnWidth: CGFloat
+	func calculateColumnWidth(sectionIndex: Int) -> CGFloat
 	{
-		(contentWidth - (columnSpacing * CGFloat(calculatedNumberOfColumns - 1))) / CGFloat(calculatedNumberOfColumns)
+		let sectionColumnCount = calculateNumberOfColumns(sectionIndex: sectionIndex, setting: numberOfColumns)
+		return (contentWidth - (columnSpacing * CGFloat(sectionColumnCount - 1))) / CGFloat(sectionColumnCount)
 	}
 
 	var hasDelegate: Bool
@@ -104,7 +108,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		{
 			return delegate.heightForCell(
 				at: indexPath,
-				context: ASWaterfallLayout.CellLayoutContext(width: columnWidth))
+				context: ASWaterfallLayout.CellLayoutContext(width: calculateColumnWidth(sectionIndex: indexPath.section)))
 		}
 		return cachedHeight[indexPath] ?? estimatedItemHeight
 	}
@@ -130,7 +134,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		for section in sections
 		{
 			let sectionMinY = (0 ..< section).reduce(into: collectionView.adjustedContentInset.top) { $0 += cachedSectionHeight[$1] ?? 0 }
-			var columnHeights: [CGFloat] = .init(repeating: 0, count: calculatedNumberOfColumns)
+			var columnHeights: [CGFloat] = .init(repeating: 0, count: calculateNumberOfColumns(sectionIndex: section, setting: numberOfColumns))
 			
 			let headerHeight = getHeightForHeader(sectionIndex: section)
 			
@@ -145,6 +149,8 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 			cachedAttributes[headerIndexPath] = headerAttributes
 			
 			let sectionContentMinY = sectionMinY + headerHeight + itemSpacing
+			
+			let sectionColumnWidth = calculateColumnWidth(sectionIndex: section)
 
 			for indexPath in collectionView.allIndexPaths(inSection: section)
 			{
@@ -153,8 +159,8 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 				let minY = sectionContentMinY + columnHeights[targetColumn]
 				let sizeY = getHeight(for: indexPath)
 
-				let minX = (columnWidth + columnSpacing) * CGFloat(targetColumn)
-				let sizeX = columnWidth
+				let minX = (sectionColumnWidth + columnSpacing) * CGFloat(targetColumn)
+				let sizeX = sectionColumnWidth
 
 				// Set cached attributes
 				let attributes = UICollectionViewLayoutAttributes(forCellWith: indexPath)
