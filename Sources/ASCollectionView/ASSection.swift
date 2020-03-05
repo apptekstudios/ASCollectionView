@@ -75,12 +75,11 @@ public struct ASSection<SectionID: Hashable>
 			data: data,
 			dataIDKeyPath: dataIDKeyPath,
 			container: container,
-			onCellEvent: onCellEvent,
+			content: contentBuilder, onCellEvent: onCellEvent,
 			onDragDrop: onDragDropEvent,
 			itemProvider: itemProvider,
 			onSwipeToDelete: onSwipeToDelete,
-			contextMenuProvider: contextMenuProvider,
-			content: contentBuilder)
+			contextMenuProvider: contextMenuProvider)
 	}
 
 	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
@@ -197,7 +196,8 @@ public extension ASCollectionViewSection
 			content: { staticContent, _ in staticContent.view })
 	}
 
-	init(id: SectionID, @ViewArrayBuilder content: () -> ViewArrayBuilder.Wrapper) {
+	init(id: SectionID, @ViewArrayBuilder content: () -> ViewArrayBuilder.Wrapper)
+	{
 		self.init(id: id, container: { $0 }, content: content)
 	}
 
@@ -223,6 +223,19 @@ public extension ASCollectionViewSection
 	}
 }
 
+// MARK: Self-sizing config
+
+@available(iOS 13.0, *)
+public extension ASSection
+{
+	func selfSizingConfig(config: SelfSizingConfig?) -> Self
+	{
+		var section = self
+		section.dataSource.setSelfSizingConfig(config: config)
+		return section
+	}
+}
+
 // MARK: IDENTIFIABLE DATA SECTION
 
 @available(iOS 13.0, *)
@@ -230,7 +243,6 @@ public extension ASCollectionViewSection
 {
 	/**
 	 Initializes a  section with identifiable data
-
 	 - Parameters:
 	 	- id: The id for this section
 	 	- data: The data to display in the section. This initialiser expects data that conforms to 'Identifiable'
@@ -248,7 +260,7 @@ public extension ASCollectionViewSection
 		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
 		contextMenuProvider: ContextMenuProvider<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
-		 where DataCollection.Index == Int, DataCollection.Element: Identifiable
+		where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
 		self.init(id: id, data: data, dataID: \.id, container: container, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}
@@ -262,7 +274,7 @@ public extension ASCollectionViewSection
 		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
 		contextMenuProvider: ContextMenuProvider<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
-		 where DataCollection.Index == Int, DataCollection.Element: Identifiable
+		where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
 		self.init(id: id, data: data, container: { $0 }, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}

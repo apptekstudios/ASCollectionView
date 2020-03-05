@@ -4,20 +4,29 @@ import Foundation
 import SwiftUI
 
 @available(iOS 13.0, *)
-class ASTableViewCell: UITableViewCell
+class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 {
 	var hostingController: ASHostingControllerProtocol?
 	{
 		didSet
 		{
-			let modifier = ASHostingControllerModifier(invalidateCellLayout: {
-				self.shouldInvalidateLayout = true
-				self.setNeedsLayout()
-			})
-			hostingController?.applyModifier(modifier)
+			guard hostingController !== oldValue else { return }
+			if let oldVC = oldValue?.viewController,
+				let oldParent = oldVC.parent
+			{
+				// Replace the old one if it was already visible (added to parent)
+				oldVC.removeFromParent()
+				oldVC.view.removeFromSuperview()
+				if let newVC = hostingController?.viewController
+				{
+					oldParent.addChild(newVC)
+					contentView.addSubview(newVC.view)
+				}
+			}
 		}
 	}
-	
+
+	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
 	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	var invalidateLayout: (() -> Void)?
@@ -25,30 +34,49 @@ class ASTableViewCell: UITableViewCell
 
 	private(set) var id: ASCollectionViewItemUniqueID?
 
-	func setupFor(id: ASCollectionViewItemUniqueID, hostingController: ASHostingControllerProtocol?)
+	func configureAsEmpty()
 	{
-		self.hostingController = hostingController
-		self.id = id
-		selectionStyle = .none
+		hostingController = nil
+	}
+
+	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content)
+	{
+		id = itemID
+
+		if let existingHC = hostingController as? ASHostingController<Content>
+		{
+			existingHC.setView(content)
+		}
+		else
+		{
+			let modifier = ASHostingControllerModifier(invalidateCellLayout: { [weak self] in
+				self?.shouldInvalidateLayout = true
+				self?.setNeedsLayout()
+			})
+			let newHC = ASHostingController<Content>(content, modifier: modifier)
+			hostingController = newHC
+		}
 	}
 
 	func willAppear(in vc: UIViewController?)
 	{
 		hostingController.map
+		{
+			if $0.viewController.parent != vc
 			{
-				if $0.viewController.parent != vc {
-					$0.viewController.removeFromParent()
-					vc?.addChild($0.viewController)
-				}
-				if $0.viewController.view.superview != contentView {
-					$0.viewController.view.removeFromSuperview()
-					contentView.subviews.forEach { $0.removeFromSuperview() }
-					contentView.addSubview($0.viewController.view)
-				}
-				
-				setNeedsLayout()
-				
-				vc.map { hostingController?.viewController.didMove(toParent: $0) }
+				$0.viewController.removeFromParent()
+				vc?.addChild($0.viewController)
+			}
+			if $0.viewController.view.superview != contentView
+			{
+				$0.viewController.view.removeFromSuperview()
+				contentView.subviews.forEach { $0.removeFromSuperview() }
+				contentView.addSubview($0.viewController.view)
+			}
+
+			setNeedsLayout()
+
+			vc.map { hostingController?.viewController.didMove(toParent: $0) }
 		}
 	}
 
@@ -60,6 +88,7 @@ class ASTableViewCell: UITableViewCell
 	override func prepareForReuse()
 	{
 		hostingController = nil
+		isSelected = false
 	}
 
 	override func layoutSubviews()
@@ -73,8 +102,6 @@ class ASTableViewCell: UITableViewCell
 		}
 	}
 
-	var selfSizeVertical: Bool = true
-
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
 		guard let hc = hostingController else { return .zero }
@@ -82,7 +109,7 @@ class ASTableViewCell: UITableViewCell
 			in: targetSize,
 			maxSize: maxSizeForSelfSizing,
 			selfSizeHorizontal: false,
-			selfSizeVertical: selfSizeVertical)
+			selfSizeVertical: selfSizingConfig.selfSizeVertically)
 		return size
 	}
 
@@ -97,7 +124,8 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 {
 	var hostingController: ASHostingControllerProtocol?
 	private(set) var id: Int?
-	
+
+	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
 	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	override init(reuseIdentifier: String?)
@@ -134,20 +162,22 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	func willAppear(in vc: UIViewController?)
 	{
 		hostingController.map
+		{
+			if $0.viewController.parent != vc
 			{
-				if $0.viewController.parent != vc {
-					$0.viewController.removeFromParent()
-					vc?.addChild($0.viewController)
-				}
-				if $0.viewController.view.superview != contentView {
-					$0.viewController.view.removeFromSuperview()
-					contentView.subviews.forEach { $0.removeFromSuperview() }
-					contentView.addSubview($0.viewController.view)
-				}
-				
-				setNeedsLayout()
-				
-				vc.map { hostingController?.viewController.didMove(toParent: $0) }
+				$0.viewController.removeFromParent()
+				vc?.addChild($0.viewController)
+			}
+			if $0.viewController.view.superview != contentView
+			{
+				$0.viewController.view.removeFromSuperview()
+				contentView.subviews.forEach { $0.removeFromSuperview() }
+				contentView.addSubview($0.viewController.view)
+			}
+
+			setNeedsLayout()
+
+			vc.map { hostingController?.viewController.didMove(toParent: $0) }
 		}
 	}
 
@@ -173,8 +203,8 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		let size = hc.sizeThatFits(
 			in: targetSize,
 			maxSize: maxSizeForSelfSizing,
-			selfSizeHorizontal: true,
-			selfSizeVertical: true)
+			selfSizeHorizontal: false,
+			selfSizeVertical: selfSizingConfig.selfSizeVertically)
 		return size
 	}
 

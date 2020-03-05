@@ -1,7 +1,7 @@
 # file options
 
 --symlinks ignore
---swiftversion 5.1
+--swiftversion 5.2
 
 --exclude Package.swift
 

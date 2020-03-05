@@ -19,12 +19,7 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 		coordinator?.typeErasedDataForItem(at: indexPath) as? T
 	}
 
-	open func collectionView(cellShouldSelfSizeHorizontallyForItemAt indexPath: IndexPath) -> Bool?
-	{
-		nil
-	}
-
-	open func collectionView(cellShouldSelfSizeVerticallyForItemAt indexPath: IndexPath) -> Bool?
+	open func collectionViewSelfSizingSettings(forContext: ASSelfSizingContext) -> ASSelfSizingConfig?
 	{
 		nil
 	}
@@ -151,7 +146,8 @@ extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionVi
 
 @available(iOS 13.0, *)
 extension ASCollectionViewDelegate {
-	public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
-		self.coordinator?.collectionView(collectionView, contextMenuConfigurationForItemAt: indexPath, point: point)
+	public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
+	{
+		coordinator?.collectionView(collectionView, contextMenuConfigurationForItemAt: indexPath, point: point)
 	}
 }

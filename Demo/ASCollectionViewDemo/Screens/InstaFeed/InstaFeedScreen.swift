@@ -78,13 +78,13 @@ struct InstaFeedScreen: View
 	{
 		ASTableView(sections: sections)
 			.tableViewSeparatorsEnabled(false)
-			.tableViewOnPullToRefresh { endRefreshing in
+			.onPullToRefresh { endRefreshing in
 				print("PULL TO REFRESH")
 				Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
 					endRefreshing()
 				}
 			}
-		.tableViewOnReachedBottom
+			.tableViewOnReachedBottom
 		{
 			self.loadMoreContent() // REACHED BOTTOM, LOADING MORE CONTENT
 		}
