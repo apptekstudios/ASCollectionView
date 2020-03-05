@@ -191,7 +191,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		var parent: ASCollectionView
 		var delegate: ASCollectionViewDelegate?
 
-		var collectionViewController: AS_CollectionViewController?
+		weak var collectionViewController: AS_CollectionViewController?
 
 		var dataSource: ASCollectionViewDiffableDataSource<SectionID, ASCollectionViewItemUniqueID>?
 
@@ -247,15 +247,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			registerSupplementaries(forCollectionView: cv)
 
 			dataSource = .init(collectionView: cv)
-			{ (collectionView, indexPath, itemID) -> UICollectionViewCell? in
-				guard
-					let cell = collectionView.dequeueReusableCell(withReuseIdentifier: self.cellReuseID, for: indexPath) as? Cell
-				else { return nil }
+			{ [weak self] (collectionView, indexPath, itemID) -> UICollectionViewCell? in
+				guard let self = self else { return nil }
+					
+				guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: self.cellReuseID, for: indexPath) as? Cell
+					else { return nil }
 				
 				let isSelected = collectionView.indexPathsForSelectedItems?.contains(indexPath) ?? false
 		
-				cell.invalidateLayout = {
-					collectionView.collectionViewLayout.invalidateLayout()
+				cell.invalidateLayout = { [weak collectionView] in
+					collectionView?.collectionViewLayout.invalidateLayout()
 				}
 				cell.maxSizeForSelfSizing = ASOptionalSize(width: self.parent.allowCellWidthToExceedCollectionContentSize ? nil : collectionView.contentSize.width,
 														   height: self.parent.allowCellHeightToExceedCollectionContentSize ? nil : collectionView.contentSize.height)
@@ -267,10 +268,15 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
 					?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizingConfig
 					?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
+				
+				//Configure cell
+				self.section(forItemID: itemID)?.dataSource.configureCell(cell, forItemID: itemID, isSelected: isSelected)
 
 				return cell
 			}
-			dataSource?.supplementaryViewProvider = { (cv, kind, indexPath) -> UICollectionReusableView? in
+			dataSource?.supplementaryViewProvider = { [weak self] (cv, kind, indexPath) -> UICollectionReusableView? in
+				guard let self = self else { return nil}
+				
 				guard self.supplementaryKinds().contains(kind) else
 				{
 					let emptyView = cv.dequeueReusableSupplementaryView(ofKind: self.supplementaryEmptyKind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
@@ -740,12 +746,13 @@ extension ASCollectionView.Coordinator
 		prefetchSubscription = queuePrefetch
 			.collect(.byTime(DispatchQueue.main, 0.1)) // .throttle CRASHES on 13.1, fixed from 13.3 but still using .collect for 13.1 compatibility
 			.compactMap
-		{ _ in
-			self.collectionViewController?.collectionView.indexPathsForVisibleItems
+		{ [weak collectionViewController] _ in
+			collectionViewController?.collectionView.indexPathsForVisibleItems
 		}
 		.receive(on: DispatchQueue.global(qos: .background))
 		.map
-		{ visibleIndexPaths -> [Int: [IndexPath]] in
+		{ [weak self] visibleIndexPaths -> [Int: [IndexPath]] in
+			guard let self = self else { return [:] }
 			let visibleIndexPathsBySection = Dictionary(grouping: visibleIndexPaths) { $0.section }.compactMapValues
 			{ (indexPaths) -> (section: Int, first: Int, last: Int)? in
 				guard let first = indexPaths.min(), let last = indexPaths.max() else { return nil }
@@ -787,17 +794,17 @@ extension ASCollectionView.Coordinator
 			return toPrefetch
 		}
 		.sink
-		{ prefetch in
+		{ [weak self] prefetch in
+			guard let self = self else { return }
 			prefetch.forEach
 			{ sectionIndex, toPrefetch in
 				if !toPrefetch.isEmpty
 				{
 					self.parent.sections[safe: sectionIndex]?.dataSource.prefetch(toPrefetch)
 				}
-				let toCancel = Array(self.currentlyPrefetching.filter { $0.section == sectionIndex }.subtracting(toPrefetch))
-				if !toCancel.isEmpty
-				{
-					self.parent.sections[safe: sectionIndex]?.dataSource.cancelPrefetch(toCancel)
+				let toCancel = self.currentlyPrefetching.filter { $0.section == sectionIndex }.subtracting(toPrefetch)
+				if !toCancel.isEmpty {
+					self.parent.sections[safe: sectionIndex]?.dataSource.cancelPrefetch(Array(toCancel))
 				}
 			}
 

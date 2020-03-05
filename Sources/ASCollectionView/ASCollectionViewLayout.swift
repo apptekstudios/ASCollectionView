@@ -77,8 +77,8 @@ public struct ASCollectionLayout<SectionID: Hashable>
 			config.scrollDirection = scrollDirection
 			config.interSectionSpacing = interSectionSpacing
 
-			let sectionProvider: UICollectionViewCompositionalLayoutSectionProvider = { sectionIndex, layoutEnvironment -> NSCollectionLayoutSection in
-				guard let sectionID = coordinator.sectionID(fromSectionIndex: sectionIndex) else { return NSCollectionLayoutSection.placeholder(environment: layoutEnvironment, primaryScrollDirection: scrollDirection) }
+			let sectionProvider: UICollectionViewCompositionalLayoutSectionProvider = { [weak coordinator] sectionIndex, layoutEnvironment -> NSCollectionLayoutSection in
+				guard let sectionID = coordinator?.sectionID(fromSectionIndex: sectionIndex) else { return NSCollectionLayoutSection.placeholder(environment: layoutEnvironment, primaryScrollDirection: scrollDirection) }
 
 				return layoutClosure(sectionID).makeLayoutSection(environment: layoutEnvironment, primaryScrollDirection: scrollDirection)
 			}

@@ -53,9 +53,9 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		}
 		else
 		{
-			let modifier = ASHostingControllerModifier(invalidateCellLayout: {
-				self.shouldInvalidateLayout = true
-				self.setNeedsLayout()
+			let modifier = ASHostingControllerModifier(invalidateCellLayout: { [weak self] in
+				self?.shouldInvalidateLayout = true
+				self?.setNeedsLayout()
 			})
 			let newHC = ASHostingController<Content>(content, modifier: modifier)
 			hostingController = newHC
