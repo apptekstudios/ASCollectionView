@@ -8,7 +8,7 @@ internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func configureCell(_ cell: ASDataSourceConfigurableCell, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
+	func configureCell(_ cell: ASDataSourceConfigurableCell, usingCachedController cachedHC: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
@@ -26,10 +26,6 @@ internal protocol ASSectionDataSourceProtocol
 	var dropEnabled: Bool { get }
 
 	mutating func setSelfSizingConfig(config: SelfSizingConfig?)
-
-	var estimatedRowHeight: CGFloat? { get set }
-	var estimatedHeaderHeight: CGFloat? { get set }
-	var estimatedFooterHeight: CGFloat? { get set }
 }
 
 @available(iOS 13.0, *)
@@ -98,11 +94,6 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var contextMenuProvider: ContextMenuProvider<DataCollection.Element>?
 	var selfSizingConfig: SelfSizingConfig?
 
-	// Only relevant for ASTableView
-	public var estimatedRowHeight: CGFloat?
-	public var estimatedHeaderHeight: CGFloat?
-	public var estimatedFooterHeight: CGFloat?
-
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
 
@@ -114,7 +105,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
 	}
 
-	func configureCell(_ cell: ASDataSourceConfigurableCell, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
+	func configureCell(_ cell: ASDataSourceConfigurableCell, usingCachedController cachedHC: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
 	{
 		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else
 		{
@@ -124,7 +115,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
 		let content = container(view)
 
-		cell.configureHostingController(forItemID: itemID, content: content)
+		cell.configureHostingController(forItemID: itemID, content: content, usingCachedController: cachedHC)
 	}
 
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?

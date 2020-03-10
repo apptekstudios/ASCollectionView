@@ -39,10 +39,14 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		hostingController = nil
 	}
 
-	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content)
+	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content, usingCachedController cachedHC: ASHostingControllerProtocol?)
 	{
 		id = itemID
 
+		if cachedHC != nil {
+			hostingController = cachedHC
+		}
+		
 		if let existingHC = hostingController as? ASHostingController<Content>
 		{
 			existingHC.setView(content)

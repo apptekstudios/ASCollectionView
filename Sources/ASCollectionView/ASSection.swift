@@ -45,6 +45,9 @@ public struct ASSection<SectionID: Hashable>
 	var estimatedRowHeight: CGFloat?
 	var estimatedHeaderHeight: CGFloat?
 	var estimatedFooterHeight: CGFloat?
+	
+	
+	var shouldCacheCells: Bool = false
 
 	/**
 	 Initializes a  section with data
@@ -167,6 +170,14 @@ public extension ASCollectionViewSection
 		section.estimatedRowHeight = rowHeight
 		section.estimatedHeaderHeight = headerHeight
 		section.estimatedFooterHeight = footerHeight
+		return section
+	}
+	
+	// Use this modifier to make a section's cells be cached even when off-screen. This is useful for cells containing nested collection views
+	func cacheCells() -> Self
+	{
+		var section = self
+		section.shouldCacheCells = true
 		return section
 	}
 }
