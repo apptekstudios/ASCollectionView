@@ -326,7 +326,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			setupPrefetching()
 		}
 
-		func populateDataSource(animated: Bool = true)
+		func populateDataSource(animated: Bool = true, isInitialLoad: Bool = false)
 		{
 			var snapshot = NSDiffableDataSourceSnapshot<SectionID, ASCollectionViewItemUniqueID>()
 			snapshot.appendSections(parent.sections.map { $0.id })
@@ -334,7 +334,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			{
 				snapshot.appendItems($0.itemIDs, toSection: $0.id)
 			}
-			dataSource?.apply(snapshot, animatingDifferences: animated)
+			dataSource?.apply(snapshot, animatingDifferences: animated, isInitialLoad: isInitialLoad)
 			{
 				self.collectionViewController.map { self.didUpdateContentSize($0.collectionView.contentSize) }
 			}
@@ -380,7 +380,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				hasDoneInitialSetup = true
 
 				// Populate data source
-				populateDataSource(animated: false)
+				populateDataSource(animated: false, isInitialLoad: true)
 
 				// Set initial scroll position
 				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
@@ -1053,7 +1053,7 @@ public extension ASCollectionView
 @available(iOS 13.0, *)
 class ASCollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: UICollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType: Hashable, ItemIdentifierType: Hashable
 {
-	override func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil)
+	func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, isInitialLoad: Bool = false, completion: (() -> Void)? = nil)
 	{
 		if animatingDifferences
 		{
@@ -1062,7 +1062,7 @@ class ASCollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierTy
 		else
 		{
 			UIView.performWithoutAnimation {
-				super.apply(snapshot, animatingDifferences: false, completion: completion)
+				super.apply(snapshot, animatingDifferences: !isInitialLoad, completion: completion) // Animation must be true to get diffing. However we have disabled animation using .performWithoutAnimation
 			}
 		}
 	}
