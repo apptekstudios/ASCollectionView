@@ -27,7 +27,7 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 {
 	init(_ view: ViewType, modifier: ASHostingControllerModifier = ASHostingControllerModifier())
 	{
-		hostedView = view
+		self.hostedView = view
 		self.modifier = modifier
 		uiHostingController = .init(rootView: view.modifier(modifier))
 	}

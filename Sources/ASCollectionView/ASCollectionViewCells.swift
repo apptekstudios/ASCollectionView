@@ -17,19 +17,12 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	{
 		didSet
 		{
-			guard hostingController !== oldValue else { return }
-			if let oldVC = oldValue?.viewController,
-				let oldParent = oldVC.parent,
-				oldVC.view.superview == contentView
+			guard hostingController !== oldValue, let hc = hostingController else { return }
+			if hc.viewController.view.superview != contentView
 			{
-				// Replace the old one if it was already visible (added to parent)
-				oldVC.removeFromParent()
-				oldVC.view.removeFromSuperview()
-				if let newVC = hostingController?.viewController
-				{
-					oldParent.addChild(newVC)
-					contentView.addSubview(newVC.view)
-				}
+				hc.viewController.view.removeFromSuperview()
+				contentView.subviews.forEach { $0.removeFromSuperview() }
+				contentView.addSubview(hc.viewController.view)
 			}
 		}
 	}
@@ -68,12 +61,6 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 			let newHC = ASHostingController<Content>(content, modifier: modifier)
 			hostingController = newHC
 		}
-	}
-
-	func setupFor(id: ASCollectionViewItemUniqueID, hostingController: ASHostingControllerProtocol?)
-	{
-		self.hostingController = hostingController
-		self.id = id
 	}
 
 	func willAppear(in vc: UIViewController)
@@ -128,6 +115,7 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		{
 			return CGSize(width: 1, height: 1)
 		} // Can't return .zero as UICollectionViewLayout will crash
+		
 		let size = hc.sizeThatFits(
 			in: targetSize,
 			maxSize: maxSizeForSelfSizing,
