@@ -1052,18 +1052,4 @@ public extension ASCollectionView
 
 @available(iOS 13.0, *)
 class ASCollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: UICollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType: Hashable, ItemIdentifierType: Hashable
-{
-	override func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil)
-	{
-		if animatingDifferences
-		{
-			super.apply(snapshot, animatingDifferences: true, completion: completion)
-		}
-		else
-		{
-			UIView.performWithoutAnimation {
-				super.apply(snapshot, animatingDifferences: false, completion: completion)
-			}
-		}
-	}
-}
+{ }

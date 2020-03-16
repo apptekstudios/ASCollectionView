@@ -19,7 +19,8 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		{
 			guard hostingController !== oldValue else { return }
 			if let oldVC = oldValue?.viewController,
-				let oldParent = oldVC.parent
+				let oldParent = oldVC.parent,
+				oldVC.view.superview == contentView
 			{
 				// Replace the old one if it was already visible (added to parent)
 				oldVC.removeFromParent()
@@ -105,14 +106,15 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	override func prepareForReuse()
 	{
 		isSelected = false
-		hostingController = nil
 	}
 
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
-		hostingController?.viewController.view.frame = contentView.bounds
-		hostingController?.viewController.view.setNeedsLayout()
+		if hostingController?.viewController.view.frame != contentView.bounds {
+			hostingController?.viewController.view.frame = contentView.bounds
+			hostingController?.viewController.view.setNeedsLayout()
+		}
 		if shouldInvalidateLayout
 		{
 			shouldInvalidateLayout = false
