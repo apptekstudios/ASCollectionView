@@ -20,7 +20,7 @@ Pod::Spec.new do |s|
   s.source           = { :git => 'https://github.com/apptekstudios/ASCollectionView.git', :tag => s.version.to_s }
 
   s.ios.deployment_target = '13.0'
-  s.swift_versions = '5.1'
+  s.swift_versions = '5.2'
   s.source_files = 'Sources/ASCollectionView/**/*'
 
 end
