@@ -24,6 +24,7 @@ extension ASCollectionView where SectionID == Int
 				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
 		}
 	}
+	
 
 	/**
 	 Initializes a  collection view with a single section of static content
@@ -73,8 +74,8 @@ extension ASCollectionView where SectionID == Int
 @available(iOS 13.0, *)
 public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentable, ContentSize
 {
+	
 	// MARK: Type definitions
-
 	public typealias Section = ASCollectionViewSection<SectionID>
 	public typealias Layout = ASCollectionLayout<SectionID>
 
@@ -88,7 +89,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
 
-	var contentSize: Binding<CGSize?>?
+	var contentSizeTracker: ContentSizeTracker?
 
 	var shouldInvalidateLayoutOnStateChange: Bool = false
 	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
@@ -647,22 +648,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			guard let cv = collectionViewController?.collectionView, cv.contentSize != lastContentSize else { return }
 			lastContentSize = cv.contentSize
-			if let contentSizeBinding = parent.contentSize, contentSizeBinding.wrappedValue != size
-			{
-				DispatchQueue.main.async
-				{
-					if contentSizeBinding.wrappedValue == nil
-					{
-						// Initial size setting, don't animate
-						contentSizeBinding.wrappedValue = size
-					}
-					else
-					{
-						// Animate change
-						contentSizeBinding.animation().wrappedValue = size
-					}
-				}
-			}
+			parent.contentSizeTracker?.contentSize = size
 		}
 
 		// MARK: Variables used for the custom prefetching implementation
@@ -929,19 +915,15 @@ public class AS_CollectionViewController: UIViewController
 			coordinator?.onMoveFromParent()
 		}
 	}
+	
+	public override func loadView() {
+		view = collectionView
+	}
 
 	public override func viewDidLoad()
 	{
 		super.viewDidLoad()
 		view.backgroundColor = .clear
-		view.addSubview(collectionView)
-		collectionView.backgroundColor = .clear
-
-		collectionView.translatesAutoresizingMaskIntoConstraints = false
-		NSLayoutConstraint.activate([collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
-									 collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
-									 collectionView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
-									 collectionView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)])
 	}
 
 	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
@@ -981,10 +963,21 @@ public class AS_CollectionViewController: UIViewController
 		super.viewDidLayoutSubviews()
 		coordinator?.didUpdateContentSize(collectionView.contentSize)
 	}
+	
+	public override var preferredContentSize: CGSize {
+		get { super.preferredContentSize }
+		set {
+			super.preferredContentSize = newValue
+		}
+	}
+	
+	public override func size(forChildContentContainer container: UIContentContainer, withParentContainerSize parentSize: CGSize) -> CGSize {
+		super.size(forChildContentContainer: container, withParentContainerSize: parentSize)
+	}
 }
 
 @available(iOS 13.0, *)
-public class AS_UICollectionView: UICollectionView
+class AS_UICollectionView: UICollectionView
 {
 	weak var coordinator: ASCollectionViewCoordinator?
 

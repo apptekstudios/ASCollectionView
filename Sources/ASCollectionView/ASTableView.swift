@@ -64,8 +64,9 @@ extension ASTableView where SectionID == Int
 public typealias ASTableViewSection = ASSection
 
 @available(iOS 13.0, *)
-public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
+public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, ContentSize
 {
+	
 	// MARK: Type definitions
 
 	public typealias Section = ASTableViewSection<SectionID>
@@ -87,6 +88,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	@Environment(\.editMode) private var editMode
 	@Environment(\.animateOnDataRefresh) private var animateOnDataRefresh
 
+	//Other
+	var contentSizeTracker: ContentSizeTracker?
+	
 	/**
 	 Initializes a  table view with the given sections
 
@@ -237,6 +241,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				snapshot.appendItems($0.itemIDs, toSection: $0.id)
 			}
 			dataSource?.apply(snapshot, animatingDifferences: animated)
+			{
+				self.tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
+			}
 		}
 
 		func updateContent(_ tv: UITableView, animated: Bool, refreshExistingCells: Bool)
@@ -261,7 +268,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			updateSelectionBindings(tv)
 		}
 
-		func onMoveToParent(tableViewController: AS_TableViewController)
+		func onMoveToParent()
 		{
 			if !hasDoneInitialSetup
 			{
@@ -271,7 +278,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				populateDataSource(animated: false)
 
 				// Check if reached bottom already
-				checkIfReachedBottom(tableViewController.tableView)
+				tableViewController.map { checkIfReachedBottom($0.tableView) }
 			}
 		}
 
@@ -279,6 +286,17 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		{
 			hasDoneInitialSetup = false
 		}
+		
+		// MARK: Function for updating contentSize binding
+		
+		var lastContentSize: CGSize = .zero
+		func didUpdateContentSize(_ size: CGSize)
+		{
+			guard let tv = tableViewController?.tableView, tv.contentSize != lastContentSize else { return }
+			lastContentSize = tv.contentSize
+			parent.contentSizeTracker?.contentSize = size
+		}
+
 
 		func configureRefreshControl(for tv: UITableView)
 		{
@@ -535,8 +553,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 @available(iOS 13.0, *)
 protocol ASTableViewCoordinator: AnyObject
 {
-	func onMoveToParent(tableViewController: AS_TableViewController)
+	func onMoveToParent()
 	func onMoveFromParent()
+	func didUpdateContentSize(_ size: CGSize)
 }
 
 // MARK: ASTableView specific header modifiers
@@ -562,11 +581,15 @@ public extension ASTableViewSection {
 @available(iOS 13.0, *)
 public class AS_TableViewController: UIViewController
 {
-	weak var coordinator: ASTableViewCoordinator?
+	weak var coordinator: ASTableViewCoordinator? {
+		didSet {
+			tableView.coordinator = coordinator
+		}
+	}
 	var style: UITableView.Style
 
-	lazy var tableView: UITableView = {
-		let tableView = UITableView(frame: .zero, style: style)
+	lazy var tableView: AS_UITableView = {
+		let tableView = AS_UITableView(frame: .zero, style: style)
 		tableView.tableHeaderView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) // Remove unnecessary padding in Style.grouped/insetGrouped
 		tableView.tableFooterView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) // Remove separators for non-existent cells
 		return tableView
@@ -595,18 +618,38 @@ public class AS_TableViewController: UIViewController
 									 tableView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
 									 tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)])
 	}
+	
+	
+	public override func viewDidLayoutSubviews()
+	{
+		super.viewDidLayoutSubviews()
+		coordinator?.didUpdateContentSize(tableView.contentSize)
+	}
 
 	public override func didMove(toParent parent: UIViewController?)
 	{
 		super.didMove(toParent: parent)
 		if parent != nil
 		{
-			coordinator?.onMoveToParent(tableViewController: self)
+			coordinator?.onMoveToParent()
 		}
 		else
 		{
 			coordinator?.onMoveFromParent()
 		}
+	}
+}
+
+@available(iOS 13.0, *)
+class AS_UITableView: UITableView {
+	weak var coordinator: ASTableViewCoordinator?
+	
+	public override func didMoveToWindow()
+	{
+		super.didMoveToWindow()
+		
+		// Intended as a temporary workaround for a SwiftUI bug present in 13.3 -> the UIViewController is not moved to a parent when embedded in a list/scrollview
+		coordinator?.onMoveToParent()
 	}
 }
 

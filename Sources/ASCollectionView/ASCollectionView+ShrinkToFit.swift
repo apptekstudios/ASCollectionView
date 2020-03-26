@@ -5,7 +5,7 @@ import SwiftUI
 @available(iOS 13.0, *)
 protocol ContentSize
 {
-	var contentSize: Binding<CGSize?>? { get set }
+	var contentSizeTracker: ContentSizeTracker? { get set }
 }
 
 @available(iOS 13.0, *)
@@ -28,38 +28,78 @@ public enum ShrinkDimension
 @available(iOS 13.0, *)
 struct SelfSizingWrapper<Content: View & ContentSize>: View
 {
-	var contentSize: Binding<CGSize?>
+	@State var contentSizeTracker = ContentSizeTracker()
+	
 	var content: Content
 	var shrinkDirection: ShrinkDimension
-	var isEnabled: Bool
-
-	init(_ content: Content, isEnabled: Bool, contentSize: Binding<CGSize?>, shrinkDirection: ShrinkDimension)
-	{
-		self.content = content
-		self.contentSize = contentSize
-		self.shrinkDirection = shrinkDirection
-		self.isEnabled = isEnabled
-
-		self.content.contentSize = contentSize
+	var isEnabled: Bool = true
+	var shouldForce: Bool = false
+	
+	var modifiedContent: Content {
+		var content = self.content
+		content.contentSizeTracker = self.contentSizeTracker
+		return content
 	}
 
 	var body: some View
 	{
+		SubWrapper(contentSizeTracker: contentSizeTracker, content: modifiedContent, shrinkDirection: shrinkDirection, isEnabled: isEnabled, shouldForce: shouldForce)
+	}
+}
+
+@available(iOS 13.0, *)
+struct SubWrapper<Content: View & ContentSize>: View {
+	@ObservedObject
+	var contentSizeTracker: ContentSizeTracker
+	
+	var content: Content
+	var shrinkDirection: ShrinkDimension
+	var isEnabled: Bool
+	var shouldForce: Bool
+	
+	var body: some View
+	{
 		content
 			.frame(
-				idealWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
-				maxWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSize.wrappedValue?.width : nil,
-				idealHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
-				maxHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSize.wrappedValue?.height : nil,
+				minWidth: isEnabled && shouldForce && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
+				idealWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
+				maxWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
+				minHeight: isEnabled && shouldForce && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
+				idealHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
+				maxHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
 				alignment: .topLeading)
 	}
 }
 
 @available(iOS 13.0, *)
+class ContentSizeTracker: ObservableObject {
+	@Published
+	var contentSize: CGSize?
+}
+
+
+@available(iOS 13.0, *)
 public extension ASCollectionView
 {
-	func shrinkToContentSize(isEnabled: Bool, _ contentSize: Binding<CGSize?>, dimensionToShrink: ShrinkDimension) -> some View
+	func shrinkToContentSize(isEnabled: Bool = true, dimension: ShrinkDimension) -> some View
 	{
-		SelfSizingWrapper(self, isEnabled: isEnabled, contentSize: contentSize, shrinkDirection: dimensionToShrink)
+		SelfSizingWrapper(content: self, shrinkDirection: dimension, isEnabled: isEnabled)
+	}
+	func forceContentSize(isEnabled: Bool = true, dimension: ShrinkDimension) -> some View
+	{
+		SelfSizingWrapper(content: self, shrinkDirection: dimension, isEnabled: isEnabled, shouldForce: true)
+	}
+}
+
+@available(iOS 13.0, *)
+public extension ASTableView
+{
+	func shrinkToContentSize(isEnabled: Bool = true) -> some View
+	{
+		SelfSizingWrapper(content: self, shrinkDirection: .vertical, isEnabled: isEnabled)
+	}
+	func forceContentSize(isEnabled: Bool = true) -> some View
+	{
+		SelfSizingWrapper(content: self, shrinkDirection:  .vertical, isEnabled: isEnabled, shouldForce: true)
 	}
 }

@@ -47,7 +47,7 @@ struct TagsScreen: View
 				fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
 				return fl
 			}
-			.shrinkToContentSize(isEnabled: shrinkToSize, $contentSize, dimensionToShrink: .vertical)
+			.shrinkToContentSize(isEnabled: shrinkToSize, dimension: .vertical)
 			.collectionViewAllowCellWidthToExceedCollectionContentSize(false)
 
 			if shrinkToSize
