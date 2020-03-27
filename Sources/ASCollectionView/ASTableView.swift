@@ -87,7 +87,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.editMode) private var editMode
 	@Environment(\.animateOnDataRefresh) private var animateOnDataRefresh
-
+	
 	//Other
 	var contentSizeTracker: ContentSizeTracker?
 	
@@ -167,6 +167,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		private var hasDoneInitialSetup = false
 		
 		// MARK: Caching
+		private var visibleHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 		private var cachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 
 		typealias Cell = ASTableViewCell
@@ -197,7 +198,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			dataSource = .init(tableView: tv)
 			{ [weak self] (tableView, indexPath, itemID) -> UITableViewCell? in
 				guard let self = self else { return nil }
-				let isSelected = tableView.indexPathsForSelectedRows?.contains(indexPath) ?? false
 				guard
 					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell
 				else { return nil }
@@ -216,13 +216,14 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					section.dataSource.getSelfSizingSettings(context: selfSizingContext)
 						?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
 
-				// Check if there is a cached host controller
-				let cachedHC = self.cachedHostingControllers[itemID]
+				//Set itemID
+				cell.itemID = itemID
 				
-				// Configure cell
-				section.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: isSelected)
-
-				// Cache the HC if needed
+				// Update hostingController
+				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: self.cachedHostingControllers[itemID] ?? self.visibleHostingControllers[itemID])
+				
+				// Cache the HC
+				self.visibleHostingControllers[itemID] = cell.hostingController
 				if section.shouldCacheCells {
 					self.cachedHostingControllers[itemID] = cell.hostingController
 				}
@@ -251,21 +252,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			guard hasDoneInitialSetup else { return }
 			if refreshExistingCells
 			{
-				tv.visibleCells.forEach
-				{ cell in
-					guard
-						let cell = cell as? Cell,
-						let itemID = cell.id
-					else { return }
-
-					// Check if there is a cached host controller
-					let cachedHC = self.cachedHostingControllers[itemID]
-					// Configure cell
-					section(forItemID: itemID)?.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: cell.isSelected)
+				self.visibleHostingControllers.forEach { (itemID, hc) in
+					section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
 				}
 			}
 			populateDataSource(animated: animated)
-			updateSelectionBindings(tv)
 		}
 
 		func onMoveToParent()
@@ -284,7 +275,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		func onMoveFromParent()
 		{
-			hasDoneInitialSetup = false
+			
 		}
 		
 		// MARK: Function for updating contentSize binding
@@ -333,7 +324,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
-			(cell as? Cell)?.willAppear(in: tableViewController)
+			tableViewController.map { (cell as? Cell)?.willAppear(in: $0) }
 			parent.sections[safe: indexPath.section]?.dataSource.onAppear(indexPath)
 		}
 
@@ -341,6 +332,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		{
 			(cell as? Cell)?.didDisappear()
 			parent.sections[safe: indexPath.section]?.dataSource.onDisappear(indexPath)
+			(cell as? Cell)?.itemID.map { visibleHostingControllers[$0] = nil }
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
@@ -406,47 +398,25 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
 		{
-			guard
-				let cell = tableView.cellForRow(at: indexPath) as? Cell,
-				let itemID = cell.id
-			else { return }
 			updateSelectionBindings(tableView)
-			
-			// Check if there is a cached host controller
-			let cachedHC = self.cachedHostingControllers[itemID]
-			// Configure cell
-			section(forItemID: itemID)?.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
 		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath)
 		{
-			guard
-				let cell = tableView.cellForRow(at: indexPath) as? Cell,
-				let itemID = cell.id
-			else { return }
 			updateSelectionBindings(tableView)
-			
-			// Check if there is a cached host controller
-			let cachedHC = self.cachedHostingControllers[itemID]
-			// Configure cell
-			section(forItemID: itemID)?.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
 		func updateSelectionBindings(_ tableView: UITableView)
 		{
-			guard let selectedItemsBinding = parent.selectedItems else { return }
 			let selected = tableView.indexPathsForSelectedRows ?? []
 			let selectedSafe = selected.filter { parent.sections.containsIndex($0.section) }
-			let selectedBySection = Dictionary(grouping: selectedSafe)
-			{
-				parent.sections[$0.section].id
-			}.mapValues
-			{
-				IndexSet($0.map { $0.item })
+			Dictionary(grouping: selectedSafe) { $0.section }
+				.mapValues
+				{
+					Set($0.map { $0.item })
 			}
-			DispatchQueue.main.async
-			{
-				selectedItemsBinding.wrappedValue = selectedBySection
+			.forEach { (sectionID, indices) in
+				parent.sections[safe: sectionID]?.dataSource.updateSelection(indices)
 			}
 		}
 

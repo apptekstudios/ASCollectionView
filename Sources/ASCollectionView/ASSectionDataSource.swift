@@ -8,7 +8,8 @@ internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func configureCell(_ cell: ASDataSourceConfigurableCell, usingCachedController cachedHC: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
+	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
+	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
@@ -21,6 +22,9 @@ internal protocol ASSectionDataSourceProtocol
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
+	
+	func isSelected(index: Int) -> Bool
+	func updateSelection(_ indices: Set<Int>)
 
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
@@ -86,36 +90,52 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var container: (Content) -> Container
 	var content: (DataCollection.Element, CellContext) -> Content
 
-	var supplementaryViews: [String: AnyView] = [:]
+	var selectedItems: Binding<Set<Int>>?
+	
 	var onCellEvent: OnCellEvent<DataCollection.Element>?
 	var onDragDrop: OnDragDrop<DataCollection.Element>?
 	var itemProvider: ItemProvider<DataCollection.Element>?
 	var onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>?
 	var contextMenuProvider: ContextMenuProvider<DataCollection.Element>?
 	var selfSizingConfig: SelfSizingConfig?
+	
 
+	var supplementaryViews: [String: AnyView] = [:]
+	
+	
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
 
-	func cellContext(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> CellContext
+	func cellContext(for index: Int) -> CellContext
 	{
 		CellContext(
-			isSelected: isSelected,
-			isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
-			isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
+			isSelected: isSelected(index: index),
+			isFirstInSection: index == data.startIndex,
+			isLastInSection: index == data.endIndex - 1)
 	}
-
-	func configureCell(_ cell: ASDataSourceConfigurableCell, usingCachedController cachedHC: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
-	{
-		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else
-		{
-			cell.configureAsEmpty()
-			return
+	
+	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol? {
+		guard let content = getContent(forItemID: itemID) else { return nil }
+		
+		if let hc = (existingHC as? ASHostingController<Container>) {
+			hc.setView(content)
+			return hc
+		} else {
+			return ASHostingController(content)
 		}
-		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
-		let content = container(view)
-
-		cell.configureHostingController(forItemID: itemID, content: content, usingCachedController: cachedHC)
+	}
+	
+	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID) {
+		guard let hc = hc as? ASHostingController<Container> else { return }
+		guard let content = getContent(forItemID: itemID) else { return }
+		hc.setView(content)
+	}
+	
+	func getContent(forItemID itemID: ASCollectionViewItemUniqueID) -> Container? {
+		guard let itemIndex = data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
+		let item = data[itemIndex]
+		let view = content(item, cellContext(for: itemIndex))
+		return container(view)
 	}
 
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
@@ -220,6 +240,17 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
 	{
 		selfSizingConfig?(context)
+	}
+	
+	func isSelected(index: Int) -> Bool {
+		selectedItems?.wrappedValue.contains(index) ?? false
+	}
+	
+	func updateSelection(_ indices: Set<Int>)
+	{
+		DispatchQueue.main.async {
+			self.selectedItems?.wrappedValue = Set(indices)
+		}
 	}
 }
 

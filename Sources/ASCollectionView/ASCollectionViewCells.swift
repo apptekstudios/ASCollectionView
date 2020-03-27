@@ -6,8 +6,7 @@ import SwiftUI
 @available(iOS 13.0, *)
 protocol ASDataSourceConfigurableCell
 {
-	func configureAsEmpty()
-	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content, usingCachedController: ASHostingControllerProtocol?)
+	var hostingController: ASHostingControllerProtocol? { get set }
 }
 
 @available(iOS 13.0, *)
@@ -17,12 +16,13 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	{
 		didSet
 		{
-			guard hostingController !== oldValue, let hc = hostingController else { return }
-			if hc.viewController.view.superview != contentView
+			if let hc = hostingController
 			{
-				hc.viewController.view.removeFromSuperview()
+				if hc.viewController.view.superview != contentView {
+					contentView.subviews.forEach { $0.removeFromSuperview() }
+				}
+			} else {
 				contentView.subviews.forEach { $0.removeFromSuperview() }
-				contentView.addSubview(hc.viewController.view)
 			}
 		}
 	}
@@ -33,7 +33,7 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	var invalidateLayout: (() -> Void)?
 	var shouldInvalidateLayout: Bool = false
 
-	private(set) var id: ASCollectionViewItemUniqueID?
+	private(set) var itemID: ASCollectionViewItemUniqueID?
 
 	func configureAsEmpty()
 	{
@@ -42,15 +42,12 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 
 	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content, usingCachedController cachedHC: ASHostingControllerProtocol?)
 	{
-		id = itemID
+		self.itemID = itemID
 		
-		if cachedHC != nil {
-			hostingController = cachedHC
-		}
-
-		if let existingHC = hostingController as? ASHostingController<Content>
+		if let existingHC = cachedHC as? ASHostingController<Content>
 		{
 			existingHC.setView(content)
+			hostingController = existingHC
 		}
 		else
 		{
@@ -66,21 +63,19 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	func willAppear(in vc: UIViewController)
 	{
 		hostingController.map
-		{
-			if $0.viewController.parent != vc
+		{ hc in
+			if hc.viewController.parent != vc
 			{
-				$0.viewController.removeFromParent()
-				vc.addChild($0.viewController)
+				hc.viewController.removeFromParent()
+				vc.addChild(hc.viewController)
 			}
-			if $0.viewController.view.superview != contentView
-			{
-				$0.viewController.view.removeFromSuperview()
+			
+			if hc.viewController.view.superview != contentView {
 				contentView.subviews.forEach { $0.removeFromSuperview() }
-				contentView.addSubview($0.viewController.view)
+				contentView.addSubview(hc.viewController.view)
+				setNeedsLayout()
 			}
-
-			setNeedsLayout()
-
+			
 			hostingController?.viewController.didMove(toParent: vc)
 		}
 	}
@@ -93,6 +88,7 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	override func prepareForReuse()
 	{
 		isSelected = false
+		hostingController = nil
 	}
 
 	override func layoutSubviews()

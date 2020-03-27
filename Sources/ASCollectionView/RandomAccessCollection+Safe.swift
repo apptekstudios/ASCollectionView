@@ -3,7 +3,7 @@
 import Foundation
 
 extension RandomAccessCollection {
-	func containsIndex(_ index: Index) -> Bool
+	public func containsIndex(_ index: Index) -> Bool
 	{
 		index >= startIndex && index < endIndex
 	}
