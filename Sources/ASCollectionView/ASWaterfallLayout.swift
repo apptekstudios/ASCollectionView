@@ -82,9 +82,9 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		switch setting
 		{
 		case let .fixed(num):
-			return num
+			return max(1, num)
 		case let .adaptive(minWidth):
-			return Int(floor((contentWidth + columnSpacing) / (minWidth + columnSpacing)))
+			return max(1, Int(floor((contentWidth + columnSpacing) / (minWidth + columnSpacing))))
 		case let .perSection(callback):
 			let resolved = callback(sectionIndex)
 			return calculateNumberOfColumns(sectionIndex: sectionIndex, setting: resolved)

@@ -12,41 +12,41 @@ extension ASTableView where SectionID == Int
 	 - Parameters:
 	 - section: A single section (ASTableViewSection)
 	 */
-	public init(style: UITableView.Style = .plain, selectedItems: Binding<IndexSet>? = nil, section: Section)
+	public init(style: UITableView.Style = .plain, section: Section)
 	{
 		self.style = style
-		self.selectedItems = selectedItems.map
-		{ selectedItems in
-			Binding(
-				get: { [:] },
-				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
-		}
 		sections = [section]
 	}
 
 	/**
 	 Initializes a  table view with a single section.
 	 */
-	public init<Data, DataID: Hashable, Content: View>(
+	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
 		style: UITableView.Style = .plain,
-		data: [Data],
-		dataID dataIDKeyPath: KeyPath<Data, DataID>,
-		selectedItems: Binding<IndexSet>? = nil,
-		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
+		data: DataCollection,
+		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+	where DataCollection.Index == Int
 	{
 		self.style = style
-		let section = ASTableViewSection(
+		let section = ASSection(
 			id: 0,
 			data: data,
 			dataID: dataIDKeyPath,
 			contentBuilder: contentBuilder)
 		sections = [section]
-		self.selectedItems = selectedItems.map
-		{ selectedItems in
-			Binding(
-				get: { [:] },
-				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
-		}
+	}
+	
+	/**
+	Initializes a  table view with a single section of identifiable data
+	*/
+	public init<DataCollection: RandomAccessCollection, Content: View>(
+		style: UITableView.Style = .plain,
+		data: DataCollection,
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+		where DataCollection.Index == Int, DataCollection.Element: Identifiable
+	{
+		self.init(style: style, data: data, dataID: \.id, contentBuilder: contentBuilder)
 	}
 
 	/**
@@ -59,7 +59,6 @@ extension ASTableView where SectionID == Int
 			sections: [ASTableViewSection(id: 0, content: staticContent)])
 	}
 }
-
 @available(iOS 13.0, *)
 public typealias ASTableViewSection = ASSection
 
@@ -75,7 +74,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 	public var sections: [Section]
 	public var style: UITableView.Style
-	public var selectedItems: Binding<[SectionID: IndexSet]>?
 
 	// MARK: Environment variables
 
@@ -97,17 +95,15 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 	 - Parameters:
 	 - sections: An array of sections (ASTableViewSection)
 	 */
-	@inlinable public init(style: UITableView.Style = .plain, selectedItems: Binding<[SectionID: IndexSet]>? = nil, sections: [Section])
+	@inlinable public init(style: UITableView.Style = .plain, sections: [Section])
 	{
 		self.style = style
-		self.selectedItems = selectedItems
 		self.sections = sections
 	}
 
-	@inlinable public init(style: UITableView.Style = .plain, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
+	@inlinable public init(style: UITableView.Style = .plain, @SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
 	{
 		self.style = style
-		self.selectedItems = selectedItems
 		sections = sectionBuilder()
 	}
 

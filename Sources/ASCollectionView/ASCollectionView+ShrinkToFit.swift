@@ -57,17 +57,24 @@ struct SubWrapper<Content: View & ContentSize>: View {
 	var isEnabled: Bool
 	var shouldForce: Bool
 	
+	@ViewBuilder
 	var body: some View
 	{
-		content
-			.frame(
-				minWidth: isEnabled && shouldForce && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
-				idealWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
-				maxWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
-				minHeight: isEnabled && shouldForce && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
-				idealHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
-				maxHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
-				alignment: .topLeading)
+		if shouldForce {
+			content
+				.frame(
+					width: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
+					height: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
+					alignment: .topLeading)
+		} else {
+			content
+				.frame(
+					idealWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
+					maxWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
+					idealHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
+					maxHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
+					alignment: .topLeading)
+		}
 	}
 }
 
