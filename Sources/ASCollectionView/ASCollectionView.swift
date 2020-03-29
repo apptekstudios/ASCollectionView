@@ -537,6 +537,21 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			(view as? ASCollectionViewSupplementaryView)?.didDisappear()
 		}
+		
+		
+		public func collectionView(_ collectionView: UICollectionView, willSelectItemAt indexPath: IndexPath) -> IndexPath? {
+			guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? true else {
+				return nil
+			}
+			return indexPath
+		}
+		
+		public func collectionView(_ collectionView: UICollectionView, willDeselectItemAt indexPath: IndexPath) -> IndexPath? {
+			guard parent.sections[safe: indexPath.section]?.dataSource.shouldDeselect(indexPath) ?? true else {
+				return nil
+			}
+			return indexPath
+		}
 
 		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 		{

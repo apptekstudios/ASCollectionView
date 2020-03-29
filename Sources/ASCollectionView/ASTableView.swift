@@ -417,6 +417,20 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				parent.sections[safe: sectionID]?.dataSource.updateSelection(indices)
 			}
 		}
+		
+		public func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+			guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false else {
+				return nil
+			}
+			return indexPath
+		}
+		
+		public func tableView(_ tableView: UITableView, willDeselectRowAt indexPath: IndexPath) -> IndexPath? {
+			guard parent.sections[safe: indexPath.section]?.dataSource.shouldDeselect(indexPath) ?? false else {
+				return nil
+			}
+			return indexPath
+		}
 
 		public func tableView(_ tableView: UITableView, estimatedHeightForHeaderInSection section: Int) -> CGFloat
 		{

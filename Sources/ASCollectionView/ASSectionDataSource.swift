@@ -26,6 +26,8 @@ internal protocol ASSectionDataSourceProtocol
 	
 	func isSelected(index: Int) -> Bool
 	func updateSelection(_ indices: Set<Int>)
+	func shouldSelect(_ indexPath: IndexPath) -> Bool
+	func shouldDeselect(_ indexPath: IndexPath) -> Bool
 
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
@@ -92,6 +94,8 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var content: (DataCollection.Element, CellContext) -> Content
 
 	var selectedItems: Binding<Set<Int>>?
+	var shouldAllowSelection: ((IndexPath) -> Bool)?
+	var shouldAllowDeselection: ((IndexPath) -> Bool)?
 	
 	var onCellEvent: OnCellEvent<DataCollection.Element>?
 	var onDragDrop: OnDragDrop<DataCollection.Element>?
@@ -261,6 +265,13 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		DispatchQueue.main.async {
 			self.selectedItems?.wrappedValue = Set(indices)
 		}
+	}
+	
+	func shouldSelect(_ indexPath: IndexPath) -> Bool {
+		shouldAllowSelection?(indexPath) ?? (selectedItems != nil)
+	}
+	func shouldDeselect(_ indexPath: IndexPath) -> Bool {
+		shouldAllowDeselection?(indexPath) ?? (selectedItems != nil)
 	}
 }
 
