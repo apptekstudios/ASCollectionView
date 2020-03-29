@@ -7,6 +7,7 @@ import SwiftUI
 internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
+	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
 	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
 	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
@@ -106,6 +107,11 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
 
+	
+	func getIndex(of itemID: ASCollectionViewItemUniqueID) -> Int? {
+		return data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash })
+	}
+	
 	func cellContext(for index: Int) -> CellContext
 	{
 		CellContext(
@@ -132,7 +138,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	}
 	
 	func getContent(forItemID itemID: ASCollectionViewItemUniqueID) -> Container? {
-		guard let itemIndex = data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else { return nil }
+		guard let itemIndex = getIndex(of: itemID) else { return nil }
 		let item = data[itemIndex]
 		let view = content(item, cellContext(for: itemIndex))
 		return container(view)
@@ -148,6 +154,10 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		data.indices.map { IndexPath(item: $0, section: sectionIndex) }
 	}
 
+	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID? {
+		data[safe: index].map { ASCollectionViewItemUniqueID(sectionID: sectionID, itemID: $0[keyPath: dataIDKeyPath]) }
+	}
+	
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
 	{
 		data.map

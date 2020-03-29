@@ -200,6 +200,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 				guard let section = self.parent.sections[safe: indexPath.section] else { return cell }
 				
+				cell.backgroundColor = (self.parent.style == .plain) ? .clear : .secondarySystemGroupedBackground
+				
 				// Cell layout invalidation callback
 				cell.invalidateLayout = { [weak tv] in
 					tv?.beginUpdates()
@@ -549,6 +551,7 @@ public class AS_TableViewController: UIViewController
 {
 	weak var coordinator: ASTableViewCoordinator? {
 		didSet {
+			guard viewIfLoaded != nil else { return }
 			tableView.coordinator = coordinator
 		}
 	}
@@ -556,6 +559,7 @@ public class AS_TableViewController: UIViewController
 
 	lazy var tableView: AS_UITableView = {
 		let tableView = AS_UITableView(frame: .zero, style: style)
+		tableView.coordinator = coordinator
 		tableView.tableHeaderView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) // Remove unnecessary padding in Style.grouped/insetGrouped
 		tableView.tableFooterView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) // Remove separators for non-existent cells
 		return tableView
@@ -571,18 +575,14 @@ public class AS_TableViewController: UIViewController
 	{
 		fatalError("init(coder:) has not been implemented")
 	}
+	
+	public override func loadView() {
+		view = tableView
+	}
 
 	public override func viewDidLoad()
 	{
 		super.viewDidLoad()
-		view.backgroundColor = .clear
-		view.addSubview(tableView)
-
-		tableView.translatesAutoresizingMaskIntoConstraints = false
-		NSLayoutConstraint.activate([tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
-									 tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
-									 tableView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
-									 tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)])
 	}
 	
 	

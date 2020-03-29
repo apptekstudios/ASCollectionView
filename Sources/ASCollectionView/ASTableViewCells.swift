@@ -62,6 +62,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 
 	override func prepareForReuse()
 	{
+		backgroundColor = .clear
 		hostingController = nil
 		isSelected = false
 	}

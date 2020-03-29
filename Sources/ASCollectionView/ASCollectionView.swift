@@ -834,13 +834,16 @@ public class AS_CollectionViewController: UIViewController
 	{
 		didSet
 		{
+			guard viewIfLoaded != nil else { return }
 			collectionView.coordinator = coordinator
 		}
 	}
 
 	var collectionViewLayout: UICollectionViewLayout
 	lazy var collectionView: AS_UICollectionView = {
-		AS_UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
+		let cv = AS_UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
+		cv.coordinator = coordinator
+		return cv
 	}()
 
 	public init(collectionViewLayout layout: UICollectionViewLayout)
@@ -913,17 +916,6 @@ public class AS_CollectionViewController: UIViewController
 	{
 		super.viewDidLayoutSubviews()
 		coordinator?.didUpdateContentSize(collectionView.contentSize)
-	}
-	
-	public override var preferredContentSize: CGSize {
-		get { super.preferredContentSize }
-		set {
-			super.preferredContentSize = newValue
-		}
-	}
-	
-	public override func size(forChildContentContainer container: UIContentContainer, withParentContainerSize parentSize: CGSize) -> CGSize {
-		super.size(forChildContentContainer: container, withParentContainerSize: parentSize)
 	}
 }
 
