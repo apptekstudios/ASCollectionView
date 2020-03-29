@@ -33,7 +33,6 @@ struct SelfSizingWrapper<Content: View & ContentSize>: View
 	var content: Content
 	var shrinkDirection: ShrinkDimension
 	var isEnabled: Bool = true
-	var shouldForce: Bool = false
 	
 	var modifiedContent: Content {
 		var content = self.content
@@ -43,7 +42,7 @@ struct SelfSizingWrapper<Content: View & ContentSize>: View
 
 	var body: some View
 	{
-		SubWrapper(contentSizeTracker: contentSizeTracker, content: modifiedContent, shrinkDirection: shrinkDirection, isEnabled: isEnabled, shouldForce: shouldForce)
+		SubWrapper(contentSizeTracker: contentSizeTracker, content: modifiedContent, shrinkDirection: shrinkDirection, isEnabled: isEnabled)
 	}
 }
 
@@ -55,26 +54,17 @@ struct SubWrapper<Content: View & ContentSize>: View {
 	var content: Content
 	var shrinkDirection: ShrinkDimension
 	var isEnabled: Bool
-	var shouldForce: Bool
 	
 	@ViewBuilder
 	var body: some View
 	{
-		if shouldForce {
-			content
-				.frame(
-					width: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
-					height: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
-					alignment: .topLeading)
-		} else {
-			content
-				.frame(
-					idealWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
-					maxWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
-					idealHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
-					maxHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
-					alignment: .topLeading)
-		}
+		content
+			.frame(
+				idealWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
+				maxWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
+				idealHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
+				maxHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
+				alignment: .topLeading)
 	}
 }
 
@@ -92,10 +82,6 @@ public extension ASCollectionView
 	{
 		SelfSizingWrapper(content: self, shrinkDirection: dimension, isEnabled: isEnabled)
 	}
-	func forceContentSize(isEnabled: Bool = true, dimension: ShrinkDimension) -> some View
-	{
-		SelfSizingWrapper(content: self, shrinkDirection: dimension, isEnabled: isEnabled, shouldForce: true)
-	}
 }
 
 @available(iOS 13.0, *)
@@ -104,9 +90,5 @@ public extension ASTableView
 	func shrinkToContentSize(isEnabled: Bool = true) -> some View
 	{
 		SelfSizingWrapper(content: self, shrinkDirection: .vertical, isEnabled: isEnabled)
-	}
-	func forceContentSize(isEnabled: Bool = true) -> some View
-	{
-		SelfSizingWrapper(content: self, shrinkDirection:  .vertical, isEnabled: isEnabled, shouldForce: true)
 	}
 }
