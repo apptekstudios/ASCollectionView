@@ -54,8 +54,7 @@ struct SubWrapper<Content: View & ContentSize>: View {
 	var content: Content
 	var shrinkDirection: ShrinkDimension
 	var isEnabled: Bool
-	
-	@ViewBuilder
+
 	var body: some View
 	{
 		content
