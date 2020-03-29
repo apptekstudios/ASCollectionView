@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'ASCollectionView-SwiftUI'
-  s.version          = '1.3.2'
+  s.version          = '1.4.0'
   s.summary          = 'A SwiftUI collection view with support for custom layouts, preloading, and more. '
 
   s.description      = <<-DESC
@@ -19,7 +19,7 @@ Pod::Spec.new do |s|
   s.author           = { 'apptekstudios' => '' }
   s.source           = { :git => 'https://github.com/apptekstudios/ASCollectionView.git', :tag => s.version.to_s }
 
-  s.ios.deployment_target = '13.0'
+  s.ios.deployment_target = '11.0'
   s.swift_versions = '5.2'
   s.source_files = 'Sources/ASCollectionView/**/*'
 
