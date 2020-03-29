@@ -9,7 +9,7 @@ struct PhotoGridScreen: View
 	var startingAtBottom: Bool = false
 
 	@State var data: [Post] = DataSource.postsForGridSection(1, number: 1000)
-	@State var selectedItems: IndexSet = []
+	@State var selectedItems: Set<Int> = []
 
 	@Environment(\.editMode) private var editMode
 	var isEditing: Bool
@@ -24,6 +24,7 @@ struct PhotoGridScreen: View
 		ASCollectionViewSection(
 			id: 0,
 			data: data,
+			selectedItems: $selectedItems,
 			onCellEvent: onCellEvent,
 			onDragDropEvent: onDragDropEvent,
 			itemProvider: { item in
@@ -67,7 +68,6 @@ struct PhotoGridScreen: View
 	var body: some View
 	{
 		ASCollectionView(
-			selectedItems: $selectedItems,
 			section: section)
 			.layout(self.layout)
 			.edgesIgnoringSafeArea(.all)
@@ -80,7 +80,7 @@ struct PhotoGridScreen: View
 					if self.isEditing
 					{
 						Button(action: {
-							self.data.remove(atOffsets: self.selectedItems)
+							self.data.remove(atOffsets: IndexSet(self.selectedItems))
 						})
 						{
 							Image(systemName: "trash")
@@ -121,6 +121,7 @@ struct PhotoGridScreen: View
 					ASRemoteImageManager.shared.load(item.usernamePhotoURL)
 				}
 		}
+		.navigationBarTitle("", displayMode: .inline)
 	}
 
 	func onDragDropEvent(_ event: DragDrop<Post>)
@@ -128,9 +129,11 @@ struct PhotoGridScreen: View
 		switch event
 		{
 		case let .onRemoveItem(indexPath):
-			data.remove(at: indexPath.item)
+			if data.containsIndex(indexPath.item) {
+				data.remove(at: indexPath.item)
+			}
 		case let .onAddItems(items, indexPath):
-			data.insert(contentsOf: items, at: indexPath.item)
+			data.insert(contentsOf: items, at: min(indexPath.item, data.endIndex))
 		}
 	}
 }

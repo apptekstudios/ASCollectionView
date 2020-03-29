@@ -7,8 +7,10 @@ import SwiftUI
 internal protocol ASSectionDataSourceProtocol
 {
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
+	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func configureCell(_ cell: ASDataSourceConfigurableCell, usingCachedController cachedHC: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
+	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
+	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
@@ -21,6 +23,11 @@ internal protocol ASSectionDataSourceProtocol
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
+	
+	func isSelected(index: Int) -> Bool
+	func updateSelection(_ indices: Set<Int>)
+	func shouldSelect(_ indexPath: IndexPath) -> Bool
+	func shouldDeselect(_ indexPath: IndexPath) -> Bool
 
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
@@ -86,36 +93,59 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var container: (Content) -> Container
 	var content: (DataCollection.Element, CellContext) -> Content
 
-	var supplementaryViews: [String: AnyView] = [:]
+	var selectedItems: Binding<Set<Int>>?
+	var shouldAllowSelection: ((_ index: Int) -> Bool)?
+	var shouldAllowDeselection: ((_ index: Int) -> Bool)?
+	
 	var onCellEvent: OnCellEvent<DataCollection.Element>?
 	var onDragDrop: OnDragDrop<DataCollection.Element>?
 	var itemProvider: ItemProvider<DataCollection.Element>?
 	var onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>?
 	var contextMenuProvider: ContextMenuProvider<DataCollection.Element>?
 	var selfSizingConfig: SelfSizingConfig?
+	
 
+	var supplementaryViews: [String: AnyView] = [:]
+	
+	
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
 
-	func cellContext(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> CellContext
+	
+	func getIndex(of itemID: ASCollectionViewItemUniqueID) -> Int? {
+		return data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash })
+	}
+	
+	func cellContext(for index: Int) -> CellContext
 	{
 		CellContext(
-			isSelected: isSelected,
-			isFirstInSection: data.first?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash,
-			isLastInSection: data.last?[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash)
+			isSelected: isSelected(index: index),
+			isFirstInSection: index == data.startIndex,
+			isLastInSection: index == data.endIndex - 1)
 	}
-
-	func configureCell(_ cell: ASDataSourceConfigurableCell, usingCachedController cachedHC: ASHostingControllerProtocol?, forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool)
-	{
-		guard let item = data.first(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash }) else
-		{
-			cell.configureAsEmpty()
-			return
+	
+	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol? {
+		guard let content = getContent(forItemID: itemID) else { return nil }
+		
+		if let hc = (existingHC as? ASHostingController<Container>) {
+			hc.setView(content)
+			return hc
+		} else {
+			return ASHostingController(content)
 		}
-		let view = content(item, cellContext(forItemID: itemID, isSelected: isSelected))
-		let content = container(view)
-
-		cell.configureHostingController(forItemID: itemID, content: content, usingCachedController: cachedHC)
+	}
+	
+	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID) {
+		guard let hc = hc as? ASHostingController<Container> else { return }
+		guard let content = getContent(forItemID: itemID) else { return }
+		hc.setView(content)
+	}
+	
+	func getContent(forItemID itemID: ASCollectionViewItemUniqueID) -> Container? {
+		guard let itemIndex = getIndex(of: itemID) else { return nil }
+		let item = data[itemIndex]
+		let view = content(item, cellContext(for: itemIndex))
+		return container(view)
 	}
 
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
@@ -128,6 +158,10 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		data.indices.map { IndexPath(item: $0, section: sectionIndex) }
 	}
 
+	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID? {
+		data[safe: index].map { ASCollectionViewItemUniqueID(sectionID: sectionID, itemID: $0[keyPath: dataIDKeyPath]) }
+	}
+	
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
 	{
 		data.map
@@ -220,6 +254,26 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
 	{
 		selfSizingConfig?(context)
+	}
+	
+	func isSelected(index: Int) -> Bool {
+		selectedItems?.wrappedValue.contains(index) ?? false
+	}
+	
+	func updateSelection(_ indices: Set<Int>)
+	{
+		DispatchQueue.main.async {
+			self.selectedItems?.wrappedValue = Set(indices)
+		}
+	}
+	
+	func shouldSelect(_ indexPath: IndexPath) -> Bool {
+		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
+		return shouldAllowSelection?(indexPath.item) ?? (selectedItems != nil)
+	}
+	func shouldDeselect(_ indexPath: IndexPath) -> Bool {
+		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
+		return shouldAllowDeselection?(indexPath.item) ?? (selectedItems != nil)
 	}
 }
 

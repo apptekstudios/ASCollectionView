@@ -12,41 +12,41 @@ extension ASTableView where SectionID == Int
 	 - Parameters:
 	 - section: A single section (ASTableViewSection)
 	 */
-	public init(style: UITableView.Style = .plain, selectedItems: Binding<IndexSet>? = nil, section: Section)
+	public init(style: UITableView.Style = .plain, section: Section)
 	{
 		self.style = style
-		self.selectedItems = selectedItems.map
-		{ selectedItems in
-			Binding(
-				get: { [:] },
-				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
-		}
 		sections = [section]
 	}
 
 	/**
 	 Initializes a  table view with a single section.
 	 */
-	public init<Data, DataID: Hashable, Content: View>(
+	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
 		style: UITableView.Style = .plain,
-		data: [Data],
-		dataID dataIDKeyPath: KeyPath<Data, DataID>,
-		selectedItems: Binding<IndexSet>? = nil,
-		@ViewBuilder contentBuilder: @escaping ((Data, CellContext) -> Content))
+		data: DataCollection,
+		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+	where DataCollection.Index == Int
 	{
 		self.style = style
-		let section = ASTableViewSection(
+		let section = ASSection(
 			id: 0,
 			data: data,
 			dataID: dataIDKeyPath,
 			contentBuilder: contentBuilder)
 		sections = [section]
-		self.selectedItems = selectedItems.map
-		{ selectedItems in
-			Binding(
-				get: { [:] },
-				set: { selectedItems.wrappedValue = $0.first?.value ?? [] })
-		}
+	}
+	
+	/**
+	Initializes a  table view with a single section of identifiable data
+	*/
+	public init<DataCollection: RandomAccessCollection, Content: View>(
+		style: UITableView.Style = .plain,
+		data: DataCollection,
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+		where DataCollection.Index == Int, DataCollection.Element: Identifiable
+	{
+		self.init(style: style, data: data, dataID: \.id, contentBuilder: contentBuilder)
 	}
 
 	/**
@@ -59,13 +59,13 @@ extension ASTableView where SectionID == Int
 			sections: [ASTableViewSection(id: 0, content: staticContent)])
 	}
 }
-
 @available(iOS 13.0, *)
 public typealias ASTableViewSection = ASSection
 
 @available(iOS 13.0, *)
-public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
+public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, ContentSize
 {
+	
 	// MARK: Type definitions
 
 	public typealias Section = ASTableViewSection<SectionID>
@@ -74,7 +74,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 	public var sections: [Section]
 	public var style: UITableView.Style
-	public var selectedItems: Binding<[SectionID: IndexSet]>?
 
 	// MARK: Environment variables
 
@@ -86,24 +85,25 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.editMode) private var editMode
 	@Environment(\.animateOnDataRefresh) private var animateOnDataRefresh
-
+	
+	//Other
+	var contentSizeTracker: ContentSizeTracker?
+	
 	/**
 	 Initializes a  table view with the given sections
 
 	 - Parameters:
 	 - sections: An array of sections (ASTableViewSection)
 	 */
-	@inlinable public init(style: UITableView.Style = .plain, selectedItems: Binding<[SectionID: IndexSet]>? = nil, sections: [Section])
+	@inlinable public init(style: UITableView.Style = .plain, sections: [Section])
 	{
 		self.style = style
-		self.selectedItems = selectedItems
 		self.sections = sections
 	}
 
-	@inlinable public init(style: UITableView.Style = .plain, selectedItems: Binding<[SectionID: IndexSet]>? = nil, @SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
+	@inlinable public init(style: UITableView.Style = .plain, @SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
 	{
 		self.style = style
-		self.selectedItems = selectedItems
 		sections = sectionBuilder()
 	}
 
@@ -163,6 +163,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		private var hasDoneInitialSetup = false
 		
 		// MARK: Caching
+		private var visibleHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 		private var cachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 
 		typealias Cell = ASTableViewCell
@@ -193,12 +194,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			dataSource = .init(tableView: tv)
 			{ [weak self] (tableView, indexPath, itemID) -> UITableViewCell? in
 				guard let self = self else { return nil }
-				let isSelected = tableView.indexPathsForSelectedRows?.contains(indexPath) ?? false
 				guard
 					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell
 				else { return nil }
 
 				guard let section = self.parent.sections[safe: indexPath.section] else { return cell }
+				
+				cell.backgroundColor = (self.parent.style == .plain) ? .clear : .secondarySystemGroupedBackground
 				
 				// Cell layout invalidation callback
 				cell.invalidateLayout = { [weak tv] in
@@ -212,13 +214,14 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 					section.dataSource.getSelfSizingSettings(context: selfSizingContext)
 						?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
 
-				// Check if there is a cached host controller
-				let cachedHC = self.cachedHostingControllers[itemID]
+				//Set itemID
+				cell.itemID = itemID
 				
-				// Configure cell
-				section.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: isSelected)
-
-				// Cache the HC if needed
+				// Update hostingController
+				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: self.cachedHostingControllers[itemID] ?? self.visibleHostingControllers[itemID])
+				
+				// Cache the HC
+				self.visibleHostingControllers[itemID] = cell.hostingController
 				if section.shouldCacheCells {
 					self.cachedHostingControllers[itemID] = cell.hostingController
 				}
@@ -237,6 +240,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				snapshot.appendItems($0.itemIDs, toSection: $0.id)
 			}
 			dataSource?.apply(snapshot, animatingDifferences: animated)
+			{
+				self.tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
+			}
 		}
 
 		func updateContent(_ tv: UITableView, animated: Bool, refreshExistingCells: Bool)
@@ -244,24 +250,14 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 			guard hasDoneInitialSetup else { return }
 			if refreshExistingCells
 			{
-				tv.visibleCells.forEach
-				{ cell in
-					guard
-						let cell = cell as? Cell,
-						let itemID = cell.id
-					else { return }
-
-					// Check if there is a cached host controller
-					let cachedHC = self.cachedHostingControllers[itemID]
-					// Configure cell
-					section(forItemID: itemID)?.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: cell.isSelected)
+				self.visibleHostingControllers.forEach { (itemID, hc) in
+					section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
 				}
 			}
 			populateDataSource(animated: animated)
-			updateSelectionBindings(tv)
 		}
 
-		func onMoveToParent(tableViewController: AS_TableViewController)
+		func onMoveToParent()
 		{
 			if !hasDoneInitialSetup
 			{
@@ -271,14 +267,25 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 				populateDataSource(animated: false)
 
 				// Check if reached bottom already
-				checkIfReachedBottom(tableViewController.tableView)
+				tableViewController.map { checkIfReachedBottom($0.tableView) }
 			}
 		}
 
 		func onMoveFromParent()
 		{
-			hasDoneInitialSetup = false
+			
 		}
+		
+		// MARK: Function for updating contentSize binding
+		
+		var lastContentSize: CGSize = .zero
+		func didUpdateContentSize(_ size: CGSize)
+		{
+			guard let tv = tableViewController?.tableView, tv.contentSize != lastContentSize else { return }
+			lastContentSize = tv.contentSize
+			parent.contentSizeTracker?.contentSize = size
+		}
+
 
 		func configureRefreshControl(for tv: UITableView)
 		{
@@ -315,7 +322,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 		public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
-			(cell as? Cell)?.willAppear(in: tableViewController)
+			tableViewController.map { (cell as? Cell)?.willAppear(in: $0) }
 			parent.sections[safe: indexPath.section]?.dataSource.onAppear(indexPath)
 		}
 
@@ -323,6 +330,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 		{
 			(cell as? Cell)?.didDisappear()
 			parent.sections[safe: indexPath.section]?.dataSource.onDisappear(indexPath)
+			(cell as? Cell)?.itemID.map { visibleHostingControllers[$0] = nil }
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
@@ -388,48 +396,40 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 
 		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
 		{
-			guard
-				let cell = tableView.cellForRow(at: indexPath) as? Cell,
-				let itemID = cell.id
-			else { return }
 			updateSelectionBindings(tableView)
-			
-			// Check if there is a cached host controller
-			let cachedHC = self.cachedHostingControllers[itemID]
-			// Configure cell
-			section(forItemID: itemID)?.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
 		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath)
 		{
-			guard
-				let cell = tableView.cellForRow(at: indexPath) as? Cell,
-				let itemID = cell.id
-			else { return }
 			updateSelectionBindings(tableView)
-			
-			// Check if there is a cached host controller
-			let cachedHC = self.cachedHostingControllers[itemID]
-			// Configure cell
-			section(forItemID: itemID)?.dataSource.configureCell(cell, usingCachedController: cachedHC, forItemID: itemID, isSelected: cell.isSelected)
 		}
 
 		func updateSelectionBindings(_ tableView: UITableView)
 		{
-			guard let selectedItemsBinding = parent.selectedItems else { return }
 			let selected = tableView.indexPathsForSelectedRows ?? []
 			let selectedSafe = selected.filter { parent.sections.containsIndex($0.section) }
-			let selectedBySection = Dictionary(grouping: selectedSafe)
-			{
-				parent.sections[$0.section].id
-			}.mapValues
-			{
-				IndexSet($0.map { $0.item })
+			Dictionary(grouping: selectedSafe) { $0.section }
+				.mapValues
+				{
+					Set($0.map { $0.item })
 			}
-			DispatchQueue.main.async
-			{
-				selectedItemsBinding.wrappedValue = selectedBySection
+			.forEach { (sectionID, indices) in
+				parent.sections[safe: sectionID]?.dataSource.updateSelection(indices)
 			}
+		}
+		
+		public func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+			guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false else {
+				return nil
+			}
+			return indexPath
+		}
+		
+		public func tableView(_ tableView: UITableView, willDeselectRowAt indexPath: IndexPath) -> IndexPath? {
+			guard parent.sections[safe: indexPath.section]?.dataSource.shouldDeselect(indexPath) ?? false else {
+				return nil
+			}
+			return indexPath
 		}
 
 		public func tableView(_ tableView: UITableView, estimatedHeightForHeaderInSection section: Int) -> CGFloat
@@ -535,8 +535,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable
 @available(iOS 13.0, *)
 protocol ASTableViewCoordinator: AnyObject
 {
-	func onMoveToParent(tableViewController: AS_TableViewController)
+	func onMoveToParent()
 	func onMoveFromParent()
+	func didUpdateContentSize(_ size: CGSize)
 }
 
 // MARK: ASTableView specific header modifiers
@@ -562,11 +563,17 @@ public extension ASTableViewSection {
 @available(iOS 13.0, *)
 public class AS_TableViewController: UIViewController
 {
-	weak var coordinator: ASTableViewCoordinator?
+	weak var coordinator: ASTableViewCoordinator? {
+		didSet {
+			guard viewIfLoaded != nil else { return }
+			tableView.coordinator = coordinator
+		}
+	}
 	var style: UITableView.Style
 
-	lazy var tableView: UITableView = {
-		let tableView = UITableView(frame: .zero, style: style)
+	lazy var tableView: AS_UITableView = {
+		let tableView = AS_UITableView(frame: .zero, style: style)
+		tableView.coordinator = coordinator
 		tableView.tableHeaderView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) // Remove unnecessary padding in Style.grouped/insetGrouped
 		tableView.tableFooterView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) // Remove separators for non-existent cells
 		return tableView
@@ -582,18 +589,21 @@ public class AS_TableViewController: UIViewController
 	{
 		fatalError("init(coder:) has not been implemented")
 	}
+	
+	public override func loadView() {
+		view = tableView
+	}
 
 	public override func viewDidLoad()
 	{
 		super.viewDidLoad()
-		view.backgroundColor = .clear
-		view.addSubview(tableView)
-
-		tableView.translatesAutoresizingMaskIntoConstraints = false
-		NSLayoutConstraint.activate([tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 0),
-									 tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: 0),
-									 tableView.topAnchor.constraint(equalTo: view.topAnchor, constant: 0),
-									 tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: 0)])
+	}
+	
+	
+	public override func viewDidLayoutSubviews()
+	{
+		super.viewDidLayoutSubviews()
+		coordinator?.didUpdateContentSize(tableView.contentSize)
 	}
 
 	public override func didMove(toParent parent: UIViewController?)
@@ -601,12 +611,25 @@ public class AS_TableViewController: UIViewController
 		super.didMove(toParent: parent)
 		if parent != nil
 		{
-			coordinator?.onMoveToParent(tableViewController: self)
+			coordinator?.onMoveToParent()
 		}
 		else
 		{
 			coordinator?.onMoveFromParent()
 		}
+	}
+}
+
+@available(iOS 13.0, *)
+class AS_UITableView: UITableView {
+	weak var coordinator: ASTableViewCoordinator?
+	
+	public override func didMoveToWindow()
+	{
+		super.didMoveToWindow()
+		
+		// Intended as a temporary workaround for a SwiftUI bug present in 13.3 -> the UIViewController is not moved to a parent when embedded in a list/scrollview
+		coordinator?.onMoveToParent()
 	}
 }
 
