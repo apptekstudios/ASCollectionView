@@ -94,8 +94,8 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var content: (DataCollection.Element, CellContext) -> Content
 
 	var selectedItems: Binding<Set<Int>>?
-	var shouldAllowSelection: ((IndexPath) -> Bool)?
-	var shouldAllowDeselection: ((IndexPath) -> Bool)?
+	var shouldAllowSelection: ((_ index: Int) -> Bool)?
+	var shouldAllowDeselection: ((_ index: Int) -> Bool)?
 	
 	var onCellEvent: OnCellEvent<DataCollection.Element>?
 	var onDragDrop: OnDragDrop<DataCollection.Element>?
@@ -268,10 +268,12 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	}
 	
 	func shouldSelect(_ indexPath: IndexPath) -> Bool {
-		shouldAllowSelection?(indexPath) ?? (selectedItems != nil)
+		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
+		return shouldAllowSelection?(indexPath.item) ?? (selectedItems != nil)
 	}
 	func shouldDeselect(_ indexPath: IndexPath) -> Bool {
-		shouldAllowDeselection?(indexPath) ?? (selectedItems != nil)
+		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
+		return shouldAllowDeselection?(indexPath.item) ?? (selectedItems != nil)
 	}
 }
 
