@@ -26,32 +26,34 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 
 	var invalidateLayout: (() -> Void)?
 	var shouldInvalidateLayout: Bool = false
-	
-	override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
+
+	override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?)
+	{
 		super.init(style: style, reuseIdentifier: reuseIdentifier)
 		backgroundColor = nil
 	}
-	
-	required init?(coder: NSCoder) {
+
+	required init?(coder: NSCoder)
+	{
 		fatalError("init(coder:) has not been implemented")
 	}
-	
+
 	func willAppear(in vc: UIViewController)
 	{
 		hostingController.map
-			{
-				$0.applyModifier(
-					ASHostingControllerModifier(invalidateCellLayout: { [weak self] in
-						self?.shouldInvalidateLayout = true
-						self?.setNeedsLayout()
+		{
+			$0.applyModifier(
+				ASHostingControllerModifier(invalidateCellLayout: { [weak self] in
+					self?.shouldInvalidateLayout = true
+					self?.setNeedsLayout()
 					})
-				)
-				if $0.viewController.parent != vc
-				{
-					$0.viewController.removeFromParent()
-					vc.addChild($0.viewController)
-				}
-				hostingController?.viewController.didMove(toParent: vc)
+			)
+			if $0.viewController.parent != vc
+			{
+				$0.viewController.removeFromParent()
+				vc.addChild($0.viewController)
+			}
+			hostingController?.viewController.didMove(toParent: vc)
 		}
 	}
 

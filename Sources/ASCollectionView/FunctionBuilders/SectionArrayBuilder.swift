@@ -11,7 +11,8 @@ public protocol Nestable
 }
 
 @available(iOS 13.0, *)
-extension ASSection: Nestable {
+extension ASSection: Nestable
+{
 	public func asArray() -> [ASSection]
 	{
 		[self]
@@ -19,7 +20,8 @@ extension ASSection: Nestable {
 }
 
 @available(iOS 13.0, *)
-extension Array: Nestable {
+extension Array: Nestable
+{
 	public func asArray() -> Self
 	{
 		self

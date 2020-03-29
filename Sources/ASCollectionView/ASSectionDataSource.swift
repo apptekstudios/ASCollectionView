@@ -23,7 +23,7 @@ internal protocol ASSectionDataSourceProtocol
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
-	
+
 	func isSelected(index: Int) -> Bool
 	func updateSelection(_ indices: Set<Int>)
 	func shouldSelect(_ indexPath: IndexPath) -> Bool
@@ -96,26 +96,24 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var selectedItems: Binding<Set<Int>>?
 	var shouldAllowSelection: ((_ index: Int) -> Bool)?
 	var shouldAllowDeselection: ((_ index: Int) -> Bool)?
-	
+
 	var onCellEvent: OnCellEvent<DataCollection.Element>?
 	var onDragDrop: OnDragDrop<DataCollection.Element>?
 	var itemProvider: ItemProvider<DataCollection.Element>?
 	var onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>?
 	var contextMenuProvider: ContextMenuProvider<DataCollection.Element>?
 	var selfSizingConfig: SelfSizingConfig?
-	
 
 	var supplementaryViews: [String: AnyView] = [:]
-	
-	
+
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
 
-	
-	func getIndex(of itemID: ASCollectionViewItemUniqueID) -> Int? {
-		return data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash })
+	func getIndex(of itemID: ASCollectionViewItemUniqueID) -> Int?
+	{
+		data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash })
 	}
-	
+
 	func cellContext(for index: Int) -> CellContext
 	{
 		CellContext(
@@ -123,25 +121,31 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			isFirstInSection: index == data.startIndex,
 			isLastInSection: index == data.endIndex - 1)
 	}
-	
-	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol? {
+
+	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
+	{
 		guard let content = getContent(forItemID: itemID) else { return nil }
-		
-		if let hc = (existingHC as? ASHostingController<Container>) {
+
+		if let hc = (existingHC as? ASHostingController<Container>)
+		{
 			hc.setView(content)
 			return hc
-		} else {
+		}
+		else
+		{
 			return ASHostingController(content)
 		}
 	}
-	
-	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID) {
+
+	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
+	{
 		guard let hc = hc as? ASHostingController<Container> else { return }
 		guard let content = getContent(forItemID: itemID) else { return }
 		hc.setView(content)
 	}
-	
-	func getContent(forItemID itemID: ASCollectionViewItemUniqueID) -> Container? {
+
+	func getContent(forItemID itemID: ASCollectionViewItemUniqueID) -> Container?
+	{
 		guard let itemIndex = getIndex(of: itemID) else { return nil }
 		let item = data[itemIndex]
 		let view = content(item, cellContext(for: itemIndex))
@@ -158,10 +162,11 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		data.indices.map { IndexPath(item: $0, section: sectionIndex) }
 	}
 
-	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID? {
+	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
+	{
 		data[safe: index].map { ASCollectionViewItemUniqueID(sectionID: sectionID, itemID: $0[keyPath: dataIDKeyPath]) }
 	}
-	
+
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
 	{
 		data.map
@@ -255,23 +260,27 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		selfSizingConfig?(context)
 	}
-	
-	func isSelected(index: Int) -> Bool {
+
+	func isSelected(index: Int) -> Bool
+	{
 		selectedItems?.wrappedValue.contains(index) ?? false
 	}
-	
+
 	func updateSelection(_ indices: Set<Int>)
 	{
 		DispatchQueue.main.async {
 			self.selectedItems?.wrappedValue = Set(indices)
 		}
 	}
-	
-	func shouldSelect(_ indexPath: IndexPath) -> Bool {
+
+	func shouldSelect(_ indexPath: IndexPath) -> Bool
+	{
 		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
 		return shouldAllowSelection?(indexPath.item) ?? (selectedItems != nil)
 	}
-	func shouldDeselect(_ indexPath: IndexPath) -> Bool {
+
+	func shouldDeselect(_ indexPath: IndexPath) -> Bool
+	{
 		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
 		return shouldAllowDeselection?(indexPath.item) ?? (selectedItems != nil)
 	}

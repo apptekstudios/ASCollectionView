@@ -22,7 +22,8 @@ struct ASOptionalSize
 	static let none = ASOptionalSize()
 }
 
-extension CGSize {
+extension CGSize
+{
 	func applyMinSize(_ minSize: ASOptionalSize) -> CGSize
 	{
 		CGSize(

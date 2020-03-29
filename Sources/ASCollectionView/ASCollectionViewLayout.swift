@@ -112,7 +112,8 @@ public struct ASCollectionLayout<SectionID: Hashable>
 }
 
 @available(iOS 13.0, *)
-private extension NSCollectionLayoutSection {
+private extension NSCollectionLayoutSection
+{
 	static func placeholder(environment: NSCollectionLayoutEnvironment, primaryScrollDirection: UICollectionView.ScrollDirection) -> NSCollectionLayoutSection
 	{
 		// Used to avoid a crash when UICollectionViewCompositionalLayout requests a NSCollectionLayoutSection for a section that no longer exists

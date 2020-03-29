@@ -2,7 +2,8 @@
 
 import Foundation
 
-extension RandomAccessCollection {
+extension RandomAccessCollection
+{
 	public func containsIndex(_ index: Index) -> Bool
 	{
 		index >= startIndex && index < endIndex

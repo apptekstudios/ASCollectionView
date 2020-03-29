@@ -129,7 +129,8 @@ struct PhotoGridScreen: View
 		switch event
 		{
 		case let .onRemoveItem(indexPath):
-			if data.containsIndex(indexPath.item) {
+			if data.containsIndex(indexPath.item)
+			{
 				data.remove(at: indexPath.item)
 			}
 		case let .onAddItems(items, indexPath):

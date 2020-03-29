@@ -18,7 +18,6 @@ extension ASCollectionView where SectionID == Int
 	{
 		sections = [section]
 	}
-	
 
 	/**
 	 Initializes a  collection view with a single section of static content
@@ -60,8 +59,8 @@ extension ASCollectionView where SectionID == Int
 @available(iOS 13.0, *)
 public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentable, ContentSize
 {
-	
 	// MARK: Type definitions
+
 	public typealias Section = ASCollectionViewSection<SectionID>
 	public typealias Layout = ASCollectionLayout<SectionID>
 
@@ -191,11 +190,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
 
 		private var haveRegisteredForSupplementaryOfKind: Set<String> = []
-		
+
 		// MARK: Caching
+
 		private var visibleHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 		private var cachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
-		
 
 		typealias Cell = ASCollectionViewCell
 
@@ -243,7 +242,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 				guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: self.cellReuseID, for: indexPath) as? Cell
 				else { return nil }
-				
+
 				guard let section = self.parent.sections[safe: indexPath.section] else { return cell }
 
 				cell.invalidateLayout = { [weak collectionView] in
@@ -263,10 +262,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 				// Update hostingController
 				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: self.cachedHostingControllers[itemID] ?? self.visibleHostingControllers[itemID])
-				
+
 				// Cache the HC
 				self.visibleHostingControllers[itemID] = cell.hostingController
-				if section.shouldCacheCells {
+				if section.shouldCacheCells
+				{
 					self.cachedHostingControllers[itemID] = cell.hostingController
 				}
 
@@ -327,7 +327,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			registerSupplementaries(forCollectionView: cv) // New sections might involve new types of supplementary...
 			if refreshExistingCells
 			{
-				self.visibleHostingControllers.forEach { (itemID, hc) in
+				visibleHostingControllers.forEach { itemID, hc in
 					section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
 				}
 
@@ -360,10 +360,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		}
 
 		func onMoveFromParent()
-		{
-			
-		}
-		
+		{}
+
 		func configureRefreshControl(for cv: UICollectionView)
 		{
 			guard parent.onPullToRefresh != nil else
@@ -391,7 +389,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 			parent.onPullToRefresh?(endRefreshing)
 		}
-
 
 		// MARK: Functions for determining scroll position (on appear, and also on orientation change)
 
@@ -537,17 +534,20 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			(view as? ASCollectionViewSupplementaryView)?.didDisappear()
 		}
-		
-		
-		public func collectionView(_ collectionView: UICollectionView, willSelectItemAt indexPath: IndexPath) -> IndexPath? {
-			guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? true else {
+
+		public func collectionView(_ collectionView: UICollectionView, willSelectItemAt indexPath: IndexPath) -> IndexPath?
+		{
+			guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? true else
+			{
 				return nil
 			}
 			return indexPath
 		}
-		
-		public func collectionView(_ collectionView: UICollectionView, willDeselectItemAt indexPath: IndexPath) -> IndexPath? {
-			guard parent.sections[safe: indexPath.section]?.dataSource.shouldDeselect(indexPath) ?? true else {
+
+		public func collectionView(_ collectionView: UICollectionView, willDeselectItemAt indexPath: IndexPath) -> IndexPath?
+		{
+			guard parent.sections[safe: indexPath.section]?.dataSource.shouldDeselect(indexPath) ?? true else
+			{
 				return nil
 			}
 			return indexPath
@@ -569,10 +569,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			let selectedSafe = selected.filter { parent.sections.containsIndex($0.section) }
 			let selectionBySection = Dictionary(grouping: selectedSafe) { $0.section }
 				.mapValues
-				{
-					Set($0.map { $0.item })
+			{
+				Set($0.map { $0.item })
 			}
-			parent.sections.enumerated().forEach { (offset, section) in
+			parent.sections.enumerated().forEach { offset, section in
 				section.dataSource.updateSelection(selectionBySection[offset] ?? [])
 			}
 		}
@@ -677,7 +677,8 @@ extension ASCollectionView.Coordinator
 // MARK: Context Menu Support
 
 @available(iOS 13.0, *)
-public extension ASCollectionView.Coordinator {
+public extension ASCollectionView.Coordinator
+{
 	func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
 	{
 		guard !indexPath.isEmpty else { return nil }
@@ -884,8 +885,9 @@ public class AS_CollectionViewController: UIViewController
 			coordinator?.onMoveFromParent()
 		}
 	}
-	
-	public override func loadView() {
+
+	public override func loadView()
+	{
 		view = collectionView
 	}
 

@@ -18,10 +18,13 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		{
 			if let hc = hostingController
 			{
-				if hc.viewController.view.superview != contentView {
+				if hc.viewController.view.superview != contentView
+				{
 					contentView.subviews.forEach { $0.removeFromSuperview() }
 				}
-			} else {
+			}
+			else
+			{
 				contentView.subviews.forEach { $0.removeFromSuperview() }
 			}
 		}
@@ -43,7 +46,7 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content, usingCachedController cachedHC: ASHostingControllerProtocol?)
 	{
 		self.itemID = itemID
-		
+
 		if let existingHC = cachedHC as? ASHostingController<Content>
 		{
 			existingHC.setView(content)
@@ -69,13 +72,14 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 				hc.viewController.removeFromParent()
 				vc.addChild(hc.viewController)
 			}
-			
-			if hc.viewController.view.superview != contentView {
+
+			if hc.viewController.view.superview != contentView
+			{
 				contentView.subviews.forEach { $0.removeFromSuperview() }
 				contentView.addSubview(hc.viewController.view)
 				setNeedsLayout()
 			}
-			
+
 			hostingController?.viewController.didMove(toParent: vc)
 		}
 	}
@@ -94,7 +98,8 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
-		if hostingController?.viewController.view.frame != contentView.bounds {
+		if hostingController?.viewController.view.frame != contentView.bounds
+		{
 			hostingController?.viewController.view.frame = contentView.bounds
 			hostingController?.viewController.view.setNeedsLayout()
 		}
@@ -111,7 +116,7 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		{
 			return CGSize(width: 1, height: 1)
 		} // Can't return .zero as UICollectionViewLayout will crash
-		
+
 		let size = hc.sizeThatFits(
 			in: targetSize,
 			maxSize: maxSizeForSelfSizing,

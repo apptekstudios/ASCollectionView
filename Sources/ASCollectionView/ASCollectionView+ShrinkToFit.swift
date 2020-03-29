@@ -29,14 +29,15 @@ public enum ShrinkDimension
 struct SelfSizingWrapper<Content: View & ContentSize>: View
 {
 	@State var contentSizeTracker = ContentSizeTracker()
-	
+
 	var content: Content
 	var shrinkDirection: ShrinkDimension
 	var isEnabled: Bool = true
-	
-	var modifiedContent: Content {
+
+	var modifiedContent: Content
+	{
 		var content = self.content
-		content.contentSizeTracker = self.contentSizeTracker
+		content.contentSizeTracker = contentSizeTracker
 		return content
 	}
 
@@ -47,10 +48,11 @@ struct SelfSizingWrapper<Content: View & ContentSize>: View
 }
 
 @available(iOS 13.0, *)
-struct SubWrapper<Content: View & ContentSize>: View {
+struct SubWrapper<Content: View & ContentSize>: View
+{
 	@ObservedObject
 	var contentSizeTracker: ContentSizeTracker
-	
+
 	var content: Content
 	var shrinkDirection: ShrinkDimension
 	var isEnabled: Bool
@@ -68,11 +70,11 @@ struct SubWrapper<Content: View & ContentSize>: View {
 }
 
 @available(iOS 13.0, *)
-class ContentSizeTracker: ObservableObject {
+class ContentSizeTracker: ObservableObject
+{
 	@Published
 	var contentSize: CGSize?
 }
-
 
 @available(iOS 13.0, *)
 public extension ASCollectionView

@@ -38,7 +38,7 @@ struct InstaFeedScreen: View
 		{
 			storiesCollectionView
 		}
-		.cacheCells() //Used so that the nested collectionView is cached even when offscreen (which maintains scroll position etc)
+		.cacheCells() // Used so that the nested collectionView is cached even when offscreen (which maintains scroll position etc)
 	}
 
 	var postSections: [ASTableViewSection<Int>]
