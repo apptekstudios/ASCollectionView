@@ -161,11 +161,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		// MARK: Private tracking variables
 
 		private var hasDoneInitialSetup = false
-
+		private var lastSnapshot: NSDiffableDataSourceSnapshot<SectionID, ASCollectionViewItemUniqueID>?
+		
 		// MARK: Caching
 
 		private var visibleHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
-		private var cachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
+		private var autoCachingHostingControllers = ASPriorityCache<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
+		private var explicitlyCachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 
 		typealias Cell = ASTableViewCell
 
@@ -174,6 +176,14 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			self.parent = parent
 		}
 
+		func itemID(for indexPath: IndexPath) -> ASCollectionViewItemUniqueID?
+		{
+			guard
+				let sectionID = sectionID(fromSectionIndex: indexPath.section)
+				else { return nil }
+			return parent.sections[safe: indexPath.section]?.dataSource.getItemID(for: indexPath.item, withSectionID: sectionID)
+		}
+		
 		func sectionID(fromSectionIndex sectionIndex: Int) -> SectionID?
 		{
 			parent.sections[safe: sectionIndex]?.id
@@ -204,9 +214,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				cell.backgroundColor = (self.parent.style == .plain) ? .clear : .secondarySystemGroupedBackground
 
 				// Cell layout invalidation callback
-				cell.invalidateLayout = { [weak tv] in
-					tv?.beginUpdates()
-					tv?.endUpdates()
+				cell.invalidateLayout = { [weak self] in
+					self?.reloadRow(indexPath)
 				}
 
 				// Self Sizing Settings
@@ -219,13 +228,15 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				cell.itemID = itemID
 
 				// Update hostingController
-				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: self.cachedHostingControllers[itemID] ?? self.visibleHostingControllers[itemID])
+				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.visibleHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
+				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: cachedHC)
 
 				// Cache the HC
+				self.autoCachingHostingControllers[itemID] = cell.hostingController
 				self.visibleHostingControllers[itemID] = cell.hostingController
 				if section.shouldCacheCells
 				{
-					self.cachedHostingControllers[itemID] = cell.hostingController
+					self.explicitlyCachedHostingControllers[itemID] = cell.hostingController
 				}
 
 				return cell
@@ -241,6 +252,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			{
 				snapshot.appendItems($0.itemIDs, toSection: $0.id)
 			}
+			lastSnapshot = snapshot
 			dataSource?.apply(snapshot, animatingDifferences: animated)
 			{
 				self.tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
@@ -257,6 +269,18 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				}
 			}
 			populateDataSource(animated: animated)
+		}
+		
+		func reloadRow(_ indexPath: IndexPath) {
+			guard
+				let itemID = itemID(for: indexPath),
+				var snapshot = lastSnapshot
+				else { return }
+			snapshot.reloadItems([itemID])
+			dataSource?.apply(snapshot, animatingDifferences: true)
+			{
+				self.tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
+			}
 		}
 
 		func onMoveToParent()
@@ -582,7 +606,7 @@ public class AS_TableViewController: UIViewController
 		let tableView = AS_UITableView(frame: .zero, style: style)
 		tableView.coordinator = coordinator
 		tableView.tableHeaderView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) // Remove unnecessary padding in Style.grouped/insetGrouped
-		tableView.tableFooterView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) // Remove separators for non-existent cells
+		tableView.tableFooterView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: 10))) // Remove separators for non-existent cells
 		return tableView
 	}()
 
@@ -658,7 +682,7 @@ class ASTableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: 
 		else
 		{
 			UIView.performWithoutAnimation {
-				super.apply(snapshot, animatingDifferences: false, completion: completion)
+				super.apply(snapshot, animatingDifferences: true, completion: completion)  // Animation must be true to get diffing. However we have disabled animation using .performWithoutAnimation
 			}
 		}
 	}

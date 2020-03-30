@@ -192,8 +192,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		private var haveRegisteredForSupplementaryOfKind: Set<String> = []
 
 		// MARK: Caching
-
 		private var visibleHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
+		private var autoCachingHostingControllers = ASPriorityCache<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
+		
 		private var cachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 
 		typealias Cell = ASCollectionViewCell
@@ -261,9 +262,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
 
 				// Update hostingController
-				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: self.cachedHostingControllers[itemID] ?? self.visibleHostingControllers[itemID])
+				let cachedHC = self.cachedHostingControllers[itemID] ?? self.visibleHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
+				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: cachedHC)
 
 				// Cache the HC
+				self.autoCachingHostingControllers[itemID] = cell.hostingController
 				self.visibleHostingControllers[itemID] = cell.hostingController
 				if section.shouldCacheCells
 				{

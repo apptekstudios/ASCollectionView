@@ -99,7 +99,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 
 	var hasDelegate: Bool
 	{
-		collectionView?.delegate is ASCollectionViewDelegate
+		collectionView?.delegate is ASWaterfallLayoutDelegate
 	}
 
 	func getHeight(for indexPath: IndexPath) -> CGFloat
@@ -115,12 +115,11 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 
 	func getHeightForHeader(sectionIndex: Int) -> CGFloat
 	{
-		let delegate = (collectionView?.delegate as? ASWaterfallLayoutDelegate)
-
-		return
-			delegate?.heightForHeader(sectionIndex: sectionIndex)
-				?? cachedHeaderHeight[sectionIndex]
-				?? estimatedHeaderHeight
+		if let delegate = (collectionView?.delegate as? ASWaterfallLayoutDelegate),
+			let height = delegate.heightForHeader(sectionIndex: sectionIndex) {
+			return height
+		}
+		return cachedHeaderHeight[sectionIndex] ?? estimatedHeaderHeight
 	}
 
 	public override func prepare()
@@ -245,10 +244,19 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 	public override func shouldInvalidateLayout(forPreferredLayoutAttributes preferredAttributes: UICollectionViewLayoutAttributes, withOriginalAttributes originalAttributes: UICollectionViewLayoutAttributes) -> Bool
 	{
 		guard !hasDelegate else { return false }
-		guard
-			let height = cachedHeight[originalAttributes.indexPath],
-			height == preferredAttributes.size.height
-		else { return true } // Either no cached height, or has changed...
+		print(preferredAttributes.indexPath)
+		if originalAttributes.indexPath.item == -1 {
+			guard
+				let height = cachedHeaderHeight[originalAttributes.indexPath.section],
+				height == preferredAttributes.size.height
+				else { return true }
+		} else {
+			guard
+				let height = cachedHeight[originalAttributes.indexPath],
+				height == preferredAttributes.size.height
+				else { return true } // Either no cached height, or has changed...
+		}
+		
 		return false
 	}
 
@@ -261,7 +269,11 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		{
 			return context
 		}
-		cachedHeight[originalAttributes.indexPath] = preferredAttributes.size.height
+		if originalAttributes.indexPath.item == -1 {
+			cachedHeaderHeight[originalAttributes.indexPath.section] = preferredAttributes.size.height
+		} else {
+			cachedHeight[originalAttributes.indexPath] = preferredAttributes.size.height
+		}
 
 		// If an item has changed size, the layout of everything underneath it has also been invalidated.
 		context.invalidateItems(at: collectionView.allIndexPaths(after: originalAttributes.indexPath))
