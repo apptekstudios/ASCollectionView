@@ -187,11 +187,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		private var haveRegisteredForSupplementaryOfKind: Set<String> = []
 
 		// MARK: Caching
-
-		private var visibleHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 		private var autoCachingHostingControllers = ASPriorityCache<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
-
-		private var cachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
+		private var explicitlyCachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 
 		typealias Cell = ASCollectionViewCell
 
@@ -261,15 +258,14 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
 
 				// Update hostingController
-				let cachedHC = self.cachedHostingControllers[itemID] ?? self.visibleHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
+				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
 				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: cachedHC)
 
 				// Cache the HC
 				self.autoCachingHostingControllers[itemID] = cell.hostingController
-				self.visibleHostingControllers[itemID] = cell.hostingController
 				if section.shouldCacheCells
 				{
-					self.cachedHostingControllers[itemID] = cell.hostingController
+					self.explicitlyCachedHostingControllers[itemID] = cell.hostingController
 				}
 
 				return cell
@@ -532,7 +528,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			(cell as? Cell)?.didDisappear()
 			guard !indexPath.isEmpty else { return }
 			parent.sections[safe: indexPath.section]?.dataSource.onDisappear(indexPath)
-			(cell as? Cell)?.itemID.map { visibleHostingControllers[$0] = nil }
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
