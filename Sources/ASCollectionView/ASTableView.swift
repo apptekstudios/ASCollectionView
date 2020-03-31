@@ -125,22 +125,22 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 	{
 		context.coordinator.parent = self
 		updateTableViewSettings(tableViewController.tableView)
-		context.coordinator.updateContent(tableViewController.tableView, animated: animateOnDataRefresh, refreshExistingCells: true)
+		context.coordinator.updateContent(tableViewController.tableView, transaction: context.transaction, refreshExistingCells: true)
 		context.coordinator.configureRefreshControl(for: tableViewController.tableView)
 	}
 
 	func updateTableViewSettings(_ tableView: UITableView)
 	{
-		tableView.backgroundColor = (style == .plain) ? .clear : .systemGroupedBackground
-		tableView.separatorStyle = separatorsEnabled ? .singleLine : .none
-		tableView.contentInset = contentInsets
-		tableView.alwaysBounceVertical = alwaysBounceVertical
-		tableView.showsVerticalScrollIndicator = scrollIndicatorsEnabled
-		tableView.showsHorizontalScrollIndicator = scrollIndicatorsEnabled
+		assignIfChanged(tableView, \.backgroundColor, newValue: (style == .plain) ? .clear : .systemGroupedBackground)
+		assignIfChanged(tableView, \.separatorStyle, newValue: separatorsEnabled ? .singleLine : .none)
+		assignIfChanged(tableView, \.contentInset, newValue: contentInsets)
+		assignIfChanged(tableView, \.alwaysBounceVertical, newValue: alwaysBounceVertical)
+		assignIfChanged(tableView, \.showsVerticalScrollIndicator, newValue: scrollIndicatorsEnabled)
+		assignIfChanged(tableView, \.showsHorizontalScrollIndicator, newValue: scrollIndicatorsEnabled)
 
 		let isEditing = editMode?.wrappedValue.isEditing ?? false
-		tableView.allowsSelection = isEditing
-		tableView.allowsMultipleSelection = isEditing
+		assignIfChanged(tableView, \.allowsSelection, newValue: isEditing)
+		assignIfChanged(tableView, \.allowsMultipleSelection, newValue: isEditing)
 	}
 
 	public func makeCoordinator() -> Coordinator
@@ -162,7 +162,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		private var hasDoneInitialSetup = false
 		private var lastSnapshot: NSDiffableDataSourceSnapshot<SectionID, ASCollectionViewItemUniqueID>?
-		
+
 		// MARK: Caching
 
 		private var visibleHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
@@ -180,10 +180,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		{
 			guard
 				let sectionID = sectionID(fromSectionIndex: indexPath.section)
-				else { return nil }
+			else { return nil }
 			return parent.sections[safe: indexPath.section]?.dataSource.getItemID(for: indexPath.item, withSectionID: sectionID)
 		}
-		
+
 		func sectionID(fromSectionIndex sectionIndex: Int) -> SectionID?
 		{
 			parent.sections[safe: sectionIndex]?.id
@@ -259,23 +259,28 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 		}
 
-		func updateContent(_ tv: UITableView, animated: Bool, refreshExistingCells: Bool)
+		func updateContent(_ tv: UITableView, transaction: Transaction?, refreshExistingCells: Bool)
 		{
 			guard hasDoneInitialSetup else { return }
 			if refreshExistingCells
 			{
-				visibleHostingControllers.forEach { itemID, hc in
-					section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
+				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
+					self.visibleHostingControllers.forEach { itemID, hc in
+						self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
+					}
 				}
 			}
-			populateDataSource(animated: animated)
+			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
+			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
+			updateSelectionBindings(tv)
 		}
-		
-		func reloadRow(_ indexPath: IndexPath) {
+
+		func reloadRow(_ indexPath: IndexPath)
+		{
 			guard
 				let itemID = itemID(for: indexPath),
 				var snapshot = lastSnapshot
-				else { return }
+			else { return }
 			snapshot.reloadItems([itemID])
 			dataSource?.apply(snapshot, animatingDifferences: true)
 			{
@@ -419,12 +424,12 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
 		{
-			updateSelectionBindings(tableView)
+			updateContent(tableView, transaction: nil, refreshExistingCells: true)
 		}
 
 		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath)
 		{
-			updateSelectionBindings(tableView)
+			updateContent(tableView, transaction: nil, refreshExistingCells: true)
 		}
 
 		func updateSelectionBindings(_ tableView: UITableView)
@@ -682,7 +687,7 @@ class ASTableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: 
 		else
 		{
 			UIView.performWithoutAnimation {
-				super.apply(snapshot, animatingDifferences: true, completion: completion)  // Animation must be true to get diffing. However we have disabled animation using .performWithoutAnimation
+				super.apply(snapshot, animatingDifferences: true, completion: completion) // Animation must be true to get diffing. However we have disabled animation using .performWithoutAnimation
 			}
 		}
 	}

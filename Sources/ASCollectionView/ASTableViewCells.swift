@@ -25,7 +25,6 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	var invalidateLayout: (() -> Void)?
-	var shouldInvalidateLayout: Bool = false
 
 	override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?)
 	{
@@ -44,8 +43,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		{
 			$0.applyModifier(
 				ASHostingControllerModifier(invalidateCellLayout: { [weak self] in
-					self?.shouldInvalidateLayout = true
-					self?.setNeedsLayout()
+					self?.invalidateLayout?()
 					})
 			)
 			if $0.viewController.parent != vc
@@ -72,13 +70,17 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
-		hostingController?.viewController.view.frame = contentView.bounds
-		if shouldInvalidateLayout
+		var cellBounds = contentView.bounds
+		// Ensure that cell aligned to top if mid-resize animation
+		if selfSizingConfig.selfSizeVertically
 		{
-			shouldInvalidateLayout = false
-			invalidateLayout?()
+			cellBounds.size.height = fittedSize.height
 		}
+
+		hostingController?.viewController.view.frame = cellBounds
 	}
+
+	var fittedSize: CGSize = .zero
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
@@ -88,6 +90,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 			maxSize: maxSizeForSelfSizing,
 			selfSizeHorizontal: false,
 			selfSizeVertical: selfSizingConfig.selfSizeVertically)
+		fittedSize = size
 		return size
 	}
 

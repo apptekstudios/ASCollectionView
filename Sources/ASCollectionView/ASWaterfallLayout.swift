@@ -116,7 +116,8 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 	func getHeightForHeader(sectionIndex: Int) -> CGFloat
 	{
 		if let delegate = (collectionView?.delegate as? ASWaterfallLayoutDelegate),
-			let height = delegate.heightForHeader(sectionIndex: sectionIndex) {
+			let height = delegate.heightForHeader(sectionIndex: sectionIndex)
+		{
 			return height
 		}
 		return cachedHeaderHeight[sectionIndex] ?? estimatedHeaderHeight
@@ -245,18 +246,21 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 	{
 		guard !hasDelegate else { return false }
 		print(preferredAttributes.indexPath)
-		if originalAttributes.indexPath.item == -1 {
+		if originalAttributes.indexPath.item == -1
+		{
 			guard
 				let height = cachedHeaderHeight[originalAttributes.indexPath.section],
 				height == preferredAttributes.size.height
-				else { return true }
-		} else {
+			else { return true }
+		}
+		else
+		{
 			guard
 				let height = cachedHeight[originalAttributes.indexPath],
 				height == preferredAttributes.size.height
-				else { return true } // Either no cached height, or has changed...
+			else { return true } // Either no cached height, or has changed...
 		}
-		
+
 		return false
 	}
 
@@ -269,9 +273,12 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		{
 			return context
 		}
-		if originalAttributes.indexPath.item == -1 {
+		if originalAttributes.indexPath.item == -1
+		{
 			cachedHeaderHeight[originalAttributes.indexPath.section] = preferredAttributes.size.height
-		} else {
+		}
+		else
+		{
 			cachedHeight[originalAttributes.indexPath] = preferredAttributes.size.height
 		}
 
