@@ -40,15 +40,17 @@ struct TagsScreen: View
 						.padding(5)
 						.background(Color(.systemGray))
 						.cornerRadius(5)
-			})
-				.layout
+				}.selfSizingConfig { _ in
+					ASSelfSizingConfig(canExceedCollectionWidth: false)
+				}
+			)
+			.layout
 			{
 				let fl = AlignedFlowLayout()
 				fl.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
 				return fl
 			}
 			.shrinkToContentSize(isEnabled: shrinkToSize, dimension: .vertical)
-			.collectionViewAllowCellWidthToExceedCollectionContentSize(false)
 
 			if shrinkToSize
 			{

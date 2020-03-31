@@ -30,8 +30,9 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		}
 	}
 
+	weak var collectionView: UICollectionView?
+
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: true, selfSizeVertically: true)
-	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	var invalidateLayout: (() -> Void)?
 
@@ -96,10 +97,12 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
+
 		if hostingController?.viewController.view.frame != contentView.bounds
 		{
 			hostingController?.viewController.view.frame = contentView.bounds
 			hostingController?.viewController.view.setNeedsLayout()
+			hostingController?.viewController.view.layoutIfNeeded()
 		}
 	}
 
@@ -127,6 +130,13 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	{
 		layoutAttributes.size = systemLayoutSizeFitting(layoutAttributes.size)
 		return layoutAttributes
+	}
+
+	var maxSizeForSelfSizing: ASOptionalSize
+	{
+		ASOptionalSize(
+			width: selfSizingConfig.canExceedCollectionWidth ? nil : collectionView.map { $0.contentSize.width - 0.001 },
+			height: selfSizingConfig.canExceedCollectionHeight ? nil : collectionView.map { $0.contentSize.height - 0.001 })
 	}
 }
 

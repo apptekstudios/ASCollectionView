@@ -96,8 +96,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	@Environment(\.collectionViewOnReachedBoundary) private var onReachedBoundary
 	@Environment(\.animateOnDataRefresh) private var animateOnDataRefresh
 	@Environment(\.attemptToMaintainScrollPositionOnOrientationChange) private var attemptToMaintainScrollPositionOnOrientationChange
-	@Environment(\.allowCellWidthToExceedCollectionContentSize) private var allowCellWidthToExceedCollectionContentSize
-	@Environment(\.allowCellHeightToExceedCollectionContentSize) private var allowCellHeightToExceedCollectionContentSize
 
 	// MARK: Init for multi-section CVs
 
@@ -248,12 +246,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 				guard let section = self.parent.sections[safe: indexPath.section] else { return cell }
 
+				cell.collectionView = collectionView
+
 				cell.invalidateLayout = { [weak collectionView] in
 					collectionView?.collectionViewLayout.invalidateLayout()
 				}
-				cell.maxSizeForSelfSizing = ASOptionalSize(
-					width: self.parent.allowCellWidthToExceedCollectionContentSize ? nil : collectionView.contentSize.width,
-					height: self.parent.allowCellHeightToExceedCollectionContentSize ? nil : collectionView.contentSize.height)
 
 				// Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .content, indexPath: indexPath)
@@ -333,8 +330,12 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			if refreshExistingCells
 			{
 				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
-					visibleHostingControllers.forEach { itemID, hc in
-						section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
+					for case let cell as Cell in cv.visibleCells {
+						guard
+							let itemID = cell.itemID,
+							let hc = cell.hostingController
+							else { return }
+						self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
 					}
 				}
 
@@ -1017,11 +1018,16 @@ class ASCollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierTy
 {
 	// private let updateQueue = DispatchQueue(label: "ASCollectionViewUpdateQueue", qos: .userInitiated)
 
-	func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, isInitialLoad: Bool = false, completion: (() -> Void)? = nil)
+	override func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil)
+	{
+		apply(snapshot, animatingDifferences: animatingDifferences, isInitialLoad: false, completion: completion)
+	}
+
+	func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, isInitialLoad: Bool, completion: (() -> Void)? = nil)
 	{
 		if animatingDifferences
 		{
-			super.apply(snapshot, animatingDifferences: true, completion: completion)
+			super.apply(snapshot, animatingDifferences: !isInitialLoad, completion: completion)
 		}
 		else
 		{

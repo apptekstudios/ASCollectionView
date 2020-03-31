@@ -76,18 +76,6 @@ public extension View
 		environment(\.attemptToMaintainScrollPositionOnOrientationChange, attemptToMaintainScrollPositionOnOrientationChange)
 	}
 
-	/// Set whether the ASCollectionView should allow a cell's width to exceed the contentSize.width of the collectionView, default is true.
-	func collectionViewAllowCellWidthToExceedCollectionContentSize(_ allowCellWidthToExceedCollectionContentSize: Bool) -> some View
-	{
-		environment(\.allowCellWidthToExceedCollectionContentSize, allowCellWidthToExceedCollectionContentSize)
-	}
-
-	/// Set whether the ASCollectionView should allow a cell's height to exceed the contentSize.height of the collectionView, default is true.
-	func collectionViewAllowCellHeightToExceedCollectionContentSize(_ allowCellHeightToExceedCollectionContentSize: Bool) -> some View
-	{
-		environment(\.allowCellHeightToExceedCollectionContentSize, allowCellHeightToExceedCollectionContentSize)
-	}
-
 	func animateOnDataRefresh(_ animateOnDataRefresh: Bool = true) -> some View
 	{
 		environment(\.animateOnDataRefresh, animateOnDataRefresh)
@@ -168,18 +156,6 @@ struct EnvironmentKeyASMaintainScrollPositionOnOrientationChange: EnvironmentKey
 	static let defaultValue: Bool = true
 }
 
-@available(iOS 13.0, *)
-struct EnvironmentKeyASAllowCellWidthToExceedCollectionContentSize: EnvironmentKey
-{
-	static let defaultValue: Bool = true
-}
-
-@available(iOS 13.0, *)
-struct EnvironmentKeyASAllowCellHeightToExceedCollectionContentSize: EnvironmentKey
-{
-	static let defaultValue: Bool = true
-}
-
 // MARK: Internal Helpers
 
 @available(iOS 13.0, *)
@@ -255,17 +231,5 @@ public extension EnvironmentValues
 	{
 		get { self[EnvironmentKeyASMaintainScrollPositionOnOrientationChange.self] }
 		set { self[EnvironmentKeyASMaintainScrollPositionOnOrientationChange.self] = newValue }
-	}
-
-	var allowCellWidthToExceedCollectionContentSize: Bool
-	{
-		get { self[EnvironmentKeyASAllowCellWidthToExceedCollectionContentSize.self] }
-		set { self[EnvironmentKeyASAllowCellWidthToExceedCollectionContentSize.self] = newValue }
-	}
-
-	var allowCellHeightToExceedCollectionContentSize: Bool
-	{
-		get { self[EnvironmentKeyASAllowCellHeightToExceedCollectionContentSize.self] }
-		set { self[EnvironmentKeyASAllowCellHeightToExceedCollectionContentSize.self] = newValue }
 	}
 }

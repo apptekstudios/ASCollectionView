@@ -241,10 +241,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 				return cell
 			}
-			dataSource?.defaultRowAnimation = .fade
+			dataSource?.defaultRowAnimation = .none
 		}
 
-		func populateDataSource(animated: Bool = true)
+		func populateDataSource(animated: Bool = true, isInitialLoad: Bool = false)
 		{
 			var snapshot = NSDiffableDataSourceSnapshot<SectionID, ASCollectionViewItemUniqueID>()
 			snapshot.appendSections(parent.sections.map { $0.id })
@@ -253,7 +253,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				snapshot.appendItems($0.itemIDs, toSection: $0.id)
 			}
 			lastSnapshot = snapshot
-			dataSource?.apply(snapshot, animatingDifferences: animated)
+			dataSource?.apply(snapshot, animatingDifferences: animated, isInitialLoad: isInitialLoad)
 			{
 				self.tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
 			}
@@ -265,7 +265,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			if refreshExistingCells
 			{
 				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
-					self.visibleHostingControllers.forEach { itemID, hc in
+					for case let cell as Cell in tv.visibleCells {
+						guard
+							let itemID = cell.itemID,
+							let hc = cell.hostingController
+							else { return }
 						self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
 					}
 				}
@@ -295,7 +299,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				hasDoneInitialSetup = true
 
 				// Populate data source
-				populateDataSource(animated: false)
+				populateDataSource(animated: false, isInitialLoad: true)
 
 				// Check if reached bottom already
 				tableViewController.map { checkIfReachedBottom($0.tableView) }
@@ -680,14 +684,19 @@ class ASTableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: 
 
 	override func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil)
 	{
+		apply(snapshot, animatingDifferences: animatingDifferences, isInitialLoad: false, completion: completion)
+	}
+
+	func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, isInitialLoad: Bool, completion: (() -> Void)? = nil)
+	{
 		if animatingDifferences
 		{
-			super.apply(snapshot, animatingDifferences: true, completion: completion)
+			super.apply(snapshot, animatingDifferences: !isInitialLoad, completion: completion)
 		}
 		else
 		{
 			UIView.performWithoutAnimation {
-				super.apply(snapshot, animatingDifferences: true, completion: completion) // Animation must be true to get diffing. However we have disabled animation using .performWithoutAnimation
+				super.apply(snapshot, animatingDifferences: !isInitialLoad, completion: completion) // Animation must be true to get diffing. However we have disabled animation using .performWithoutAnimation
 			}
 		}
 	}

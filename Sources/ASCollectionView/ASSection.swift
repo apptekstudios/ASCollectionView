@@ -248,7 +248,7 @@ public extension ASCollectionViewSection
 @available(iOS 13.0, *)
 public extension ASSection
 {
-	func selfSizingConfig(config: SelfSizingConfig?) -> Self
+	func selfSizingConfig(_ config: @escaping SelfSizingConfig) -> Self
 	{
 		var section = self
 		section.dataSource.setSelfSizingConfig(config: config)
