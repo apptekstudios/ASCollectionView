@@ -34,7 +34,6 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	var invalidateLayout: (() -> Void)?
-	var shouldInvalidateLayout: Bool = false
 
 	private(set) var itemID: ASCollectionViewItemUniqueID?
 
@@ -55,8 +54,7 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		else
 		{
 			let modifier = ASHostingControllerModifier(invalidateCellLayout: { [weak self] in
-				self?.shouldInvalidateLayout = true
-				self?.setNeedsLayout()
+				self?.invalidateLayout?()
 			})
 			let newHC = ASHostingController<Content>(content, modifier: modifier)
 			hostingController = newHC
@@ -102,11 +100,6 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		{
 			hostingController?.viewController.view.frame = contentView.bounds
 			hostingController?.viewController.view.setNeedsLayout()
-		}
-		if shouldInvalidateLayout
-		{
-			shouldInvalidateLayout = false
-			invalidateLayout?()
 		}
 	}
 

@@ -142,26 +142,23 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		context.coordinator.parent = self
 		updateCollectionViewSettings(collectionViewController.collectionView, delegate: context.coordinator.delegate)
 		context.coordinator.updateLayout()
-		context.coordinator.updateContent(collectionViewController.collectionView, animated: animateOnDataRefresh, refreshExistingCells: true)
+		context.coordinator.updateContent(collectionViewController.collectionView, transaction: context.transaction, refreshExistingCells: true)
 		context.coordinator.configureRefreshControl(for: collectionViewController.collectionView)
 	}
 
 	func updateCollectionViewSettings(_ collectionView: UICollectionView, delegate: ASCollectionViewDelegate?)
 	{
-		collectionView.delegate = delegate
-		collectionView.dragDelegate = delegate
-		collectionView.dropDelegate = delegate
-		collectionView.dragInteractionEnabled = true
-		collectionView.contentInsetAdjustmentBehavior = delegate?.collectionViewContentInsetAdjustmentBehavior ?? .automatic
-		collectionView.contentInset = contentInsets
-		collectionView.alwaysBounceVertical = alwaysBounceVertical
-		collectionView.alwaysBounceHorizontal = alwaysBounceHorizontal
-		collectionView.showsVerticalScrollIndicator = scrollIndicatorsEnabled
-		collectionView.showsHorizontalScrollIndicator = scrollIndicatorsEnabled
+		assignIfChanged(collectionView, \.dragInteractionEnabled, newValue: true)
+		assignIfChanged(collectionView, \.contentInsetAdjustmentBehavior, newValue: delegate?.collectionViewContentInsetAdjustmentBehavior ?? .automatic)
+		assignIfChanged(collectionView, \.contentInset, newValue: contentInsets)
+		assignIfChanged(collectionView, \.alwaysBounceVertical, newValue: alwaysBounceVertical)
+		assignIfChanged(collectionView, \.alwaysBounceHorizontal, newValue: alwaysBounceHorizontal)
+		assignIfChanged(collectionView, \.showsVerticalScrollIndicator, newValue: scrollIndicatorsEnabled)
+		assignIfChanged(collectionView, \.showsHorizontalScrollIndicator, newValue: scrollIndicatorsEnabled)
 
 		let isEditing = editMode?.wrappedValue.isEditing ?? false
-		collectionView.allowsSelection = isEditing
-		collectionView.allowsMultipleSelection = isEditing
+		assignIfChanged(collectionView, \.allowsSelection, newValue: isEditing)
+		assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: isEditing)
 	}
 
 	public func makeCoordinator() -> Coordinator
@@ -194,6 +191,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		// MARK: Caching
 
 		private var visibleHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
+		private var autoCachingHostingControllers = ASPriorityCache<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
+
 		private var cachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 
 		typealias Cell = ASCollectionViewCell
@@ -233,6 +232,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func setupDataSource(forCollectionView cv: UICollectionView)
 		{
+			cv.delegate = delegate
+			cv.dragDelegate = delegate
+			cv.dropDelegate = delegate
+
 			cv.register(Cell.self, forCellWithReuseIdentifier: cellReuseID)
 			registerSupplementaries(forCollectionView: cv)
 
@@ -261,9 +264,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
 
 				// Update hostingController
-				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: self.cachedHostingControllers[itemID] ?? self.visibleHostingControllers[itemID])
+				let cachedHC = self.cachedHostingControllers[itemID] ?? self.visibleHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
+				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: cachedHC)
 
 				// Cache the HC
+				self.autoCachingHostingControllers[itemID] = cell.hostingController
 				self.visibleHostingControllers[itemID] = cell.hostingController
 				if section.shouldCacheCells
 				{
@@ -321,14 +326,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 		}
 
-		func updateContent(_ cv: UICollectionView, animated: Bool, refreshExistingCells: Bool)
+		func updateContent(_ cv: UICollectionView, transaction: Transaction?, refreshExistingCells: Bool)
 		{
 			guard hasDoneInitialSetup else { return }
 			registerSupplementaries(forCollectionView: cv) // New sections might involve new types of supplementary...
 			if refreshExistingCells
 			{
-				visibleHostingControllers.forEach { itemID, hc in
-					section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
+				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
+					visibleHostingControllers.forEach { itemID, hc in
+						section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
+					}
 				}
 
 				supplementaryKinds().forEach
@@ -341,7 +348,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					}
 				}
 			}
-			populateDataSource(animated: animated)
+			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
+			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
 			updateSelectionBindings(cv)
 		}
 
@@ -439,6 +447,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			if parent.attemptToMaintainScrollPositionOnOrientationChange
 			{
+				guard let currentOffset = collectionViewController?.collectionView.contentOffset, currentOffset.x > 0, currentOffset.y > 0 else { return nil }
 				return transitionCentralIndexPath.flatMap(getContentOffsetToCenterCell)
 			}
 			else
@@ -555,12 +564,12 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 		{
-			updateContent(collectionView, animated: true, refreshExistingCells: true)
+			updateContent(collectionView, transaction: nil, refreshExistingCells: true)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
 		{
-			updateContent(collectionView, animated: true, refreshExistingCells: true)
+			updateContent(collectionView, transaction: nil, refreshExistingCells: true)
 		}
 
 		func updateSelectionBindings(_ collectionView: UICollectionView)
@@ -1006,6 +1015,8 @@ public extension ASCollectionView
 @available(iOS 13.0, *)
 class ASCollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: UICollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType: Hashable, ItemIdentifierType: Hashable
 {
+	// private let updateQueue = DispatchQueue(label: "ASCollectionViewUpdateQueue", qos: .userInitiated)
+
 	func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, isInitialLoad: Bool = false, completion: (() -> Void)? = nil)
 	{
 		if animatingDifferences

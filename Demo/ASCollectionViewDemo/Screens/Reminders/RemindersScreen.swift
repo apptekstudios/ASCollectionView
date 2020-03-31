@@ -13,14 +13,14 @@ struct RemindersScreen: View
 		case footnote
 	}
 
-	@State var upperData: [GroupModel] = [GroupModel(icon: "calendar", title: "Today", color: .blue),
-										  GroupModel(icon: "clock.fill", title: "Scheduled", color: .orange),
-										  GroupModel(icon: "tray.fill", title: "All", color: .gray),
-										  GroupModel(icon: "flag.fill", title: "Flagged", color: .red)]
-	@State var lowerData: [GroupModel] = [GroupModel(icon: "list.bullet", title: "Todo"),
-										  GroupModel(icon: "cart.fill", title: "Groceries"),
-										  GroupModel(icon: "house.fill", title: "House renovation"),
-										  GroupModel(icon: "book.fill", title: "Reading list")]
+	var upperData: [GroupModel] = [GroupModel(icon: "calendar", title: "Today", color: .blue),
+								   GroupModel(icon: "clock.fill", title: "Scheduled", color: .orange),
+								   GroupModel(icon: "tray.fill", title: "All", color: .gray),
+								   GroupModel(icon: "flag.fill", title: "Flagged", color: .red)]
+	var lowerData: [GroupModel] = [GroupModel(icon: "list.bullet", title: "Todo"),
+								   GroupModel(icon: "cart.fill", title: "Groceries"),
+								   GroupModel(icon: "house.fill", title: "House renovation"),
+								   GroupModel(icon: "book.fill", title: "Reading list")]
 
 	let addNewModel = GroupModel(icon: "plus", title: "Create new list", contentCount: nil, color: .green)
 
