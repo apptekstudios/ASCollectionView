@@ -75,11 +75,8 @@ struct PostView: View
 			.truncationMode(.tail)
 			.onTapGesture
 			{
-				if !self.captionExpanded
-				{
-					self.captionExpanded = true
-					self.invalidateCellLayout()
-				}
+				self.captionExpanded.toggle()
+				self.invalidateCellLayout()
 			}
 			Text("View all \(post.comments) comments").foregroundColor(Color(.systemGray))
 		}

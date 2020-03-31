@@ -22,7 +22,6 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	}
 
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
-	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	var invalidateLayout: (() -> Void)?
 
@@ -70,14 +69,11 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
-		var cellBounds = contentView.bounds
-		// Ensure that cell aligned to top if mid-resize animation
-		if selfSizingConfig.selfSizeVertically
-		{
-			cellBounds.size.height = fittedSize.height
-		}
 
-		hostingController?.viewController.view.frame = cellBounds
+		if hostingController?.viewController.view.frame != contentView.bounds
+		{
+			hostingController?.viewController.view.frame = contentView.bounds
+		}
 	}
 
 	var fittedSize: CGSize = .zero
@@ -87,10 +83,10 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		guard let hc = hostingController else { return .zero }
 		let size = hc.sizeThatFits(
 			in: targetSize,
-			maxSize: maxSizeForSelfSizing,
+			maxSize: ASOptionalSize(),
 			selfSizeHorizontal: false,
 			selfSizeVertical: selfSizingConfig.selfSizeVertically)
-		fittedSize = size
+		layoutIfNeeded() // A hacky way to make cell size animations work correctly
 		return size
 	}
 
@@ -107,7 +103,6 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	private(set) var id: Int?
 
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
-	var maxSizeForSelfSizing: ASOptionalSize = .none
 
 	override init(reuseIdentifier: String?)
 	{
@@ -183,7 +178,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		guard let hc = hostingController else { return CGSize(width: 1, height: 1) }
 		let size = hc.sizeThatFits(
 			in: targetSize,
-			maxSize: maxSizeForSelfSizing,
+			maxSize: ASOptionalSize(),
 			selfSizeHorizontal: false,
 			selfSizeVertical: selfSizingConfig.selfSizeVertically)
 		return size

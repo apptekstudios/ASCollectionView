@@ -16,12 +16,16 @@ public struct ASSelfSizingContext
 
 public struct ASSelfSizingConfig
 {
-	public init(selfSizeHorizontally: Bool, selfSizeVertically: Bool)
+	public init(selfSizeHorizontally: Bool = true, selfSizeVertically: Bool = true, canExceedCollectionWidth: Bool = true, canExceedCollectionHeight: Bool = true)
 	{
 		self.selfSizeHorizontally = selfSizeHorizontally
 		self.selfSizeVertically = selfSizeVertically
+		self.canExceedCollectionWidth = canExceedCollectionWidth
+		self.canExceedCollectionHeight = canExceedCollectionHeight
 	}
 
-	let selfSizeHorizontally: Bool
-	let selfSizeVertically: Bool
+	var selfSizeHorizontally: Bool
+	var selfSizeVertically: Bool
+	var canExceedCollectionWidth: Bool
+	var canExceedCollectionHeight: Bool
 }

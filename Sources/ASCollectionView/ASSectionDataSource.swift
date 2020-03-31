@@ -32,7 +32,7 @@ internal protocol ASSectionDataSourceProtocol
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 
-	mutating func setSelfSizingConfig(config: SelfSizingConfig?)
+	mutating func setSelfSizingConfig(config: @escaping SelfSizingConfig)
 }
 
 @available(iOS 13.0, *)
@@ -102,7 +102,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var itemProvider: ItemProvider<DataCollection.Element>?
 	var onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>?
 	var contextMenuProvider: ContextMenuProvider<DataCollection.Element>?
-	var selfSizingConfig: SelfSizingConfig?
+	var selfSizingConfig: (SelfSizingConfig)?
 
 	var supplementaryViews: [String: AnyView] = [:]
 
@@ -291,7 +291,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 @available(iOS 13.0, *)
 internal extension ASSectionDataSource
 {
-	mutating func setSelfSizingConfig(config: SelfSizingConfig?)
+	mutating func setSelfSizingConfig(config: @escaping SelfSizingConfig)
 	{
 		selfSizingConfig = config
 	}
