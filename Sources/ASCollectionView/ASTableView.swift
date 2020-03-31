@@ -164,8 +164,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		private var lastSnapshot: NSDiffableDataSourceSnapshot<SectionID, ASCollectionViewItemUniqueID>?
 
 		// MARK: Caching
-
-		private var visibleHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 		private var autoCachingHostingControllers = ASPriorityCache<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 		private var explicitlyCachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 
@@ -228,12 +226,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				cell.itemID = itemID
 
 				// Update hostingController
-				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.visibleHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
+				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
 				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: cachedHC)
 
 				// Cache the HC
 				self.autoCachingHostingControllers[itemID] = cell.hostingController
-				self.visibleHostingControllers[itemID] = cell.hostingController
 				if section.shouldCacheCells
 				{
 					self.explicitlyCachedHostingControllers[itemID] = cell.hostingController
@@ -362,7 +359,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		{
 			(cell as? Cell)?.didDisappear()
 			parent.sections[safe: indexPath.section]?.dataSource.onDisappear(indexPath)
-			(cell as? Cell)?.itemID.map { visibleHostingControllers[$0] = nil }
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
