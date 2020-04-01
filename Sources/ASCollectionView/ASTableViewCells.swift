@@ -73,6 +73,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		if hostingController?.viewController.view.frame != contentView.bounds
 		{
 			hostingController?.viewController.view.frame = contentView.bounds
+			hostingController?.viewController.view.layoutIfNeeded()
 		}
 	}
 
