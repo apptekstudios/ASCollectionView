@@ -92,7 +92,7 @@ struct WaterfallScreen: View
 				sections: sections)
 				.layout(self.layout)
 				.customDelegate(WaterfallScreenLayoutDelegate.init)
-				.collectionViewContentInsets(.init(top: 0, left: 10, bottom: 10, right: 10))
+				.contentInsets(.init(top: 0, left: 10, bottom: 10, right: 10))
 				.navigationBarTitle("Waterfall Layout", displayMode: .inline)
 				.navigationBarItems(
 					trailing:
@@ -101,8 +101,10 @@ struct WaterfallScreen: View
 						if self.isEditing
 						{
 							Button(action: {
-								self.selectedItems.forEach { sectionIndex, selected in
-									self.data[sectionIndex].remove(atOffsets: IndexSet(selected))
+								withAnimation {
+									self.selectedItems.forEach { sectionIndex, selected in
+										self.data[sectionIndex].remove(atOffsets: IndexSet(selected))
+									}
 								}
 							})
 							{

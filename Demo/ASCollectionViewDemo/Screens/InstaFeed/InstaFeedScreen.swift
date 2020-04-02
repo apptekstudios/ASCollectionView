@@ -24,12 +24,11 @@ struct InstaFeedScreen: View
 		{
 			.list(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
 		}
-		.frame(height: 100)
-		.collectionViewScrollIndicatorsEnabled(false)
-		.collectionViewOnReachedBoundary
-		{ boundary in
+		.onReachedBoundary { boundary in
 			print("Reached the \(boundary) boundary")
 		}
+		.scrollIndicatorsEnabled(horizontal: false, vertical: false)
+		.frame(height: 100)
 	}
 
 	var storiesSection: ASTableViewSection<Int>
@@ -78,16 +77,16 @@ struct InstaFeedScreen: View
 	var body: some View
 	{
 		ASTableView(sections: sections)
-			.tableViewSeparatorsEnabled(false)
-			.onPullToRefresh { endRefreshing in
-				print("PULL TO REFRESH")
-				Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
-					endRefreshing()
-				}
-			}
-			.tableViewOnReachedBottom
+			.onReachedBottom
 		{
 			self.loadMoreContent() // REACHED BOTTOM, LOADING MORE CONTENT
+		}
+		.separatorsEnabled(false)
+		.onPullToRefresh { endRefreshing in
+			print("PULL TO REFRESH")
+			Timer.scheduledTimer(withTimeInterval: 2, repeats: false) { _ in
+				endRefreshing()
+			}
 		}
 		.navigationBarTitle("Insta Feed (tableview)", displayMode: .inline)
 	}

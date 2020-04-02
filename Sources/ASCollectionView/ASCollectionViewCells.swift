@@ -12,6 +12,7 @@ protocol ASDataSourceConfigurableCell
 @available(iOS 13.0, *)
 class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 {
+	var itemID: ASCollectionViewItemUniqueID?
 	var hostingController: ASHostingControllerProtocol?
 	{
 		didSet
@@ -35,32 +36,6 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: true, selfSizeVertically: true)
 
 	var invalidateLayout: (() -> Void)?
-
-	private(set) var itemID: ASCollectionViewItemUniqueID?
-
-	func configureAsEmpty()
-	{
-		hostingController = nil
-	}
-
-	func configureHostingController<Content: View>(forItemID itemID: ASCollectionViewItemUniqueID, content: Content, usingCachedController cachedHC: ASHostingControllerProtocol?)
-	{
-		self.itemID = itemID
-
-		if let existingHC = cachedHC as? ASHostingController<Content>
-		{
-			existingHC.setView(content)
-			hostingController = existingHC
-		}
-		else
-		{
-			let modifier = ASHostingControllerModifier(invalidateCellLayout: { [weak self] in
-				self?.invalidateLayout?()
-			})
-			let newHC = ASHostingController<Content>(content, modifier: modifier)
-			hostingController = newHC
-		}
-	}
 
 	func willAppear(in vc: UIViewController)
 	{

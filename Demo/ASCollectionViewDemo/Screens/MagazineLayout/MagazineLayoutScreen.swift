@@ -38,13 +38,12 @@ struct MagazineLayoutScreen: View
 	{
 		ASCollectionView(sections: self.sections)
 			.layout { MagazineLayout() }
+			.onReachedBoundary { boundary in
+				print("Reached the \(boundary) boundary")
+			}
 			.customDelegate(ASCollectionViewMagazineLayoutDelegate.init)
 			.edgesIgnoringSafeArea(.all)
 			.navigationBarTitle("Magazine Layout (custom delegate)", displayMode: .inline)
-			.collectionViewOnReachedBoundary
-		{ boundary in
-			print("Reached the \(boundary) boundary")
-		}
 	}
 
 	func onCellEvent(_ event: CellEvent<Post>)

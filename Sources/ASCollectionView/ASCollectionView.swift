@@ -64,6 +64,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	public typealias Section = ASCollectionViewSection<SectionID>
 	public typealias Layout = ASCollectionLayout<SectionID>
 
+	public typealias OnScrollCallback = ((_ contentOffset: CGPoint, _ contentSize: CGSize) -> Void)
+	public typealias OnReachedBoundaryCallback = ((_ boundary: Boundary) -> Void)
+
 	// MARK: Key variables
 
 	public var layout: Layout = .default
@@ -71,31 +74,38 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	// MARK: Internal variables modified by modifier functions
 
-	var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
+	private var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
 
-	var contentSizeTracker: ContentSizeTracker?
+	internal var contentSizeTracker: ContentSizeTracker?
 
-	var shouldInvalidateLayoutOnStateChange: Bool = false
-	var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
+	private var onScrollCallback: OnScrollCallback?
+	private var onReachedBoundaryCallback: OnReachedBoundaryCallback?
 
-	var shouldRecreateLayoutOnStateChange: Bool = false
-	var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
+	private var horizontalScrollIndicatorEnabled: Bool = true
+	private var verticalScrollIndicatorEnabled: Bool = true
+	private var contentInsets: UIEdgeInsets = .zero
+
+	private var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
+
+	private var alwaysBounceVertical: Bool = false
+	private var alwaysBounceHorizontal: Bool = false
+
+	private var initialScrollPosition: ASCollectionViewScrollPosition?
+
+	private var animateOnDataRefresh: Bool = true
+
+	private var maintainScrollPositionOnOrientationChange: Bool = true
+
+	private var shouldInvalidateLayoutOnStateChange: Bool = false
+	private var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
+
+	private var shouldRecreateLayoutOnStateChange: Bool = false
+	private var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
 
 	// MARK: Environment variables
 
 	// SwiftUI environment
 	@Environment(\.editMode) private var editMode
-
-	// ASCollectionView environment
-	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
-	@Environment(\.contentInsets) private var contentInsets
-	@Environment(\.alwaysBounceHorizontal) private var alwaysBounceHorizontal
-	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
-	@Environment(\.initialScrollPosition) private var initialScrollPosition
-	@Environment(\.onPullToRefresh) private var onPullToRefresh
-	@Environment(\.collectionViewOnReachedBoundary) private var onReachedBoundary
-	@Environment(\.animateOnDataRefresh) private var animateOnDataRefresh
-	@Environment(\.attemptToMaintainScrollPositionOnOrientationChange) private var attemptToMaintainScrollPositionOnOrientationChange
 
 	// MARK: Init for multi-section CVs
 
@@ -120,43 +130,29 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		context.coordinator.parent = self
 
 		let delegate = delegateInitialiser()
-		context.coordinator.delegate = delegate
 		delegate.coordinator = context.coordinator
 
 		let collectionViewLayout = layout.makeLayout(withCoordinator: context.coordinator)
 
 		let collectionViewController = AS_CollectionViewController(collectionViewLayout: collectionViewLayout)
 		collectionViewController.coordinator = context.coordinator
-		updateCollectionViewSettings(collectionViewController.collectionView, delegate: delegate)
 
 		context.coordinator.collectionViewController = collectionViewController
+		context.coordinator.delegate = delegate
 
+		context.coordinator.updateCollectionViewSettings(collectionViewController.collectionView)
 		context.coordinator.setupDataSource(forCollectionView: collectionViewController.collectionView)
+
 		return collectionViewController
 	}
 
 	public func updateUIViewController(_ collectionViewController: AS_CollectionViewController, context: Context)
 	{
 		context.coordinator.parent = self
-		updateCollectionViewSettings(collectionViewController.collectionView, delegate: context.coordinator.delegate)
+		context.coordinator.updateCollectionViewSettings(collectionViewController.collectionView)
 		context.coordinator.updateLayout()
 		context.coordinator.updateContent(collectionViewController.collectionView, transaction: context.transaction, refreshExistingCells: true)
 		context.coordinator.configureRefreshControl(for: collectionViewController.collectionView)
-	}
-
-	func updateCollectionViewSettings(_ collectionView: UICollectionView, delegate: ASCollectionViewDelegate?)
-	{
-		assignIfChanged(collectionView, \.dragInteractionEnabled, newValue: true)
-		assignIfChanged(collectionView, \.contentInsetAdjustmentBehavior, newValue: delegate?.collectionViewContentInsetAdjustmentBehavior ?? .automatic)
-		assignIfChanged(collectionView, \.contentInset, newValue: contentInsets)
-		assignIfChanged(collectionView, \.alwaysBounceVertical, newValue: alwaysBounceVertical)
-		assignIfChanged(collectionView, \.alwaysBounceHorizontal, newValue: alwaysBounceHorizontal)
-		assignIfChanged(collectionView, \.showsVerticalScrollIndicator, newValue: scrollIndicatorsEnabled)
-		assignIfChanged(collectionView, \.showsHorizontalScrollIndicator, newValue: scrollIndicatorsEnabled)
-
-		let isEditing = editMode?.wrappedValue.isEditing ?? false
-		assignIfChanged(collectionView, \.allowsSelection, newValue: isEditing)
-		assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: isEditing)
 	}
 
 	public func makeCoordinator() -> Coordinator
@@ -187,6 +183,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		private var haveRegisteredForSupplementaryOfKind: Set<String> = []
 
 		// MARK: Caching
+
 		private var autoCachingHostingControllers = ASPriorityCache<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 		private var explicitlyCachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 
@@ -225,6 +222,21 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 		}
 
+		func updateCollectionViewSettings(_ collectionView: UICollectionView)
+		{
+			assignIfChanged(collectionView, \.dragInteractionEnabled, newValue: true)
+			assignIfChanged(collectionView, \.contentInsetAdjustmentBehavior, newValue: delegate?.collectionViewContentInsetAdjustmentBehavior ?? .automatic)
+			assignIfChanged(collectionView, \.contentInset, newValue: parent.contentInsets)
+			assignIfChanged(collectionView, \.alwaysBounceVertical, newValue: parent.alwaysBounceVertical)
+			assignIfChanged(collectionView, \.alwaysBounceHorizontal, newValue: parent.alwaysBounceHorizontal)
+			assignIfChanged(collectionView, \.showsVerticalScrollIndicator, newValue: parent.verticalScrollIndicatorEnabled)
+			assignIfChanged(collectionView, \.showsHorizontalScrollIndicator, newValue: parent.horizontalScrollIndicatorEnabled)
+
+			let isEditing = parent.editMode?.wrappedValue.isEditing ?? false
+			assignIfChanged(collectionView, \.allowsSelection, newValue: isEditing)
+			assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: isEditing)
+		}
+
 		func setupDataSource(forCollectionView cv: UICollectionView)
 		{
 			cv.delegate = delegate
@@ -256,6 +268,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
 						?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizingConfig
 						?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
+
+				// Set itemID
+				cell.itemID = itemID
 
 				// Update hostingController
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
@@ -326,11 +341,12 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			if refreshExistingCells
 			{
 				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
-					for case let cell as Cell in cv.visibleCells {
+					for case let cell as Cell in cv.visibleCells
+					{
 						guard
 							let itemID = cell.itemID,
 							let hc = cell.hostingController
-							else { return }
+						else { return }
 						self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
 					}
 				}
@@ -419,7 +435,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			guard let collectionView = collectionViewController?.collectionView else { return }
 
-			if parent.attemptToMaintainScrollPositionOnOrientationChange
+			if parent.maintainScrollPositionOnOrientationChange
 			{
 				// Get centremost cell
 				if let indexPath = collectionView.indexPathForItem(at: CGPoint(x: collectionView.bounds.midX, y: collectionView.bounds.midY))
@@ -442,7 +458,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		var transitionCentralIndexPath: IndexPath?
 		func getContentOffsetForOrientationChange() -> CGPoint?
 		{
-			if parent.attemptToMaintainScrollPositionOnOrientationChange
+			if parent.maintainScrollPositionOnOrientationChange
 			{
 				guard let currentOffset = collectionViewController?.collectionView.contentOffset, currentOffset.x > 0, currentOffset.y > 0 else { return nil }
 				return transitionCentralIndexPath.flatMap(getContentOffsetToCenterCell)
@@ -560,19 +576,18 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 		{
-			updateContent(collectionView, transaction: nil, refreshExistingCells: true)
+			updateSelectionBindings(collectionView)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
 		{
-			updateContent(collectionView, transaction: nil, refreshExistingCells: true)
+			updateSelectionBindings(collectionView)
 		}
 
 		func updateSelectionBindings(_ collectionView: UICollectionView)
 		{
 			let selected = collectionView.indexPathsForSelectedItems ?? []
-			let selectedSafe = selected.filter { parent.sections.containsIndex($0.section) }
-			let selectionBySection = Dictionary(grouping: selectedSafe) { $0.section }
+			let selectionBySection = Dictionary(grouping: selected) { $0.section }
 				.mapValues
 			{
 				Set($0.map { $0.item })
@@ -630,13 +645,14 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	}
 }
 
-// MARK: OnReachedBoundary support
+// MARK: OnScroll/OnReachedBoundary support
 
 @available(iOS 13.0, *)
 extension ASCollectionView.Coordinator
 {
 	public func scrollViewDidScroll(_ scrollView: UIScrollView)
 	{
+		parent.onScrollCallback?(scrollView.contentOffset, scrollView.contentSizePlusInsets)
 		checkIfReachedBoundary(scrollView)
 	}
 
@@ -667,7 +683,7 @@ extension ASCollectionView.Coordinator
 				if !hasFiredBoundaryNotificationForBoundary.contains(boundary)
 				{
 					hasFiredBoundaryNotificationForBoundary.insert(boundary)
-					parent.onReachedBoundary(boundary)
+					parent.onReachedBoundaryCallback?(boundary)
 				}
 			}
 			else
@@ -688,48 +704,6 @@ public extension ASCollectionView.Coordinator
 	{
 		guard !indexPath.isEmpty else { return nil }
 		return parent.sections[safe: indexPath.section]?.dataSource.getContextMenu(for: indexPath)
-	}
-}
-
-// MARK: Modifer: Custom Delegate
-
-@available(iOS 13.0, *)
-public extension ASCollectionView
-{
-	/// Use this modifier to assign a custom delegate type (subclass of ASCollectionViewDelegate). This allows support for old UICollectionViewLayouts that require a delegate.
-	func customDelegate(_ delegateInitialiser: @escaping (() -> ASCollectionViewDelegate)) -> Self
-	{
-		var cv = self
-		cv.delegateInitialiser = delegateInitialiser
-		return cv
-	}
-}
-
-// MARK: Modifer: Layout Invalidation
-
-@available(iOS 13.0, *)
-public extension ASCollectionView
-{
-	/// For use in cases where you would like to change layout settings in response to a change in variables referenced by your layout closure.
-	/// Note: this ensures the layout is invalidated
-	/// - For UICollectionViewCompositionalLayout this means that your SectionLayout closure will be called again
-	/// - closures capture value types when created, therefore you must refer to a reference type in your layout closure if you want it to update.
-	func shouldInvalidateLayoutOnStateChange(_ shouldInvalidate: Bool, animated: Bool = true) -> Self
-	{
-		var this = self
-		this.shouldInvalidateLayoutOnStateChange = shouldInvalidate
-		this.shouldAnimateInvalidatedLayoutOnStateChange = animated
-		return this
-	}
-
-	/// For use in cases where you would like to recreate the layout object in response to a change in state. Eg. for changing layout types completely
-	/// If not changing the type of layout (eg. to a different class) t is preferable to invalidate the layout and update variables in the `configureCustomLayout` closure
-	func shouldRecreateLayoutOnStateChange(_ shouldRecreate: Bool, animated: Bool = true) -> Self
-	{
-		var this = self
-		this.shouldRecreateLayoutOnStateChange = shouldRecreate
-		this.shouldAnimateRecreatedLayoutOnStateChange = animated
-		return this
 	}
 }
 
@@ -952,6 +926,136 @@ class AS_UICollectionView: UICollectionView
 		guard window != nil else { return }
 		// Intended as a temporary workaround for a SwiftUI bug present in 13.3 -> the UIViewController is not moved to a parent when embedded in a list/scrollview
 		coordinator?.onMoveToParent()
+	}
+}
+
+// MARK: Modifer: Custom Delegate
+
+@available(iOS 13.0, *)
+public extension ASCollectionView
+{
+	/// Use this modifier to assign a custom delegate type (subclass of ASCollectionViewDelegate). This allows support for old UICollectionViewLayouts that require a delegate.
+	func customDelegate(_ delegateInitialiser: @escaping (() -> ASCollectionViewDelegate)) -> Self
+	{
+		var cv = self
+		cv.delegateInitialiser = delegateInitialiser
+		return cv
+	}
+}
+
+// MARK: Modifer: Layout Invalidation
+
+@available(iOS 13.0, *)
+public extension ASCollectionView
+{
+	/// For use in cases where you would like to change layout settings in response to a change in variables referenced by your layout closure.
+	/// Note: this ensures the layout is invalidated
+	/// - For UICollectionViewCompositionalLayout this means that your SectionLayout closure will be called again
+	/// - closures capture value types when created, therefore you must refer to a reference type in your layout closure if you want it to update.
+	func shouldInvalidateLayoutOnStateChange(_ shouldInvalidate: Bool, animated: Bool = true) -> Self
+	{
+		var this = self
+		this.shouldInvalidateLayoutOnStateChange = shouldInvalidate
+		this.shouldAnimateInvalidatedLayoutOnStateChange = animated
+		return this
+	}
+
+	/// For use in cases where you would like to recreate the layout object in response to a change in state. Eg. for changing layout types completely
+	/// If not changing the type of layout (eg. to a different class) t is preferable to invalidate the layout and update variables in the `configureCustomLayout` closure
+	func shouldRecreateLayoutOnStateChange(_ shouldRecreate: Bool, animated: Bool = true) -> Self
+	{
+		var this = self
+		this.shouldRecreateLayoutOnStateChange = shouldRecreate
+		this.shouldAnimateRecreatedLayoutOnStateChange = animated
+		return this
+	}
+}
+
+// MARK: Modifer: Other Modifiers
+
+@available(iOS 13.0, *)
+public extension ASCollectionView
+{
+	/// Set a closure that is called whenever the collectionView is scrolled
+	func onScroll(_ onScroll: @escaping OnScrollCallback) -> Self
+	{
+		var this = self
+		this.onScrollCallback = onScroll
+		return this
+	}
+
+	/// Set a closure that is called whenever the collectionView is scrolled to a boundary. eg. the bottom.
+	/// This is useful to enable loading more data when scrolling to bottom
+	func onReachedBoundary(_ onReachedBoundary: @escaping OnReachedBoundaryCallback) -> Self
+	{
+		var this = self
+		this.onReachedBoundaryCallback = onReachedBoundary
+		return this
+	}
+
+	/// Set whether to show scroll indicators
+	func scrollIndicatorsEnabled(horizontal: Bool = true, vertical: Bool = true) -> Self
+	{
+		var this = self
+		this.horizontalScrollIndicatorEnabled = horizontal
+		this.verticalScrollIndicatorEnabled = vertical
+		return this
+	}
+
+	/// Set the content insets
+	func contentInsets(_ insets: UIEdgeInsets) -> Self
+	{
+		var this = self
+		this.contentInsets = insets
+		return this
+	}
+
+	/// Set a closure that is called when the collectionView is pulled to refresh
+	func onPullToRefresh(_ callback: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?) -> Self
+	{
+		var this = self
+		this.onPullToRefresh = callback
+		return this
+	}
+
+	/// Set whether the ASCollectionView should always allow bounce vertically
+	func alwaysBounceVertical(_ alwaysBounce: Bool = true) -> Self
+	{
+		var this = self
+		this.alwaysBounceVertical = alwaysBounce
+		return this
+	}
+
+	/// Set whether the ASCollectionView should always allow bounce horizontally
+	func alwaysBounceHorizontal(_ alwaysBounce: Bool = true) -> Self
+	{
+		var this = self
+		this.alwaysBounceHorizontal = alwaysBounce
+		return this
+	}
+
+	/// Set an initial scroll position for the ASCollectionView
+	func initialScrollPosition(_ position: ASCollectionViewScrollPosition?) -> Self
+	{
+		var this = self
+		this.initialScrollPosition = position
+		return this
+	}
+
+	/// Set whether the ASCollectionView should animate on data refresh
+	func animateOnDataRefresh(_ animate: Bool = true) -> Self
+	{
+		var this = self
+		this.animateOnDataRefresh = animate
+		return this
+	}
+
+	/// Set whether the ASCollectionView should attempt to maintain scroll position on orientation change, default is true
+	func shouldAttemptToMaintainScrollPositionOnOrientationChange(maintainPosition: Bool) -> Self
+	{
+		var this = self
+		this.maintainScrollPositionOnOrientationChange = true
+		return this
 	}
 }
 

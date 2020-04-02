@@ -26,7 +26,9 @@ struct TagsScreen: View
 			}
 			.onTapGesture
 			{
-				self.store.refreshStore()
+				withAnimation(self.shrinkToSize ? nil : .default) {
+					self.store.refreshStore()
+				}
 			}
 			Text("Tags:")
 				.font(.title)

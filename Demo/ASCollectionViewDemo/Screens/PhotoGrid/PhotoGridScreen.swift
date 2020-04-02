@@ -26,7 +26,6 @@ struct PhotoGridScreen: View
 			data: data,
 			selectedItems: $selectedItems,
 			onCellEvent: onCellEvent,
-			onDragDropEvent: onDragDropEvent,
 			itemProvider: { item in
 				// Example of returning a custom item provider (eg. to support drag-drop to other apps)
 				NSItemProvider(object: item.url as NSURL)
@@ -70,8 +69,8 @@ struct PhotoGridScreen: View
 		ASCollectionView(
 			section: section)
 			.layout(self.layout)
+			.initialScrollPosition(startingAtBottom ? .bottom : nil)
 			.edgesIgnoringSafeArea(.all)
-			.collectionViewInitialScrollPosition(startingAtBottom ? .bottom : nil)
 			.navigationBarTitle("Explore", displayMode: .large)
 			.navigationBarItems(
 				trailing:
@@ -80,7 +79,10 @@ struct PhotoGridScreen: View
 					if self.isEditing
 					{
 						Button(action: {
-							self.data.remove(atOffsets: IndexSet(self.selectedItems))
+							withAnimation {
+								// We want the cell removal to be animated, so explicitly specify `withAnimation`
+								self.data.remove(atOffsets: IndexSet(self.selectedItems))
+							}
 						})
 						{
 							Image(systemName: "trash")
@@ -122,20 +124,6 @@ struct PhotoGridScreen: View
 				}
 		}
 		.navigationBarTitle("", displayMode: .inline)
-	}
-
-	func onDragDropEvent(_ event: DragDrop<Post>)
-	{
-		switch event
-		{
-		case let .onRemoveItem(indexPath):
-			if data.containsIndex(indexPath.item)
-			{
-				data.remove(at: indexPath.item)
-			}
-		case let .onAddItems(items, indexPath):
-			data.insert(contentsOf: items, at: min(indexPath.item, data.endIndex))
-		}
 	}
 }
 
