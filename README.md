@@ -101,13 +101,10 @@ struct ExampleView: View {
 			}
 			.sectionHeader
 			{
-				HStack
-				{
-					Text("Section header")
-						.padding()
-					Spacer()
-				}
-				.background(Color.yellow)
+				Text("Section header")
+					.padding()
+					.frame(maxWidth: .infinity, alignment: .leading) //Fill width and align text to the left
+					.background(Color.yellow)
 			}
 			.sectionFooter
 			{

@@ -56,13 +56,10 @@ struct ExampleView: View
 			}
 			.sectionHeader
 			{
-				HStack
-				{
-					Text("Section header")
-						.padding()
-					Spacer()
-				}
-				.background(Color.yellow)
+				Text("Section header")
+					.padding()
+					.frame(maxWidth: .infinity, alignment: .leading)
+					.background(Color.yellow)
 			}
 			.sectionFooter
 			{

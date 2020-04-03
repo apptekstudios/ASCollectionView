@@ -23,13 +23,10 @@ struct MagazineLayoutScreen: View
 			}
 			.sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader)
 			{
-				HStack
-				{
-					Text("Section \(offset)")
-						.padding()
-					Spacer()
-				}
-				.background(Color.blue)
+				Text("Section \(offset)")
+					.padding()
+					.frame(maxWidth: .infinity, alignment: .leading)
+					.background(Color.blue)
 			}
 		}
 	}

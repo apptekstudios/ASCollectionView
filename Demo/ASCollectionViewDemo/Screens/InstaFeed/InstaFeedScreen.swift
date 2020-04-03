@@ -56,12 +56,9 @@ struct InstaFeedScreen: View
 			{
 				VStack(spacing: 0)
 				{
-					HStack
-					{
-						Text("Demo sticky header view")
-							.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
-						Spacer()
-					}
+					Text("Demo sticky header view")
+						.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+						.frame(maxWidth: .infinity, alignment: .leading)
 					Divider()
 				}
 				.background(Color(.secondarySystemBackground))
@@ -69,15 +66,13 @@ struct InstaFeedScreen: View
 		}
 	}
 
-	var sections: [ASTableViewSection<Int>]
-	{
-		[storiesSection] + postSections
-	}
-
 	var body: some View
 	{
-		ASTableView(sections: sections)
-			.onReachedBottom
+		ASTableView {
+			storiesSection // An ASSection
+			postSections // An array of ASSection's
+		}
+		.onReachedBottom
 		{
 			self.loadMoreContent() // REACHED BOTTOM, LOADING MORE CONTENT
 		}

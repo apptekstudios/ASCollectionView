@@ -24,7 +24,7 @@ extension Optional: Nestable where Wrapped: Nestable
 {
 	public func asArray() -> [Wrapped.T]
 	{
-		self.map { $0.asArray()	} ?? []
+		map { $0.asArray() } ?? []
 	}
 }
 
