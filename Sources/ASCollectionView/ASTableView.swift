@@ -70,21 +70,32 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 	public typealias Section = ASTableViewSection<SectionID>
 
+	public typealias OnScrollCallback = ((_ contentOffset: CGPoint, _ contentSize: CGSize) -> Void)
+	public typealias OnReachedBottomCallback = (() -> Void)
+
 	// MARK: Key variables
 
 	public var sections: [Section]
 	public var style: UITableView.Style
 
+	// MARK: Private vars set by public modifiers
+
+	private var onScrollCallback: OnScrollCallback?
+	private var onReachedBottomCallback: OnReachedBottomCallback?
+
+	private var scrollIndicatorEnabled: Bool = true
+	private var contentInsets: UIEdgeInsets = .zero
+
+	private var separatorsEnabled: Bool = true
+
+	private var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
+
+	private var alwaysBounce: Bool = false
+	private var animateOnDataRefresh: Bool = true
+
 	// MARK: Environment variables
 
-	@Environment(\.tableViewSeparatorsEnabled) private var separatorsEnabled
-	@Environment(\.onPullToRefresh) private var onPullToRefresh
-	@Environment(\.tableViewOnReachedBottom) private var onReachedBottom
-	@Environment(\.scrollIndicatorsEnabled) private var scrollIndicatorsEnabled
-	@Environment(\.contentInsets) private var contentInsets
-	@Environment(\.alwaysBounceVertical) private var alwaysBounceVertical
 	@Environment(\.editMode) private var editMode
-	@Environment(\.animateOnDataRefresh) private var animateOnDataRefresh
 
 	// Other
 	var contentSizeTracker: ContentSizeTracker?
@@ -114,8 +125,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		let tableViewController = AS_TableViewController(style: style)
 		tableViewController.coordinator = context.coordinator
 
-		updateTableViewSettings(tableViewController.tableView)
 		context.coordinator.tableViewController = tableViewController
+		context.coordinator.updateTableViewSettings(tableViewController.tableView)
 
 		context.coordinator.setupDataSource(forTableView: tableViewController.tableView)
 		return tableViewController
@@ -124,23 +135,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 	public func updateUIViewController(_ tableViewController: AS_TableViewController, context: Context)
 	{
 		context.coordinator.parent = self
-		updateTableViewSettings(tableViewController.tableView)
+		context.coordinator.updateTableViewSettings(tableViewController.tableView)
 		context.coordinator.updateContent(tableViewController.tableView, transaction: context.transaction, refreshExistingCells: true)
 		context.coordinator.configureRefreshControl(for: tableViewController.tableView)
-	}
-
-	func updateTableViewSettings(_ tableView: UITableView)
-	{
-		assignIfChanged(tableView, \.backgroundColor, newValue: (style == .plain) ? .clear : .systemGroupedBackground)
-		assignIfChanged(tableView, \.separatorStyle, newValue: separatorsEnabled ? .singleLine : .none)
-		assignIfChanged(tableView, \.contentInset, newValue: contentInsets)
-		assignIfChanged(tableView, \.alwaysBounceVertical, newValue: alwaysBounceVertical)
-		assignIfChanged(tableView, \.showsVerticalScrollIndicator, newValue: scrollIndicatorsEnabled)
-		assignIfChanged(tableView, \.showsHorizontalScrollIndicator, newValue: scrollIndicatorsEnabled)
-
-		let isEditing = editMode?.wrappedValue.isEditing ?? false
-		assignIfChanged(tableView, \.allowsSelection, newValue: isEditing)
-		assignIfChanged(tableView, \.allowsMultipleSelection, newValue: isEditing)
 	}
 
 	public func makeCoordinator() -> Coordinator
@@ -164,6 +161,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		private var lastSnapshot: NSDiffableDataSourceSnapshot<SectionID, ASCollectionViewItemUniqueID>?
 
 		// MARK: Caching
+
 		private var autoCachingHostingControllers = ASPriorityCache<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 		private var explicitlyCachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
 
@@ -191,6 +189,21 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		{
 			parent.sections
 				.first(where: { $0.id.hashValue == itemID.sectionIDHash })
+		}
+
+		func updateTableViewSettings(_ tableView: UITableView)
+		{
+			assignIfChanged(tableView, \.backgroundColor, newValue: (parent.style == .plain) ? .clear : .systemGroupedBackground)
+			assignIfChanged(tableView, \.separatorStyle, newValue: parent.separatorsEnabled ? .singleLine : .none)
+			assignIfChanged(tableView, \.contentInset, newValue: parent.contentInsets)
+			assignIfChanged(tableView, \.alwaysBounceVertical, newValue: parent.alwaysBounce)
+			assignIfChanged(tableView, \.showsVerticalScrollIndicator, newValue: parent.scrollIndicatorEnabled)
+			assignIfChanged(tableView, \.showsHorizontalScrollIndicator, newValue: parent.scrollIndicatorEnabled)
+			assignIfChanged(tableView, \.keyboardDismissMode, newValue: .onDrag)
+
+			let isEditing = parent.editMode?.wrappedValue.isEditing ?? false
+			assignIfChanged(tableView, \.allowsSelection, newValue: isEditing)
+			assignIfChanged(tableView, \.allowsMultipleSelection, newValue: isEditing)
 		}
 
 		func setupDataSource(forTableView tv: UITableView)
@@ -228,7 +241,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				// Update hostingController
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
 				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: cachedHC)
-
 				// Cache the HC
 				self.autoCachingHostingControllers[itemID] = cell.hostingController
 				if section.shouldCacheCells
@@ -262,12 +274,21 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			if refreshExistingCells
 			{
 				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
-					for case let cell as Cell in tv.visibleCells {
+					for case let cell as Cell in tv.visibleCells
+					{
 						guard
 							let itemID = cell.itemID,
 							let hc = cell.hostingController
-							else { return }
+						else { return }
 						self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
+					}
+
+					tv.visibleHeaderViews.forEach { sectionIndex, view in
+						configureHeader(view, forSection: sectionIndex)
+					}
+
+					tv.visibleFooterViews.forEach { sectionIndex, view in
+						configureFooter(view, forSection: sectionIndex)
 					}
 				}
 			}
@@ -435,14 +456,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		func updateSelectionBindings(_ tableView: UITableView)
 		{
 			let selected = tableView.indexPathsForSelectedRows ?? []
-			let selectedSafe = selected.filter { parent.sections.containsIndex($0.section) }
-			Dictionary(grouping: selectedSafe) { $0.section }
+			let selectionBySection = Dictionary(grouping: selected) { $0.section }
 				.mapValues
 			{
 				Set($0.map { $0.item })
 			}
-			.forEach { sectionID, indices in
-				parent.sections[safe: sectionID]?.dataSource.updateSelection(indices)
+			parent.sections.enumerated().forEach { offset, section in
+				section.dataSource.updateSelection(selectionBySection[offset] ?? [])
 			}
 		}
 
@@ -502,8 +522,15 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView?
 		{
-			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: supplementaryReuseID) as? ASTableViewSupplementaryView
-			else { return nil }
+			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: supplementaryReuseID) else { return nil }
+			configureHeader(reusableView, forSection: section)
+			return reusableView
+		}
+
+		func configureHeader(_ headerCell: UITableViewHeaderFooterView, forSection section: Int)
+		{
+			guard let reusableView = headerCell as? ASTableViewSupplementaryView
+			else { return }
 			if let supplementaryView = parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionHeader)
 			{
 				// Self Sizing Settings
@@ -517,13 +544,23 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					id: section,
 					view: supplementaryView)
 			}
-			return reusableView
+			else
+			{
+				reusableView.setupForEmpty(id: section)
+			}
 		}
 
 		public func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView?
 		{
-			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: supplementaryReuseID) as? ASTableViewSupplementaryView
-			else { return nil }
+			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: supplementaryReuseID) else { return nil }
+			configureFooter(reusableView, forSection: section)
+			return reusableView
+		}
+
+		func configureFooter(_ footerCell: UITableViewHeaderFooterView, forSection section: Int)
+		{
+			guard let reusableView = footerCell as? ASTableViewSupplementaryView
+			else { return }
 			if let supplementaryView = parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionFooter)
 			{
 				// Self Sizing Settings
@@ -537,11 +574,15 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					id: section,
 					view: supplementaryView)
 			}
-			return reusableView
+			else
+			{
+				reusableView.setupForEmpty(id: section)
+			}
 		}
 
 		public func scrollViewDidScroll(_ scrollView: UIScrollView)
 		{
+			parent.onScrollCallback?(scrollView.contentOffset, scrollView.contentSizePlusInsets)
 			checkIfReachedBottom(scrollView)
 		}
 
@@ -553,7 +594,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				if !hasAlreadyReachedBottom
 				{
 					hasAlreadyReachedBottom = true
-					parent.onReachedBottom()
+					parent.onReachedBottomCallback?()
 				}
 			}
 			else
@@ -570,6 +611,77 @@ protocol ASTableViewCoordinator: AnyObject
 	func onMoveToParent()
 	func onMoveFromParent()
 	func didUpdateContentSize(_ size: CGSize)
+}
+
+// MARK: PUBLIC Modifier: OnScroll / OnReachedBottom
+
+@available(iOS 13.0, *)
+public extension ASTableView
+{
+	/// Set a closure that is called whenever the tableView is scrolled
+	func onScroll(_ onScroll: @escaping OnScrollCallback) -> Self
+	{
+		var this = self
+		this.onScrollCallback = onScroll
+		return this
+	}
+
+	/// Set a closure that is called whenever the tableView is scrolled to the bottom.
+	/// This is useful to enable loading more data when scrolling to bottom
+	func onReachedBottom(_ onReachedBottom: @escaping OnReachedBottomCallback) -> Self
+	{
+		var this = self
+		this.onReachedBottomCallback = onReachedBottom
+		return this
+	}
+
+	/// Set whether to show separators between cells
+	func separatorsEnabled(_ isEnabled: Bool = true) -> Self
+	{
+		var this = self
+		this.separatorsEnabled = isEnabled
+		return this
+	}
+
+	/// Set whether to show scroll indicator
+	func scrollIndicatorEnabled(_ isEnabled: Bool = true) -> Self
+	{
+		var this = self
+		this.scrollIndicatorEnabled = isEnabled
+		return this
+	}
+
+	/// Set the content insets
+	func contentInsets(_ insets: UIEdgeInsets) -> Self
+	{
+		var this = self
+		this.contentInsets = insets
+		return this
+	}
+
+	/// Set a closure that is called when the tableView is pulled to refresh
+	func onPullToRefresh(_ callback: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?) -> Self
+	{
+		var this = self
+		this.onPullToRefresh = callback
+		return this
+	}
+
+	/// Set whether the TableView should always allow bounce vertically
+	func alwaysBounce(_ alwaysBounce: Bool = true) -> Self
+	{
+		var this = self
+		this.alwaysBounce = alwaysBounce
+		return this
+	}
+
+	/// Set whether the TableView should animate on data refresh
+	func animateOnDataRefresh(_ animate: Bool = true) -> Self
+	{
+		var this = self
+		this.animateOnDataRefresh = animate
+		return this
+	}
 }
 
 // MARK: ASTableView specific header modifiers

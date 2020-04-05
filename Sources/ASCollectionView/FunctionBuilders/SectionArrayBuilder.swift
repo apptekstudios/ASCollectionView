@@ -20,6 +20,15 @@ extension ASSection: Nestable
 }
 
 @available(iOS 13.0, *)
+extension Optional: Nestable where Wrapped: Nestable
+{
+	public func asArray() -> [Wrapped.T]
+	{
+		map { $0.asArray() } ?? []
+	}
+}
+
+@available(iOS 13.0, *)
 extension Array: Nestable
 {
 	public func asArray() -> Self

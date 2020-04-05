@@ -73,6 +73,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		if hostingController?.viewController.view.frame != contentView.bounds
 		{
 			hostingController?.viewController.view.frame = contentView.bounds
+			hostingController?.viewController.view.layoutIfNeeded()
 		}
 	}
 
@@ -115,24 +116,24 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		fatalError("init(coder:) has not been implemented")
 	}
 
-	func setupFor<Content: View>(id: Int, view: Content?)
+	func setupFor<Content: View>(id: Int, view: Content)
 	{
 		self.id = id
-		if let view = view
+		if let hc = hostingController as? ASHostingController<Content>
 		{
-			hostingController = ASHostingController<Content>(view)
+			hc.setView(view)
 		}
 		else
 		{
-			hostingController = nil
-			contentView.subviews.forEach { $0.removeFromSuperview() }
+			hostingController = ASHostingController<Content>(view)
 		}
 	}
 
-	func updateView<Content: View>(_ view: Content)
+	func setupForEmpty(id: Int)
 	{
-		guard let hc = hostingController as? ASHostingController<Content> else { return }
-		hc.setView(view)
+		self.id = id
+		hostingController = nil
+		contentView.subviews.forEach { $0.removeFromSuperview() }
 	}
 
 	func willAppear(in vc: UIViewController?)

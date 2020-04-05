@@ -23,13 +23,10 @@ struct MagazineLayoutScreen: View
 			}
 			.sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader)
 			{
-				HStack
-				{
-					Text("Section \(offset)")
-						.padding()
-					Spacer()
-				}
-				.background(Color.blue)
+				Text("Section \(offset)")
+					.padding()
+					.frame(maxWidth: .infinity, alignment: .leading)
+					.background(Color.blue)
 			}
 		}
 	}
@@ -38,13 +35,12 @@ struct MagazineLayoutScreen: View
 	{
 		ASCollectionView(sections: self.sections)
 			.layout { MagazineLayout() }
+			.onReachedBoundary { boundary in
+				print("Reached the \(boundary) boundary")
+			}
 			.customDelegate(ASCollectionViewMagazineLayoutDelegate.init)
 			.edgesIgnoringSafeArea(.all)
 			.navigationBarTitle("Magazine Layout (custom delegate)", displayMode: .inline)
-			.collectionViewOnReachedBoundary
-		{ boundary in
-			print("Reached the \(boundary) boundary")
-		}
 	}
 
 	func onCellEvent(_ event: CellEvent<Post>)

@@ -46,14 +46,11 @@ struct RemindersScreen: View
 			}
 			.sectionHeader
 			{
-				HStack
-				{
-					Text("My Lists")
-						.font(.headline)
-						.bold()
-						.padding()
-					Spacer()
-				}
+				Text("My Lists")
+					.font(.headline)
+					.bold()
+					.padding()
+					.frame(maxWidth: .infinity, alignment: .leading)
 			}
 
 			ASCollectionViewSection<Section>(id: .addNew)
@@ -63,18 +60,14 @@ struct RemindersScreen: View
 
 			ASCollectionViewSection<Section>(id: .footnote)
 			{
-				HStack
-				{
-					Spacer()
-					Text("Try rotating the screen")
-						.padding()
-					Spacer()
-				}
+				Text("Try rotating the screen")
+					.padding()
+					.frame(maxWidth: .infinity, alignment: .center)
 			}
 		}
 		.layout(self.layout)
-		.collectionViewContentInsets(.init(top: 20, left: 0, bottom: 20, right: 0))
-		.collectionViewAlwaysBounceVertical()
+		.contentInsets(.init(top: 20, left: 0, bottom: 20, right: 0))
+		.alwaysBounceVertical()
 		.background(Color(.systemGroupedBackground))
 		.edgesIgnoringSafeArea(.all)
 		.navigationBarTitle("Reminders", displayMode: .inline)
