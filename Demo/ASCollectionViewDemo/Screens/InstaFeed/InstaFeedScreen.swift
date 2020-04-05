@@ -56,7 +56,7 @@ struct InstaFeedScreen: View
 			{
 				VStack(spacing: 0)
 				{
-					Text("Demo sticky header view")
+					Text("Section \(i)")
 						.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
 						.frame(maxWidth: .infinity, alignment: .leading)
 					Divider()

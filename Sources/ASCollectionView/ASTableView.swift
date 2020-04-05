@@ -199,6 +199,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			assignIfChanged(tableView, \.alwaysBounceVertical, newValue: parent.alwaysBounce)
 			assignIfChanged(tableView, \.showsVerticalScrollIndicator, newValue: parent.scrollIndicatorEnabled)
 			assignIfChanged(tableView, \.showsHorizontalScrollIndicator, newValue: parent.scrollIndicatorEnabled)
+			assignIfChanged(tableView, \.keyboardDismissMode, newValue: .onDrag)
 
 			let isEditing = parent.editMode?.wrappedValue.isEditing ?? false
 			assignIfChanged(tableView, \.allowsSelection, newValue: isEditing)
@@ -280,6 +281,14 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 							let hc = cell.hostingController
 						else { return }
 						self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
+					}
+
+					tv.visibleHeaderViews.forEach { sectionIndex, view in
+						configureHeader(view, forSection: sectionIndex)
+					}
+
+					tv.visibleFooterViews.forEach { sectionIndex, view in
+						configureFooter(view, forSection: sectionIndex)
 					}
 				}
 			}
@@ -513,8 +522,15 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView?
 		{
-			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: supplementaryReuseID) as? ASTableViewSupplementaryView
-			else { return nil }
+			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: supplementaryReuseID) else { return nil }
+			configureHeader(reusableView, forSection: section)
+			return reusableView
+		}
+
+		func configureHeader(_ headerCell: UITableViewHeaderFooterView, forSection section: Int)
+		{
+			guard let reusableView = headerCell as? ASTableViewSupplementaryView
+			else { return }
 			if let supplementaryView = parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionHeader)
 			{
 				// Self Sizing Settings
@@ -528,13 +544,23 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					id: section,
 					view: supplementaryView)
 			}
-			return reusableView
+			else
+			{
+				reusableView.setupForEmpty(id: section)
+			}
 		}
 
 		public func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView?
 		{
-			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: supplementaryReuseID) as? ASTableViewSupplementaryView
-			else { return nil }
+			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: supplementaryReuseID) else { return nil }
+			configureFooter(reusableView, forSection: section)
+			return reusableView
+		}
+
+		func configureFooter(_ footerCell: UITableViewHeaderFooterView, forSection section: Int)
+		{
+			guard let reusableView = footerCell as? ASTableViewSupplementaryView
+			else { return }
 			if let supplementaryView = parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionFooter)
 			{
 				// Self Sizing Settings
@@ -548,7 +574,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					id: section,
 					view: supplementaryView)
 			}
-			return reusableView
+			else
+			{
+				reusableView.setupForEmpty(id: section)
+			}
 		}
 
 		public func scrollViewDidScroll(_ scrollView: UIScrollView)
