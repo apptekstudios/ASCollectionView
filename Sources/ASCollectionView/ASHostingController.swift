@@ -6,11 +6,15 @@ import SwiftUI
 @available(iOS 13.0, *)
 internal struct ASHostingControllerModifier: ViewModifier
 {
-	var invalidateCellLayout: (() -> Void) = {}
+	var invalidateCellLayoutCallback: ((_ animated: Bool) -> Void)?
+	var collectionViewScrollToCellCallback: ((UICollectionView.ScrollPosition) -> Void)?
+	var tableViewScrollToCellCallback: ((UITableView.ScrollPosition) -> Void)?
 	func body(content: Content) -> some View
 	{
 		content
-			.environment(\.invalidateCellLayout, invalidateCellLayout)
+			.environment(\.invalidateCellLayout, invalidateCellLayoutCallback)
+			.environment(\.collectionViewScrollToCell, collectionViewScrollToCellCallback)
+			.environment(\.tableViewScrollToCell, tableViewScrollToCellCallback)
 	}
 }
 
@@ -18,7 +22,7 @@ internal struct ASHostingControllerModifier: ViewModifier
 internal protocol ASHostingControllerProtocol: AnyObject
 {
 	var viewController: UIViewController { get }
-	func applyModifier(_ modifier: ASHostingControllerModifier)
+	var modifier: ASHostingControllerModifier { get set }
 	func sizeThatFits(in size: CGSize, maxSize: ASOptionalSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize
 }
 
@@ -53,11 +57,6 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 	{
 		hostedView = view
 		uiHostingController.rootView = hostedView.modifier(modifier)
-	}
-
-	func applyModifier(_ modifier: ASHostingControllerModifier)
-	{
-		self.modifier = modifier
 	}
 
 	func sizeThatFits(in size: CGSize, maxSize: ASOptionalSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize

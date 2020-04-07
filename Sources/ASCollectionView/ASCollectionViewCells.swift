@@ -17,17 +17,8 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	{
 		didSet
 		{
-			if let hc = hostingController
-			{
-				if hc.viewController.view.superview != contentView
-				{
-					contentView.subviews.forEach { $0.removeFromSuperview() }
-				}
-			}
-			else
-			{
-				contentView.subviews.forEach { $0.removeFromSuperview() }
-			}
+			hostingController?.modifier.invalidateCellLayoutCallback = invalidateLayoutCallback
+			hostingController?.modifier.collectionViewScrollToCellCallback = scrollToCellCallback
 		}
 	}
 
@@ -35,7 +26,8 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: true, selfSizeVertically: true)
 
-	var invalidateLayout: (() -> Void)?
+	var invalidateLayoutCallback: ((_ animated: Bool) -> Void)?
+	var scrollToCellCallback: ((UICollectionView.ScrollPosition) -> Void)?
 
 	func willAppear(in vc: UIViewController)
 	{
@@ -47,12 +39,7 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 				vc.addChild(hc.viewController)
 			}
 
-			if hc.viewController.view.superview != contentView
-			{
-				contentView.subviews.forEach { $0.removeFromSuperview() }
-				contentView.addSubview(hc.viewController.view)
-				setNeedsLayout()
-			}
+			attachView()
 
 			hostingController?.viewController.didMove(toParent: vc)
 		}
@@ -61,6 +48,21 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	func didDisappear()
 	{
 		hostingController?.viewController.removeFromParent()
+	}
+
+	private func attachView()
+	{
+		guard let hcView = hostingController?.viewController.view else
+		{
+			contentView.subviews.forEach { $0.removeFromSuperview() }
+			return
+		}
+		if hcView.superview != contentView
+		{
+			contentView.subviews.forEach { $0.removeFromSuperview() }
+			contentView.addSubview(hcView)
+			setNeedsLayout()
+		}
 	}
 
 	override func prepareForReuse()

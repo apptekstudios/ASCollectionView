@@ -11,9 +11,10 @@ let package = Package(name: "ASCollectionView",
                         .library(name: "ASCollectionViewDynamic", type: .dynamic, targets: ["ASCollectionView"]),
 					  ],
                       dependencies: [
+						.package(url: "https://github.com/ra1028/DifferenceKit", .upToNextMajor(from: Version(1, 1, 5)))
                       ],
                       targets: [
                       	.target(name: "ASCollectionView",
-                      	        dependencies: []),
+                      	        dependencies: ["DifferenceKit"]),
 					  ]
 )

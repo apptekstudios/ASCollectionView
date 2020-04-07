@@ -169,11 +169,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		weak var collectionViewController: AS_CollectionViewController?
 
-		var dataSource: ASCollectionViewDiffableDataSource<SectionID, ASCollectionViewItemUniqueID>?
+		var dataSource: ASDiffableDataSourceCollectionView<SectionID>?
 
 		let cellReuseID = UUID().uuidString
 		let supplementaryReuseID = UUID().uuidString
-		let supplementaryEmptyKind = UUID().uuidString // Used to prevent crash if supplementaries defined in layout but not provided by the section
 
 		// MARK: Private tracking variables
 
@@ -207,8 +206,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func supplementaryKinds() -> Set<String>
 		{
-			let emptyKindSet: Set<String> = [supplementaryEmptyKind] // Used to prevent crash if supplementaries defined in layout but not provided by the section
-			return parent.sections.reduce(into: emptyKindSet) { result, section in
+			parent.sections.reduce(into: Set<String>()) { result, section in
 				result.formUnion(section.supplementaryKinds)
 			}
 		}
@@ -247,7 +245,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			registerSupplementaries(forCollectionView: cv)
 
 			dataSource = .init(collectionView: cv)
-			{ [weak self] (collectionView, indexPath, itemID) -> UICollectionViewCell? in
+			{ [weak self] collectionView, indexPath, itemID in
 				guard let self = self else { return nil }
 
 				guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: self.cellReuseID, for: indexPath) as? Cell
@@ -257,8 +255,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 				cell.collectionView = collectionView
 
-				cell.invalidateLayout = { [weak collectionView] in
-					collectionView?.collectionViewLayout.invalidateLayout()
+				cell.invalidateLayoutCallback = { [weak self] animated in
+					self?.invalidateLayout(animated: animated)
+				}
+				cell.scrollToCellCallback = { [weak self] position in
+					self?.scrollToItem(indexPath: indexPath, position: position)
 				}
 
 				// Self Sizing Settings
@@ -285,14 +286,12 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 				return cell
 			}
-			dataSource?.supplementaryViewProvider = { [weak self] (cv, kind, indexPath) -> UICollectionReusableView? in
+			dataSource?.supplementaryViewProvider = { [weak self] cv, kind, indexPath in
 				guard let self = self else { return nil }
 
 				guard self.supplementaryKinds().contains(kind) else
 				{
-					let emptyView = cv.dequeueReusableSupplementaryView(ofKind: self.supplementaryEmptyKind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
-					emptyView?.setupAsEmptyView()
-					return emptyView
+					return nil
 				}
 				guard let reusableView = cv.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
 				else { return nil }
@@ -320,18 +319,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			setupPrefetching()
 		}
 
-		func populateDataSource(animated: Bool = true, isInitialLoad: Bool = false)
+		func populateDataSource(animated: Bool = true)
 		{
-			var snapshot = NSDiffableDataSourceSnapshot<SectionID, ASCollectionViewItemUniqueID>()
-			snapshot.appendSections(parent.sections.map { $0.id })
-			parent.sections.forEach
-			{
-				snapshot.appendItems($0.itemIDs, toSection: $0.id)
-			}
-			dataSource?.apply(snapshot, animatingDifferences: animated, isInitialLoad: isInitialLoad)
-			{
-				self.collectionViewController.map { self.didUpdateContentSize($0.collectionView.contentSize) }
-			}
+			guard hasDoneInitialSetup else { return }
+			let snapshot = ASDiffableDataSourceSnapshot(sections:
+				parent.sections.map {
+					ASDiffableDataSourceSnapshot.Section(id: $0.id, elements: $0.itemIDs)
+				}
+			)
+			dataSource?.applySnapshot(snapshot, animated: animated)
+			collectionViewController.map { self.didUpdateContentSize($0.collectionView.contentSize) }
 		}
 
 		func updateContent(_ cv: UICollectionView, transaction: Transaction?, refreshExistingCells: Bool)
@@ -373,7 +370,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				hasDoneInitialSetup = true
 
 				// Populate data source
-				populateDataSource(animated: false, isInitialLoad: true)
+				populateDataSource(animated: false)
 
 				// Set initial scroll position
 				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
@@ -382,6 +379,17 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func onMoveFromParent()
 		{}
+
+		func invalidateLayout(animated: Bool)
+		{
+			CATransaction.begin()
+			if !animated
+			{
+				CATransaction.setDisableActions(true)
+			}
+			collectionViewController?.collectionViewLayout.invalidateLayout()
+			CATransaction.commit()
+		}
 
 		func configureRefreshControl(for cv: UICollectionView)
 		{
@@ -412,6 +420,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		}
 
 		// MARK: Functions for determining scroll position (on appear, and also on orientation change)
+
+		func scrollToItem(indexPath: IndexPath, position: UICollectionView.ScrollPosition = [])
+		{
+			CATransaction.begin()
+			collectionViewController?.collectionView.scrollToItem(at: indexPath, at: position, animated: true)
+			CATransaction.commit()
+		}
 
 		func scrollToPosition(_ scrollPosition: ASCollectionViewScrollPosition, animated: Bool = false)
 		{
@@ -740,7 +755,7 @@ extension ASCollectionView.Coordinator
 {
 	func setupPrefetching()
 	{
-		let numberToPreload = 8
+		let numberToPreload = 5
 		prefetchSubscription = queuePrefetch
 			.collect(.byTime(DispatchQueue.main, 0.1)) // .throttle CRASHES on 13.1, fixed from 13.3 but still using .collect for 13.1 compatibility
 			.compactMap
@@ -793,21 +808,21 @@ extension ASCollectionView.Coordinator
 		}
 		.sink
 		{ [weak self] prefetch in
-			guard let self = self else { return }
 			prefetch.forEach
 			{ sectionIndex, toPrefetch in
 				if !toPrefetch.isEmpty
 				{
-					self.parent.sections[safe: sectionIndex]?.dataSource.prefetch(toPrefetch)
+					self?.parent.sections[safe: sectionIndex]?.dataSource.prefetch(toPrefetch)
 				}
-				let toCancel = self.currentlyPrefetching.filter { $0.section == sectionIndex }.subtracting(toPrefetch)
-				if !toCancel.isEmpty
+				if
+					let toCancel = self?.currentlyPrefetching.filter({ $0.section == sectionIndex }).subtracting(toPrefetch),
+					!toCancel.isEmpty
 				{
-					self.parent.sections[safe: sectionIndex]?.dataSource.cancelPrefetch(Array(toCancel))
+					self?.parent.sections[safe: sectionIndex]?.dataSource.cancelPrefetch(Array(toCancel))
 				}
 			}
 
-			self.currentlyPrefetching = Set(prefetch.flatMap { $0.value })
+			self?.currentlyPrefetching = Set(prefetch.flatMap { $0.value })
 		}
 	}
 }
@@ -1109,30 +1124,5 @@ public extension ASCollectionView
 		var this = self
 		this.layout = Layout(createCustomLayout: createCustomLayout, configureCustomLayout: configureCustomLayout)
 		return this
-	}
-}
-
-@available(iOS 13.0, *)
-class ASCollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: UICollectionViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType: Hashable, ItemIdentifierType: Hashable
-{
-	// private let updateQueue = DispatchQueue(label: "ASCollectionViewUpdateQueue", qos: .userInitiated)
-
-	override func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil)
-	{
-		apply(snapshot, animatingDifferences: animatingDifferences, isInitialLoad: false, completion: completion)
-	}
-
-	func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, isInitialLoad: Bool, completion: (() -> Void)? = nil)
-	{
-		if animatingDifferences
-		{
-			super.apply(snapshot, animatingDifferences: !isInitialLoad, completion: completion)
-		}
-		else
-		{
-			UIView.performWithoutAnimation {
-				super.apply(snapshot, animatingDifferences: !isInitialLoad, completion: completion) // Animation must be true to get diffing. However we have disabled animation using .performWithoutAnimation
-			}
-		}
 	}
 }

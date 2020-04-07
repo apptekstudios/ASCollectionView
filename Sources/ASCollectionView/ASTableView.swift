@@ -150,7 +150,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		var parent: ASTableView
 		weak var tableViewController: AS_TableViewController?
 
-		var dataSource: ASTableViewDiffableDataSource<SectionID, ASCollectionViewItemUniqueID>?
+		var dataSource: ASDiffableDataSourceTableView<SectionID>?
 
 		let cellReuseID = UUID().uuidString
 		let supplementaryReuseID = UUID().uuidString
@@ -214,7 +214,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			tv.register(ASTableViewSupplementaryView.self, forHeaderFooterViewReuseIdentifier: supplementaryReuseID)
 
 			dataSource = .init(tableView: tv)
-			{ [weak self] (tableView, indexPath, itemID) -> UITableViewCell? in
+			{ [weak self] tableView, indexPath, itemID in
 				guard let self = self else { return nil }
 				guard
 					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell
@@ -225,8 +225,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				cell.backgroundColor = (self.parent.style == .plain) ? .clear : .secondarySystemGroupedBackground
 
 				// Cell layout invalidation callback
-				cell.invalidateLayout = { [weak self] in
-					self?.reloadRow(indexPath)
+				cell.invalidateLayoutCallback = { [weak self] animated in
+					self?.reloadRow(indexPath, animated: animated)
+				}
+				cell.scrollToCellCallback = { [weak self] position in
+					self?.scrollToRow(indexPath: indexPath, position: position)
 				}
 
 				// Self Sizing Settings
@@ -253,19 +256,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			dataSource?.defaultRowAnimation = .none
 		}
 
-		func populateDataSource(animated: Bool = true, isInitialLoad: Bool = false)
+		func populateDataSource(animated: Bool = true)
 		{
-			var snapshot = NSDiffableDataSourceSnapshot<SectionID, ASCollectionViewItemUniqueID>()
-			snapshot.appendSections(parent.sections.map { $0.id })
-			parent.sections.forEach
-			{
-				snapshot.appendItems($0.itemIDs, toSection: $0.id)
-			}
-			lastSnapshot = snapshot
-			dataSource?.apply(snapshot, animatingDifferences: animated, isInitialLoad: isInitialLoad)
-			{
-				self.tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
-			}
+			guard hasDoneInitialSetup else { return }
+			let snapshot = ASDiffableDataSourceSnapshot(sections:
+				parent.sections.map {
+					ASDiffableDataSourceSnapshot.Section(id: $0.id, elements: $0.itemIDs)
+				}
+			)
+			dataSource?.applySnapshot(snapshot, animated: animated)
+			tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
 		}
 
 		func updateContent(_ tv: UITableView, transaction: Transaction?, refreshExistingCells: Bool)
@@ -297,17 +297,14 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			updateSelectionBindings(tv)
 		}
 
-		func reloadRow(_ indexPath: IndexPath)
+		func reloadRow(_ indexPath: IndexPath, animated: Bool)
 		{
-			guard
-				let itemID = itemID(for: indexPath),
-				var snapshot = lastSnapshot
-			else { return }
-			snapshot.reloadItems([itemID])
-			dataSource?.apply(snapshot, animatingDifferences: true)
-			{
-				self.tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
-			}
+			dataSource?.reloadItem(indexPath, animated: animated)
+		}
+
+		func scrollToRow(indexPath: IndexPath, position: UITableView.ScrollPosition = .none)
+		{
+			tableViewController?.tableView.scrollToRow(at: indexPath, at: position, animated: true)
 		}
 
 		func onMoveToParent()
@@ -317,7 +314,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				hasDoneInitialSetup = true
 
 				// Populate data source
-				populateDataSource(animated: false, isInitialLoad: true)
+				populateDataSource(animated: false)
 
 				// Check if reached bottom already
 				tableViewController.map { checkIfReachedBottom($0.tableView) }
@@ -363,11 +360,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				tableView?.refreshControl?.endRefreshing()
 			}
 			parent.onPullToRefresh?(endRefreshing)
-		}
-
-		public func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat
-		{
-			parent.sections[safe: indexPath.section]?.estimatedRowHeight ?? 50
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
@@ -779,33 +771,5 @@ class AS_UITableView: UITableView
 
 		// Intended as a temporary workaround for a SwiftUI bug present in 13.3 -> the UIViewController is not moved to a parent when embedded in a list/scrollview
 		coordinator?.onMoveToParent()
-	}
-}
-
-@available(iOS 13.0, *)
-class ASTableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType>: UITableViewDiffableDataSource<SectionIdentifierType, ItemIdentifierType> where SectionIdentifierType: Hashable, ItemIdentifierType: Hashable
-{
-	override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool
-	{
-		true
-	}
-
-	override func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, completion: (() -> Void)? = nil)
-	{
-		apply(snapshot, animatingDifferences: animatingDifferences, isInitialLoad: false, completion: completion)
-	}
-
-	func apply(_ snapshot: NSDiffableDataSourceSnapshot<SectionIdentifierType, ItemIdentifierType>, animatingDifferences: Bool = true, isInitialLoad: Bool, completion: (() -> Void)? = nil)
-	{
-		if animatingDifferences
-		{
-			super.apply(snapshot, animatingDifferences: !isInitialLoad, completion: completion)
-		}
-		else
-		{
-			UIView.performWithoutAnimation {
-				super.apply(snapshot, animatingDifferences: !isInitialLoad, completion: completion) // Animation must be true to get diffing. However we have disabled animation using .performWithoutAnimation
-			}
-		}
 	}
 }

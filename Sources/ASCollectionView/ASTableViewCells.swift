@@ -11,19 +11,15 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	{
 		didSet
 		{
-			guard hostingController !== oldValue, let hc = hostingController else { return }
-			if hc.viewController.view.superview != contentView
-			{
-				hc.viewController.view.removeFromSuperview()
-				contentView.subviews.forEach { $0.removeFromSuperview() }
-				contentView.addSubview(hc.viewController.view)
-			}
+			hostingController?.modifier.invalidateCellLayoutCallback = invalidateLayoutCallback
+			hostingController?.modifier.tableViewScrollToCellCallback = scrollToCellCallback
 		}
 	}
 
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
 
-	var invalidateLayout: (() -> Void)?
+	var invalidateLayoutCallback: ((_ animated: Bool) -> Void)?
+	var scrollToCellCallback: ((UITableView.ScrollPosition) -> Void)?
 
 	override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?)
 	{
@@ -39,17 +35,15 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	func willAppear(in vc: UIViewController)
 	{
 		hostingController.map
-		{
-			$0.applyModifier(
-				ASHostingControllerModifier(invalidateCellLayout: { [weak self] in
-					self?.invalidateLayout?()
-					})
-			)
-			if $0.viewController.parent != vc
+		{ hc in
+			if hc.viewController.parent != vc
 			{
-				$0.viewController.removeFromParent()
-				vc.addChild($0.viewController)
+				hc.viewController.removeFromParent()
+				vc.addChild(hc.viewController)
 			}
+
+			attachView()
+
 			hostingController?.viewController.didMove(toParent: vc)
 		}
 	}
@@ -57,6 +51,20 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	func didDisappear()
 	{
 		hostingController?.viewController.removeFromParent()
+	}
+
+	private func attachView()
+	{
+		guard let hcView = hostingController?.viewController.view else
+		{
+			contentView.subviews.forEach { $0.removeFromSuperview() }
+			return
+		}
+		if hcView.superview != contentView
+		{
+			contentView.subviews.forEach { $0.removeFromSuperview() }
+			contentView.addSubview(hcView)
+		}
 	}
 
 	override func prepareForReuse()
@@ -73,11 +81,16 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		if hostingController?.viewController.view.frame != contentView.bounds
 		{
 			hostingController?.viewController.view.frame = contentView.bounds
+			hostingController?.viewController.view.setNeedsLayout()
 			hostingController?.viewController.view.layoutIfNeeded()
 		}
 	}
 
-	var fittedSize: CGSize = .zero
+	func prepareForSizing()
+	{
+		hostingController?.viewController.view.setNeedsLayout()
+		hostingController?.viewController.view.layoutIfNeeded()
+	}
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
@@ -87,7 +100,6 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 			maxSize: ASOptionalSize(),
 			selfSizeHorizontal: false,
 			selfSizeVertical: selfSizingConfig.selfSizeVertically)
-		layoutIfNeeded() // A hacky way to make cell size animations work correctly
 		return size
 	}
 
@@ -171,7 +183,10 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
-		hostingController?.viewController.view.frame = contentView.bounds
+		if hostingController?.viewController.view.frame != contentView.bounds
+		{
+			hostingController?.viewController.view.frame = contentView.bounds
+		}
 	}
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize

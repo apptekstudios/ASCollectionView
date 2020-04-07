@@ -51,7 +51,7 @@ struct InstaFeedScreen: View
 			{ item, _ in
 				PostView(post: item)
 			}
-			.tableViewSetEstimatedSizes(rowHeight: 500, headerHeight: 50) // Optional: Provide reasonable estimated heights for this section
+			.tableViewSetEstimatedSizes(headerHeight: 50) // Optional: Provide reasonable estimated heights for this section
 			.sectionHeader
 			{
 				VStack(spacing: 0)

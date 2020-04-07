@@ -61,8 +61,9 @@ struct AppStoreScreen: View
 	{
 		ASCollectionView(sections: self.sections)
 			.layout(self.layout)
-			.edgesIgnoringSafeArea(.all)
+			.shouldAttemptToMaintainScrollPositionOnOrientationChange(maintainPosition: false)
 			.navigationBarTitle("Apps", displayMode: .large)
+			.edgesIgnoringSafeArea(.all)
 	}
 
 	func onCellEvent(_ event: CellEvent<App>, sectionID: Int)
@@ -127,14 +128,14 @@ extension AppStoreScreen
 						widthDimension: .fractionalWidth(1.0),
 						heightDimension: .fractionalHeight(1.0)))
 
-					let itemsGroup = NSCollectionLayoutGroup.horizontal(
+					let itemsGroup = NSCollectionLayoutGroup.vertical(
 						layoutSize: NSCollectionLayoutSize(
-							widthDimension: .fractionalWidth(0.9 / columnsToFit),
+							widthDimension: .fractionalWidth(0.8 / columnsToFit),
 							heightDimension: .absolute(280)),
-						subitems: [item])
-					itemsGroup.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 8, bottom: 10, trailing: 8)
+						subitem: item, count: 1)
 
 					let section = NSCollectionLayoutSection(group: itemsGroup)
+					section.interGroupSpacing = 20
 					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
 					section.orthogonalScrollingBehavior = .groupPaging
 					return section
@@ -164,7 +165,7 @@ extension AppStoreScreen
 					let header = NSCollectionLayoutBoundarySupplementaryItem(
 						layoutSize: NSCollectionLayoutSize(
 							widthDimension: .fractionalWidth(1.0),
-							heightDimension: .estimated(34)),
+							heightDimension: .absolute(34)),
 						elementKind: UICollectionView.elementKindSectionHeader,
 						alignment: .top)
 					header.contentInsets.leading = nestedGroup.contentInsets.leading
@@ -201,7 +202,7 @@ extension AppStoreScreen
 					let header = NSCollectionLayoutBoundarySupplementaryItem(
 						layoutSize: NSCollectionLayoutSize(
 							widthDimension: .fractionalWidth(1.0),
-							heightDimension: .estimated(34)),
+							heightDimension: .absolute(34)),
 						elementKind: UICollectionView.elementKindSectionHeader,
 						alignment: .top)
 					header.contentInsets.leading = nestedGroup.contentInsets.leading

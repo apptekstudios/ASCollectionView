@@ -42,7 +42,6 @@ public struct ASSection<SectionID: Hashable>
 	}
 
 	// Only relevant for ASTableView
-	var estimatedRowHeight: CGFloat?
 	var estimatedHeaderHeight: CGFloat?
 	var estimatedFooterHeight: CGFloat?
 
@@ -173,10 +172,9 @@ public extension ASCollectionViewSection
 		return section
 	}
 
-	func tableViewSetEstimatedSizes(rowHeight: CGFloat? = nil, headerHeight: CGFloat? = nil, footerHeight: CGFloat? = nil) -> Self
+	func tableViewSetEstimatedSizes(headerHeight: CGFloat? = nil, footerHeight: CGFloat? = nil) -> Self
 	{
 		var section = self
-		section.estimatedRowHeight = rowHeight
 		section.estimatedHeaderHeight = headerHeight
 		section.estimatedFooterHeight = footerHeight
 		return section
