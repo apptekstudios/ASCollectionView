@@ -6,6 +6,7 @@ import SwiftUI
 @available(iOS 13.0, *)
 internal protocol ASSectionDataSourceProtocol
 {
+	var endIndex: Int { get }
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
@@ -17,8 +18,7 @@ internal protocol ASSectionDataSourceProtocol
 	func prefetch(_ indexPaths: [IndexPath])
 	func cancelPrefetch(_ indexPaths: [IndexPath])
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
-	func removeItem(from indexPath: IndexPath)
-	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
+	func applyDragOperation(_ operation: DragDrop<UIDragItem>)
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
@@ -54,8 +54,9 @@ public enum CellEvent<Data>
 @available(iOS 13.0, *)
 public enum DragDrop<Data>
 {
-	case onRemoveItem(indexPath: IndexPath)
-	case onAddItems(items: [Data], atIndexPath: IndexPath)
+	case onRemoveItems(from: IndexSet)
+	case onMoveItems(from: IndexSet, to: Int)
+	case onInsertItems(items: [Data], to: Int)
 }
 
 @available(iOS 13.0, *)
@@ -71,7 +72,7 @@ public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
 public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: (Bool) -> Void) -> Void)
 
 @available(iOS 13.0, *)
-public typealias ContextMenuProvider<Data> = ((_ item: Data) -> UIContextMenuConfiguration?)
+public typealias ContextMenuProvider<Data> = ((_ indexPath: IndexPath, _ item: Data) -> UIContextMenuConfiguration?)
 
 @available(iOS 13.0, *)
 public typealias SelfSizingConfig = ((_ context: ASSelfSizingContext) -> ASSelfSizingConfig?)
@@ -109,6 +110,8 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var dragEnabled: Bool { onDragDrop != nil }
 	var dropEnabled: Bool { onDragDrop != nil }
 
+	var endIndex: Int { data.endIndex }
+
 	func getIndex(of itemID: ASCollectionViewItemUniqueID) -> Int?
 	{
 		data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash })
@@ -129,11 +132,16 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		if let hc = (existingHC as? ASHostingController<Container>)
 		{
 			hc.setView(content)
+			hc.disableSwiftUIDropInteraction = dropEnabled
+			hc.disableSwiftUIDragInteraction = dragEnabled
 			return hc
 		}
 		else
 		{
-			return ASHostingController(content)
+			let newHC = ASHostingController(content)
+			newHC.disableSwiftUIDropInteraction = dropEnabled
+			newHC.disableSwiftUIDragInteraction = dragEnabled
+			return newHC
 		}
 	}
 
@@ -227,23 +235,17 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		return dragItem
 	}
 
-	func removeItem(from indexPath: IndexPath)
+	func applyDragOperation(_ operation: DragDrop<UIDragItem>)
 	{
-		guard data.containsIndex(indexPath.item) else { return }
-		onDragDrop?(.onRemoveItem(indexPath: indexPath))
-	}
-
-	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
-	{
-		guard dropEnabled else { return }
-		let index = max(data.startIndex, min(indexPath.item, data.endIndex))
-		let indexPath = IndexPath(item: index, section: indexPath.section)
-		let dataItems = items.compactMap
-		{ (dragItem) -> Data? in
-			guard let item = dragItem.localObject as? Data else { return nil }
-			return item
+		switch operation
+		{
+		case let .onInsertItems(items, index):
+			onDragDrop?(.onInsertItems(items: items.compactMap { $0.localObject as? Data }, to: index))
+		case let .onMoveItems(fromIndexes, index):
+			onDragDrop?(.onMoveItems(from: fromIndexes, to: index))
+		case let .onRemoveItems(indexes):
+			onDragDrop?(.onRemoveItems(from: indexes))
 		}
-		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: indexPath))
 	}
 
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
@@ -253,7 +255,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			let item = data[safe: indexPath.item]
 		else { return nil }
 
-		return menuProvider(item)
+		return menuProvider(indexPath, item)
 	}
 
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?

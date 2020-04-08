@@ -26,10 +26,22 @@ struct PhotoGridScreen: View
 			data: data,
 			selectedItems: $selectedItems,
 			onCellEvent: onCellEvent,
+			onDragDropEvent: { event in
+				switch event
+				{
+				case let .onInsertItems(items, index):
+					self.data.insert(contentsOf: items, at: index) // If this were a multi-section CV, you'd refer to the source of data for this section, eg. `self.data[sectionIndex]`
+				case let .onMoveItems(sourceIndexSet, index):
+					self.data.move(fromOffsets: sourceIndexSet, toOffset: index)
+				case let .onRemoveItems(indexSet):
+					self.data.remove(atOffsets: indexSet)
+				}
+			},
 			itemProvider: { item in
 				// Example of returning a custom item provider (eg. to support drag-drop to other apps)
 				NSItemProvider(object: item.url as NSURL)
-		})
+			},
+			contextMenuProvider: contextMenuProvider)
 		{ item, state in
 			ZStack(alignment: .bottomTrailing)
 			{
@@ -112,6 +124,20 @@ struct PhotoGridScreen: View
 				ASRemoteImageManager.shared.cancelLoad(for: item.url)
 			}
 		}
+	}
+
+	func contextMenuProvider(indexPath: IndexPath, post: Post) -> UIContextMenuConfiguration?
+	{
+		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { (_) -> UIMenu? in
+			let testAction = UIAction(title: "Do nothing") { _ in
+				//
+			}
+			let testAction2 = UIAction(title: "Try dragging the photo") { _ in
+				//
+			}
+			return UIMenu(title: "", image: nil, identifier: nil, options: [], children: [testAction, testAction2])
+		}
+		return configuration
 	}
 
 	func destinationForItem(_ item: Post) -> some View

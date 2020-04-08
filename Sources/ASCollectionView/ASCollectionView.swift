@@ -612,28 +612,122 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 		}
 
-		func dragItem(for indexPath: IndexPath) -> UIDragItem?
-		{
-			guard !indexPath.isEmpty else { return nil }
-			return parent.sections[safe: indexPath.section]?.dataSource.getDragItem(for: indexPath)
-		}
-
 		func canDrop(at indexPath: IndexPath) -> Bool
 		{
 			guard !indexPath.isEmpty else { return false }
 			return parent.sections[safe: indexPath.section]?.dataSource.dropEnabled ?? false
 		}
 
-		func removeItem(from indexPath: IndexPath)
+		func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
 		{
-			guard !indexPath.isEmpty else { return }
-			parent.sections[safe: indexPath.section]?.dataSource.removeItem(from: indexPath)
+			guard !indexPath.isEmpty else { return [] }
+			guard let dragItem = parent.sections[safe: indexPath.section]?.dataSource.getDragItem(for: indexPath) else { return [] }
+			return [dragItem]
 		}
 
-		func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
+		func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal
 		{
-			guard !indexPath.isEmpty else { return }
-			parent.sections[safe: indexPath.section]?.dataSource.insertDragItems(items, at: indexPath)
+			if collectionView.hasActiveDrag
+			{
+				if let destination = destinationIndexPath
+				{
+					guard canDrop(at: destination) else
+					{
+						return UICollectionViewDropProposal(operation: .cancel)
+					}
+				}
+				return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+			}
+			else
+			{
+				return UICollectionViewDropProposal(operation: .copy, intent: .insertAtDestinationIndexPath)
+			}
+		}
+
+		func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator)
+		{
+			guard
+				let destinationIndexPath = coordinator.destinationIndexPath,
+				!destinationIndexPath.isEmpty,
+				let destinationSection = parent.sections[safe: destinationIndexPath.section]
+			else { return }
+
+			switch coordinator.proposal.operation
+			{
+			case .move:
+				let itemsBySourceSection = Dictionary(grouping: coordinator.items) { item -> Int? in
+					if let sourceIndex = item.sourceIndexPath, !sourceIndex.isEmpty
+					{
+						return sourceIndex.section
+					}
+					else
+					{
+						return nil
+					}
+				}
+
+				// Handle move within destination section + insertion from other sections
+				let itemsToMove = itemsBySourceSection[destinationIndexPath.section] ?? []
+				var itemsToInsertPrefix: [UICollectionViewDropItem] = []
+				var itemsToInsertSuffix: [UICollectionViewDropItem] = []
+
+				// Handle removal from source sections
+				for (sectionIndex, items) in itemsBySourceSection
+				{
+					guard
+						let sectionIndex = sectionIndex,
+						sectionIndex != destinationIndexPath.section,
+						let sourceSection = parent.sections[safe: sectionIndex]
+					else { continue }
+					// Note that these need to be inserted at destination
+					if sectionIndex < destinationIndexPath.section
+					{
+						itemsToInsertPrefix.append(contentsOf: coordinator.items)
+					}
+					else
+					{
+						itemsToInsertSuffix.append(contentsOf: coordinator.items)
+					}
+
+					let itemsSourceIndexSet = IndexSet(items.compactMap { $0.sourceIndexPath?.item })
+					// These items are being REMOVED from the section (moved to another section)
+					let removeOperation = DragDrop<UIDragItem>.onRemoveItems(from: itemsSourceIndexSet)
+					sourceSection.dataSource.applyDragOperation(removeOperation)
+				}
+
+				// Find index after accounting for moves
+				let itemsToMoveSourceIndexSet = IndexSet(itemsToMove.compactMap { $0.sourceIndexPath?.item })
+				let maxDestinationIndex = destinationSection.dataSource.endIndex - 1
+				let adjustedDestinationIndexForMove = itemsToMoveSourceIndexSet.reduce(into: destinationIndexPath.item) {
+					if $1 < $0 { $0 += 1 }
+				}
+
+				let adjustedDestinationIndexForSuffix = adjustedDestinationIndexForMove + itemsToMoveSourceIndexSet.count
+				let adjustedDestinationIndexForPrefix = adjustedDestinationIndexForMove
+
+				// Calculate move within destination section
+				let moveOperation: DragDrop<UIDragItem>? = (!itemsToMoveSourceIndexSet.isEmpty) ? DragDrop<UIDragItem>.onMoveItems(from: itemsToMoveSourceIndexSet, to: min(adjustedDestinationIndexForMove, maxDestinationIndex)) : nil
+
+				// Calculate insert suffix and prefix
+				let insertSuffixOperation: DragDrop<UIDragItem>? = (!itemsToInsertSuffix.isEmpty) ? DragDrop<UIDragItem>.onInsertItems(items: itemsToInsertSuffix.compactMap { $0.dragItem }, to: min(adjustedDestinationIndexForSuffix, maxDestinationIndex)) : nil
+				let insertPrefixOperation: DragDrop<UIDragItem>? = (!itemsToInsertPrefix.isEmpty) ? DragDrop<UIDragItem>.onInsertItems(items: itemsToInsertPrefix.compactMap { $0.dragItem }, to: min(adjustedDestinationIndexForPrefix, maxDestinationIndex)) : nil
+
+				// Apply operation: MOVE THEN INSERT SUFFIX, THEN INSERT PREFIX (that order is important)
+				moveOperation.map { destinationSection.dataSource.applyDragOperation($0) }
+				insertSuffixOperation.map { destinationSection.dataSource.applyDragOperation($0) } // Suffix first so that prefix index unaffected
+				insertPrefixOperation.map { destinationSection.dataSource.applyDragOperation($0) }
+
+			case .copy:
+				let items = coordinator.items.map { $0.dragItem }
+				if !items.isEmpty
+				{
+					let operation = DragDrop<UIDragItem>.onInsertItems(items: items, to: destinationIndexPath.item)
+					destinationSection.dataSource.applyDragOperation(operation)
+				}
+
+			default:
+				return
+			}
 		}
 
 		func typeErasedDataForItem(at indexPath: IndexPath) -> Any?
@@ -738,10 +832,9 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
-	func dragItem(for indexPath: IndexPath) -> UIDragItem?
-	func canDrop(at indexPath: IndexPath) -> Bool
-	func removeItem(from indexPath: IndexPath)
-	func insertItems(_ items: [UIDragItem], at indexPath: IndexPath)
+	func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
+	func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal
+	func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator)
 	func didUpdateContentSize(_ size: CGSize)
 	func scrollViewDidScroll(_ scrollView: UIScrollView)
 	func onMoveToParent()

@@ -31,12 +31,10 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 {
 	init(_ view: ViewType, modifier: ASHostingControllerModifier = ASHostingControllerModifier())
 	{
-		hostedView = view
-		self.modifier = modifier
 		uiHostingController = .init(rootView: view.modifier(modifier))
 	}
 
-	let uiHostingController: UIHostingController<ModifiedContent<ViewType, ASHostingControllerModifier>>
+	private let uiHostingController: AS_UIHostingController<ModifiedContent<ViewType, ASHostingControllerModifier>>
 	var viewController: UIViewController
 	{
 		uiHostingController.view.backgroundColor = .clear
@@ -44,19 +42,45 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 		return uiHostingController as UIViewController
 	}
 
+	var disableSwiftUIDropInteraction: Bool
+	{
+		get { uiHostingController.shouldDisableDrop }
+		set { uiHostingController.shouldDisableDrop = newValue }
+	}
+
+	var disableSwiftUIDragInteraction: Bool
+	{
+		get { uiHostingController.shouldDisableDrag }
+		set { uiHostingController.shouldDisableDrag = newValue }
+	}
+
 	var hostedView: ViewType
+	{
+		get
+		{
+			uiHostingController.rootView.content
+		}
+		set
+		{
+			uiHostingController.rootView.content = newValue
+		}
+	}
+
 	var modifier: ASHostingControllerModifier
 	{
-		didSet
+		get
 		{
-			uiHostingController.rootView = hostedView.modifier(modifier)
+			uiHostingController.rootView.modifier
+		}
+		set
+		{
+			uiHostingController.rootView.modifier = newValue
 		}
 	}
 
 	func setView(_ view: ViewType)
 	{
 		hostedView = view
-		uiHostingController.rootView = hostedView.modifier(modifier)
 	}
 
 	func sizeThatFits(in size: CGSize, maxSize: ASOptionalSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize
@@ -85,5 +109,54 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 		if !selfSizeVertical { desiredSize.height = size.height }
 
 		return desiredSize.applyMaxSize(maxSize)
+	}
+}
+
+@available(iOS 13.0, *)
+private class AS_UIHostingController<Content: View>: UIHostingController<Content>
+{
+	var shouldDisableDrop: Bool = false
+	{
+		didSet
+		{
+			disableInteractionsIfNeeded()
+		}
+	}
+
+	var shouldDisableDrag: Bool = false
+	{
+		didSet
+		{
+			disableInteractionsIfNeeded()
+		}
+	}
+
+	private func disableInteractionsIfNeeded()
+	{
+		guard let view = viewIfLoaded else { return }
+		if shouldDisableDrop
+		{
+			if let dropInteraction = view.interactions.first(where: {
+				$0.isKind(of: UIDropInteraction.self)
+			}) as? UIDropInteraction
+			{
+				view.removeInteraction(dropInteraction)
+			}
+		}
+		if shouldDisableDrag
+		{
+			if let contextInteraction = view.interactions.first(where: {
+				$0.isKind(of: UIDragInteraction.self)
+			}) as? UIDragInteraction
+			{
+				view.removeInteraction(contextInteraction)
+			}
+		}
+	}
+
+	override func loadView()
+	{
+		super.loadView()
+		disableInteractionsIfNeeded()
 	}
 }

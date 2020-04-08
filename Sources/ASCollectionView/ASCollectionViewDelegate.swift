@@ -69,78 +69,29 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 @available(iOS 13.0, *)
 extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionViewDropDelegate
 {
+	public func collectionView(_ collectionView: UICollectionView, dragSessionAllowsMoveOperation session: UIDragSession) -> Bool
+	{
+		true
+	}
+
 	public func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
 	{
-		guard let dragItem = coordinator?.dragItem(for: indexPath) else { return [] }
-		return [dragItem]
+		coordinator?.collectionView(collectionView, itemsForBeginning: session, at: indexPath) ?? []
 	}
 
 	public func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal
 	{
-		guard session.localDragSession != nil else
-		{
-			return UICollectionViewDropProposal(operation: .forbidden)
-		}
-		if collectionView.hasActiveDrag
-		{
-			if let destination = destinationIndexPath
-			{
-				guard coordinator?.canDrop(at: destination) ?? false else
-				{
-					return UICollectionViewDropProposal(operation: .cancel)
-				}
-			}
-			return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
-		}
-		else
-		{
-			return UICollectionViewDropProposal(operation: .copy, intent: .insertAtDestinationIndexPath)
-		}
+		coordinator?.collectionView(collectionView, dropSessionDidUpdate: session, withDestinationIndexPath: destinationIndexPath) ?? UICollectionViewDropProposal(operation: .cancel)
 	}
 
 	public func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator)
 	{
-		var proposedDestinationIndexPath: IndexPath? = coordinator.destinationIndexPath
-
-		if proposedDestinationIndexPath == nil, collectionView.numberOfSections != 0
-		{
-			// Get last index path of collection view.
-			let section = collectionView.numberOfSections - 1
-			let row = collectionView.numberOfItems(inSection: section)
-			proposedDestinationIndexPath = IndexPath(row: row, section: section)
-		}
-
-		guard let destinationIndexPath = proposedDestinationIndexPath else { return }
-
-		switch coordinator.proposal.operation
-		{
-		case .move:
-			coordinator.items.forEach
-			{ item in
-				if let sourceIndex = item.sourceIndexPath
-				{
-					self.coordinator?.removeItem(from: sourceIndex)
-				}
-			}
-
-			self.coordinator?.insertItems(coordinator.items.map { $0.dragItem }, at: destinationIndexPath)
-			/* self.coordinator?.afterNextUpdate = {
-			 coordinator.items.forEach { (item) in
-			 coordinator.drop(item.dragItem, toItemAt: destinationIndexPath) // This assumption is flawed if dropping multiple items
-			 }
-			 } */
-
-		case .copy:
-			self.coordinator?.insertItems(coordinator.items.map { $0.dragItem }, at: destinationIndexPath)
-
-		default:
-			return
-		}
+		self.coordinator?.collectionView(collectionView, performDropWith: coordinator)
 	}
 
 	public func scrollViewDidScroll(_ scrollView: UIScrollView)
 	{
-		self.coordinator?.scrollViewDidScroll(scrollView)
+		coordinator?.scrollViewDidScroll(scrollView)
 	}
 }
 
