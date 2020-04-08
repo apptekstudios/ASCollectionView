@@ -4,37 +4,46 @@ import Foundation
 import SwiftUI
 
 @available(iOS 13.0, *)
-internal struct ASHostingControllerModifier: ViewModifier
+internal struct ASHostingControllerWrapper<Content: View>: View, ASHostingControllerWrapperProtocol
 {
 	var invalidateCellLayoutCallback: ((_ animated: Bool) -> Void)?
 	var collectionViewScrollToCellCallback: ((UICollectionView.ScrollPosition) -> Void)?
 	var tableViewScrollToCellCallback: ((UITableView.ScrollPosition) -> Void)?
-	func body(content: Content) -> some View
+
+	var content: Content
+	var body: some View
 	{
 		content
+			.edgesIgnoringSafeArea(.all)
 			.environment(\.invalidateCellLayout, invalidateCellLayoutCallback)
 			.environment(\.collectionViewScrollToCell, collectionViewScrollToCellCallback)
 			.environment(\.tableViewScrollToCell, tableViewScrollToCellCallback)
 	}
 }
 
+protocol ASHostingControllerWrapperProtocol
+{
+	var invalidateCellLayoutCallback: ((_ animated: Bool) -> Void)? { get set }
+	var collectionViewScrollToCellCallback: ((UICollectionView.ScrollPosition) -> Void)? { get set }
+	var tableViewScrollToCellCallback: ((UITableView.ScrollPosition) -> Void)? { get set }
+}
+
 @available(iOS 13.0, *)
-internal protocol ASHostingControllerProtocol: AnyObject
+internal protocol ASHostingControllerProtocol: AnyObject, ASHostingControllerWrapperProtocol
 {
 	var viewController: UIViewController { get }
-	var modifier: ASHostingControllerModifier { get set }
 	func sizeThatFits(in size: CGSize, maxSize: ASOptionalSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize
 }
 
 @available(iOS 13.0, *)
 internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 {
-	init(_ view: ViewType, modifier: ASHostingControllerModifier = ASHostingControllerModifier())
+	init(_ view: ViewType)
 	{
-		uiHostingController = .init(rootView: view.modifier(modifier))
+		uiHostingController = .init(rootView: ASHostingControllerWrapper(content: view))
 	}
 
-	private let uiHostingController: AS_UIHostingController<ModifiedContent<ViewType, ASHostingControllerModifier>>
+	private let uiHostingController: AS_UIHostingController<ASHostingControllerWrapper<ViewType>>
 	var viewController: UIViewController
 	{
 		uiHostingController.view.backgroundColor = .clear
@@ -66,15 +75,39 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 		}
 	}
 
-	var modifier: ASHostingControllerModifier
+	var invalidateCellLayoutCallback: ((_ animated: Bool) -> Void)?
 	{
 		get
 		{
-			uiHostingController.rootView.modifier
+			uiHostingController.rootView.invalidateCellLayoutCallback
 		}
 		set
 		{
-			uiHostingController.rootView.modifier = newValue
+			uiHostingController.rootView.invalidateCellLayoutCallback = newValue
+		}
+	}
+
+	var collectionViewScrollToCellCallback: ((UICollectionView.ScrollPosition) -> Void)?
+	{
+		get
+		{
+			uiHostingController.rootView.collectionViewScrollToCellCallback
+		}
+		set
+		{
+			uiHostingController.rootView.collectionViewScrollToCellCallback = newValue
+		}
+	}
+
+	var tableViewScrollToCellCallback: ((UITableView.ScrollPosition) -> Void)?
+	{
+		get
+		{
+			uiHostingController.rootView.tableViewScrollToCellCallback
+		}
+		set
+		{
+			uiHostingController.rootView.tableViewScrollToCellCallback = newValue
 		}
 	}
 

@@ -11,8 +11,8 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	{
 		didSet
 		{
-			hostingController?.modifier.invalidateCellLayoutCallback = invalidateLayoutCallback
-			hostingController?.modifier.tableViewScrollToCellCallback = scrollToCellCallback
+			hostingController?.invalidateCellLayoutCallback = invalidateLayoutCallback
+			hostingController?.tableViewScrollToCellCallback = scrollToCellCallback
 		}
 	}
 

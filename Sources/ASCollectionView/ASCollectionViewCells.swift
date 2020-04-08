@@ -17,8 +17,8 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	{
 		didSet
 		{
-			hostingController?.modifier.invalidateCellLayoutCallback = invalidateLayoutCallback
-			hostingController?.modifier.collectionViewScrollToCellCallback = scrollToCellCallback
+			hostingController?.invalidateCellLayoutCallback = invalidateLayoutCallback
+			hostingController?.collectionViewScrollToCellCallback = scrollToCellCallback
 		}
 	}
 
