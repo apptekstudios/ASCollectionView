@@ -694,6 +694,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				reusableView.setupForEmpty(id: section)
 			}
 		}
+		
+		// MARK: Context Menu Support
+		
+		public func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+			guard !indexPath.isEmpty else { return nil }
+			return parent.sections[safe: indexPath.section]?.dataSource.getContextMenu(for: indexPath)
+		}
 
 		public func scrollViewDidScroll(_ scrollView: UIScrollView)
 		{
@@ -719,6 +726,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		}
 	}
 }
+
+
 
 @available(iOS 13.0, *)
 protocol ASTableViewCoordinator: AnyObject
