@@ -145,7 +145,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		Coordinator(self)
 	}
 
-	public class Coordinator: NSObject, ASTableViewCoordinator, UITableViewDelegate, UITableViewDataSourcePrefetching
+	public class Coordinator: NSObject, ASTableViewCoordinator, UITableViewDelegate, UITableViewDataSourcePrefetching, UITableViewDragDelegate, UITableViewDropDelegate
 	{
 		var parent: ASTableView
 		weak var tableViewController: AS_TableViewController?
@@ -210,6 +210,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		{
 			tv.delegate = self
 			tv.prefetchDataSource = self
+
+			tv.dragDelegate = self
+			tv.dropDelegate = self
+			tv.dragInteractionEnabled = true
+
 			tv.register(Cell.self, forCellReuseIdentifier: cellReuseID)
 			tv.register(ASTableViewSupplementaryView.self, forHeaderFooterViewReuseIdentifier: supplementaryReuseID)
 
@@ -476,6 +481,124 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			return indexPath
 		}
 
+		public func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
+		{
+			guard !indexPath.isEmpty else { return [] }
+			guard let dragItem = parent.sections[safe: indexPath.section]?.dataSource.getDragItem(for: indexPath) else { return [] }
+			return [dragItem]
+		}
+
+		func canDrop(at indexPath: IndexPath) -> Bool
+		{
+			guard !indexPath.isEmpty else { return false }
+			return parent.sections[safe: indexPath.section]?.dataSource.dropEnabled ?? false
+		}
+
+		public func tableView(_ tableView: UITableView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal
+		{
+			if tableView.hasActiveDrag
+			{
+				if let destination = destinationIndexPath
+				{
+					guard canDrop(at: destination) else
+					{
+						return UITableViewDropProposal(operation: .cancel)
+					}
+				}
+				return UITableViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
+			}
+			else
+			{
+				return UITableViewDropProposal(operation: .copy, intent: .insertAtDestinationIndexPath)
+			}
+		}
+
+		public func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator)
+		{
+			guard
+				let destinationIndexPath = coordinator.destinationIndexPath,
+				!destinationIndexPath.isEmpty,
+				let destinationSection = parent.sections[safe: destinationIndexPath.section]
+			else { return }
+
+			switch coordinator.proposal.operation
+			{
+			case .move:
+				let itemsBySourceSection = Dictionary(grouping: coordinator.items) { item -> Int? in
+					if let sourceIndex = item.sourceIndexPath, !sourceIndex.isEmpty
+					{
+						return sourceIndex.section
+					}
+					else
+					{
+						return nil
+					}
+				}
+
+				// Handle move within destination section + insertion from other sections
+				let itemsToMove = itemsBySourceSection[destinationIndexPath.section] ?? []
+				var itemsToInsertPrefix: [UITableViewDropItem] = []
+				var itemsToInsertSuffix: [UITableViewDropItem] = []
+
+				// Handle removal from source sections
+				for (sectionIndex, items) in itemsBySourceSection
+				{
+					guard
+						let sectionIndex = sectionIndex,
+						sectionIndex != destinationIndexPath.section,
+						let sourceSection = parent.sections[safe: sectionIndex]
+					else { continue }
+					// Note that these need to be inserted at destination
+					if sectionIndex < destinationIndexPath.section
+					{
+						itemsToInsertPrefix.append(contentsOf: coordinator.items)
+					}
+					else
+					{
+						itemsToInsertSuffix.append(contentsOf: coordinator.items)
+					}
+
+					let itemsSourceIndexSet = IndexSet(items.compactMap { $0.sourceIndexPath?.item })
+					// These items are being REMOVED from the section (moved to another section)
+					let removeOperation = DragDrop<UIDragItem>.onRemoveItems(from: itemsSourceIndexSet)
+					sourceSection.dataSource.applyDragOperation(removeOperation)
+				}
+
+				// Find index after accounting for moves
+				let itemsToMoveSourceIndexSet = IndexSet(itemsToMove.compactMap { $0.sourceIndexPath?.item })
+				let maxDestinationIndex = destinationSection.dataSource.endIndex - 1
+				let adjustedDestinationIndexForMove = itemsToMoveSourceIndexSet.reduce(into: destinationIndexPath.item) {
+					if $1 < $0 { $0 += 1 }
+				}
+
+				let adjustedDestinationIndexForSuffix = adjustedDestinationIndexForMove + itemsToMoveSourceIndexSet.count
+				let adjustedDestinationIndexForPrefix = adjustedDestinationIndexForMove
+
+				// Calculate move within destination section
+				let moveOperation: DragDrop<UIDragItem>? = (!itemsToMoveSourceIndexSet.isEmpty) ? DragDrop<UIDragItem>.onMoveItems(from: itemsToMoveSourceIndexSet, to: min(adjustedDestinationIndexForMove, maxDestinationIndex)) : nil
+
+				// Calculate insert suffix and prefix
+				let insertSuffixOperation: DragDrop<UIDragItem>? = (!itemsToInsertSuffix.isEmpty) ? DragDrop<UIDragItem>.onInsertItems(items: itemsToInsertSuffix.compactMap { $0.dragItem }, to: min(adjustedDestinationIndexForSuffix, maxDestinationIndex)) : nil
+				let insertPrefixOperation: DragDrop<UIDragItem>? = (!itemsToInsertPrefix.isEmpty) ? DragDrop<UIDragItem>.onInsertItems(items: itemsToInsertPrefix.compactMap { $0.dragItem }, to: min(adjustedDestinationIndexForPrefix, maxDestinationIndex)) : nil
+
+				// Apply operation: MOVE THEN INSERT SUFFIX, THEN INSERT PREFIX (that order is important)
+				moveOperation.map { destinationSection.dataSource.applyDragOperation($0) }
+				insertSuffixOperation.map { destinationSection.dataSource.applyDragOperation($0) } // Suffix first so that prefix index unaffected
+				insertPrefixOperation.map { destinationSection.dataSource.applyDragOperation($0) }
+
+			case .copy:
+				let items = coordinator.items.map { $0.dragItem }
+				if !items.isEmpty
+				{
+					let operation = DragDrop<UIDragItem>.onInsertItems(items: items, to: destinationIndexPath.item)
+					destinationSection.dataSource.applyDragOperation(operation)
+				}
+
+			default:
+				return
+			}
+		}
+
 		public func tableView(_ tableView: UITableView, estimatedHeightForHeaderInSection section: Int) -> CGFloat
 		{
 			guard parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else
@@ -593,117 +716,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			{
 				hasAlreadyReachedBottom = false
 			}
-		}
-	}
-}
-
-extension ASTableView.Coordinator: UITableViewDragDelegate, UITableViewDropDelegate {
-	public func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem] {
-		guard !indexPath.isEmpty else { return [] }
-		guard let dragItem = parent.sections[safe: indexPath.section]?.dataSource.getDragItem(for: indexPath) else { return [] }
-		return [dragItem]
-	}
-	
-	public func tableView(_ tableView: UITableView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UITableViewDropProposal {
-		if tableView.hasActiveDrag
-		{
-			if let destination = destinationIndexPath
-			{
-				guard canDrop(at: destination) else
-				{
-					return UICollectionViewDropProposal(operation: .cancel)
-				}
-			}
-			return UICollectionViewDropProposal(operation: .move, intent: .insertAtDestinationIndexPath)
-		}
-		else
-		{
-			return UICollectionViewDropProposal(operation: .copy, intent: .insertAtDestinationIndexPath)
-		}
-	}
-	
-	public func tableView(_ tableView: UITableView, performDropWith coordinator: UITableViewDropCoordinator) {
-		guard
-			let destinationIndexPath = coordinator.destinationIndexPath,
-			!destinationIndexPath.isEmpty,
-			let destinationSection = parent.sections[safe: destinationIndexPath.section]
-			else { return }
-		
-		switch coordinator.proposal.operation
-		{
-		case .move:
-			let itemsBySourceSection = Dictionary(grouping: coordinator.items) { item -> Int? in
-				if let sourceIndex = item.sourceIndexPath, !sourceIndex.isEmpty
-				{
-					return sourceIndex.section
-				}
-				else
-				{
-					return nil
-				}
-			}
-			
-			// Handle move within destination section + insertion from other sections
-			let itemsToMove = itemsBySourceSection[destinationIndexPath.section] ?? []
-			var itemsToInsertPrefix: [UICollectionViewDropItem] = []
-			var itemsToInsertSuffix: [UICollectionViewDropItem] = []
-			
-			// Handle removal from source sections
-			for (sectionIndex, items) in itemsBySourceSection
-			{
-				guard
-					let sectionIndex = sectionIndex,
-					sectionIndex != destinationIndexPath.section,
-					let sourceSection = parent.sections[safe: sectionIndex]
-					else { continue }
-				// Note that these need to be inserted at destination
-				if sectionIndex < destinationIndexPath.section
-				{
-					itemsToInsertPrefix.append(contentsOf: coordinator.items)
-				}
-				else
-				{
-					itemsToInsertSuffix.append(contentsOf: coordinator.items)
-				}
-				
-				let itemsSourceIndexSet = IndexSet(items.compactMap { $0.sourceIndexPath?.item })
-				// These items are being REMOVED from the section (moved to another section)
-				let removeOperation = DragDrop<UIDragItem>.onRemoveItems(from: itemsSourceIndexSet)
-				sourceSection.dataSource.applyDragOperation(removeOperation)
-			}
-			
-			// Find index after accounting for moves
-			let itemsToMoveSourceIndexSet = IndexSet(itemsToMove.compactMap { $0.sourceIndexPath?.item })
-			let maxDestinationIndex = destinationSection.dataSource.endIndex - 1
-			let adjustedDestinationIndexForMove = itemsToMoveSourceIndexSet.reduce(into: destinationIndexPath.item) {
-				if $1 < $0 { $0 += 1 }
-			}
-			
-			let adjustedDestinationIndexForSuffix = adjustedDestinationIndexForMove + itemsToMoveSourceIndexSet.count
-			let adjustedDestinationIndexForPrefix = adjustedDestinationIndexForMove
-			
-			// Calculate move within destination section
-			let moveOperation: DragDrop<UIDragItem>? = (!itemsToMoveSourceIndexSet.isEmpty) ? DragDrop<UIDragItem>.onMoveItems(from: itemsToMoveSourceIndexSet, to: min(adjustedDestinationIndexForMove, maxDestinationIndex)) : nil
-			
-			// Calculate insert suffix and prefix
-			let insertSuffixOperation: DragDrop<UIDragItem>? = (!itemsToInsertSuffix.isEmpty) ? DragDrop<UIDragItem>.onInsertItems(items: itemsToInsertSuffix.compactMap { $0.dragItem }, to: min(adjustedDestinationIndexForSuffix, maxDestinationIndex)) : nil
-			let insertPrefixOperation: DragDrop<UIDragItem>? = (!itemsToInsertPrefix.isEmpty) ? DragDrop<UIDragItem>.onInsertItems(items: itemsToInsertPrefix.compactMap { $0.dragItem }, to: min(adjustedDestinationIndexForPrefix, maxDestinationIndex)) : nil
-			
-			// Apply operation: MOVE THEN INSERT SUFFIX, THEN INSERT PREFIX (that order is important)
-			moveOperation.map { destinationSection.dataSource.applyDragOperation($0) }
-			insertSuffixOperation.map { destinationSection.dataSource.applyDragOperation($0) } // Suffix first so that prefix index unaffected
-			insertPrefixOperation.map { destinationSection.dataSource.applyDragOperation($0) }
-			
-		case .copy:
-			let items = coordinator.items.map { $0.dragItem }
-			if !items.isEmpty
-			{
-				let operation = DragDrop<UIDragItem>.onInsertItems(items: items, to: destinationIndexPath.item)
-				destinationSection.dataSource.applyDragOperation(operation)
-			}
-			
-		default:
-			return
 		}
 	}
 }
