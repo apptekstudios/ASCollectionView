@@ -68,11 +68,15 @@ public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
 @available(iOS 13.0, *)
 public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
 
-@available(iOS 13.0, *)
-public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: (Bool) -> Void) -> Void)
 
 @available(iOS 13.0, *)
-public typealias ContextMenuProvider<Data> = ((_ indexPath: IndexPath, _ item: Data) -> UIContextMenuConfiguration?)
+public typealias ShouldAllowSwipeToDelete = ((_ index: Int) -> Bool)
+
+@available(iOS 13.0, *)
+public typealias OnSwipeToDelete<Data> = ((_ index: Int, _ item: Data, _ completionHandler: (Bool) -> Void) -> Void)
+
+@available(iOS 13.0, *)
+public typealias ContextMenuProvider<Data> = ((_ index: Int, _ item: Data) -> UIContextMenuConfiguration?)
 
 @available(iOS 13.0, *)
 public typealias SelfSizingConfig = ((_ context: ASSelfSizingContext) -> ASSelfSizingConfig?)
@@ -81,6 +85,7 @@ public typealias SelfSizingConfig = ((_ context: ASSelfSizingContext) -> ASSelfS
 public struct CellContext
 {
 	public var isSelected: Bool
+	public var index: Int
 	public var isFirstInSection: Bool
 	public var isLastInSection: Bool
 }
@@ -101,6 +106,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var onCellEvent: OnCellEvent<DataCollection.Element>?
 	var onDragDrop: OnDragDrop<DataCollection.Element>?
 	var itemProvider: ItemProvider<DataCollection.Element>?
+	var shouldAllowSwipeToDelete: ShouldAllowSwipeToDelete?
 	var onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>?
 	var contextMenuProvider: ContextMenuProvider<DataCollection.Element>?
 	var selfSizingConfig: (SelfSizingConfig)?
@@ -121,6 +127,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		CellContext(
 			isSelected: isSelected(index: index),
+			index: index,
 			isFirstInSection: index == data.startIndex,
 			isLastInSection: index == data.endIndex - 1)
 	}
@@ -215,13 +222,14 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	{
-		onSwipeToDelete != nil
+		guard onSwipeToDelete != nil else { return false }
+		return shouldAllowSwipeToDelete?(indexPath.item) ?? true
 	}
 
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	{
 		guard let item = data[safe: indexPath.item] else { return }
-		onSwipeToDelete?(item, completionHandler)
+		onSwipeToDelete?(indexPath.item, item, completionHandler)
 	}
 
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
@@ -255,7 +263,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			let item = data[safe: indexPath.item]
 		else { return nil }
 
-		return menuProvider(indexPath, item)
+		return menuProvider(indexPath.item, item)
 	}
 
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?

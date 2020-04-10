@@ -111,7 +111,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		self.style = style
 		self.sections = sections
 	}
-
+	
 	@inlinable public init(style: UITableView.Style = .plain, @SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
 	{
 		self.style = style
@@ -566,20 +566,21 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 				// Find index after accounting for moves
 				let itemsToMoveSourceIndexSet = IndexSet(itemsToMove.compactMap { $0.sourceIndexPath?.item })
-				let maxDestinationIndex = destinationSection.dataSource.endIndex - 1
+				// Adjusted destination index, note that this can exceed the usual highest index (due to the way the move is calculated)
 				let adjustedDestinationIndexForMove = itemsToMoveSourceIndexSet.reduce(into: destinationIndexPath.item) {
 					if $1 < $0 { $0 += 1 }
 				}
 
-				let adjustedDestinationIndexForSuffix = adjustedDestinationIndexForMove + itemsToMoveSourceIndexSet.count
-				let adjustedDestinationIndexForPrefix = adjustedDestinationIndexForMove
+				//Insert the suffix after
+				let adjustedDestinationIndexForSuffix = destinationIndexPath.item + itemsToMoveSourceIndexSet.count
+				let adjustedDestinationIndexForPrefix = destinationIndexPath.item
 
 				// Calculate move within destination section
-				let moveOperation: DragDrop<UIDragItem>? = (!itemsToMoveSourceIndexSet.isEmpty) ? DragDrop<UIDragItem>.onMoveItems(from: itemsToMoveSourceIndexSet, to: min(adjustedDestinationIndexForMove, maxDestinationIndex)) : nil
+				let moveOperation: DragDrop<UIDragItem>? = (!itemsToMoveSourceIndexSet.isEmpty) ? DragDrop<UIDragItem>.onMoveItems(from: itemsToMoveSourceIndexSet, to: adjustedDestinationIndexForMove) : nil
 
 				// Calculate insert suffix and prefix
-				let insertSuffixOperation: DragDrop<UIDragItem>? = (!itemsToInsertSuffix.isEmpty) ? DragDrop<UIDragItem>.onInsertItems(items: itemsToInsertSuffix.compactMap { $0.dragItem }, to: min(adjustedDestinationIndexForSuffix, maxDestinationIndex)) : nil
-				let insertPrefixOperation: DragDrop<UIDragItem>? = (!itemsToInsertPrefix.isEmpty) ? DragDrop<UIDragItem>.onInsertItems(items: itemsToInsertPrefix.compactMap { $0.dragItem }, to: min(adjustedDestinationIndexForPrefix, maxDestinationIndex)) : nil
+				let insertSuffixOperation: DragDrop<UIDragItem>? = (!itemsToInsertSuffix.isEmpty) ? DragDrop<UIDragItem>.onInsertItems(items: itemsToInsertSuffix.compactMap { $0.dragItem }, to: adjustedDestinationIndexForSuffix) : nil
+				let insertPrefixOperation: DragDrop<UIDragItem>? = (!itemsToInsertPrefix.isEmpty) ? DragDrop<UIDragItem>.onInsertItems(items: itemsToInsertPrefix.compactMap { $0.dragItem }, to: adjustedDestinationIndexForPrefix) : nil
 
 				// Apply operation: MOVE THEN INSERT SUFFIX, THEN INSERT PREFIX (that order is important)
 				moveOperation.map { destinationSection.dataSource.applyDragOperation($0) }

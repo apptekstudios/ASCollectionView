@@ -40,7 +40,7 @@ class ASDiffableDataSourceCollectionView<SectionID: Hashable>: ASDiffableDataSou
 			CATransaction.setDisableActions(true)
 		}
 		CATransaction.setCompletionBlock(completion)
-		collectionView.reload(using: changeset) { newSections in
+		collectionView.reload(using: changeset, interrupt: { $0.changeCount > 100 }) { newSections in
 			self.currentSnapshot.sections = newSections
 		}
 		CATransaction.commit()
