@@ -126,7 +126,7 @@ struct PhotoGridScreen: View
 		}
 	}
 
-	func contextMenuProvider(indexPath: IndexPath, post: Post) -> UIContextMenuConfiguration?
+	func contextMenuProvider(int: Int, post: Post) -> UIContextMenuConfiguration?
 	{
 		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { (_) -> UIMenu? in
 			let testAction = UIAction(title: "Do nothing") { _ in

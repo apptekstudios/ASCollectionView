@@ -68,7 +68,6 @@ public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
 @available(iOS 13.0, *)
 public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
 
-
 @available(iOS 13.0, *)
 public typealias ShouldAllowSwipeToDelete = ((_ index: Int) -> Bool)
 

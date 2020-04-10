@@ -68,7 +68,7 @@ struct MagazineLayoutScreen: View
 		}
 	}
 
-	func contextMenuProvider(indexPath: IndexPath, post: Post) -> UIContextMenuConfiguration?
+	func contextMenuProvider(index: Int, post: Post) -> UIContextMenuConfiguration?
 	{
 		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { (_) -> UIMenu? in
 			let testAction = UIAction(title: "Test") { _ in

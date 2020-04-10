@@ -153,12 +153,34 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		context.coordinator.updateLayout()
 		context.coordinator.updateContent(collectionViewController.collectionView, transaction: context.transaction, refreshExistingCells: true)
 		context.coordinator.configureRefreshControl(for: collectionViewController.collectionView)
+#if DEBUG
+		debugOnly_checkHasUniqueSections()
+#endif
 	}
 
 	public func makeCoordinator() -> Coordinator
 	{
 		Coordinator(self)
 	}
+
+#if DEBUG
+	func debugOnly_checkHasUniqueSections()
+	{
+		var sectionIDs: Set<SectionID> = []
+		var conflicts: Set<SectionID> = []
+		sections.forEach {
+			let (inserted, _) = sectionIDs.insert($0.id)
+			if !inserted
+			{
+				conflicts.insert($0.id)
+			}
+		}
+		if !conflicts.isEmpty
+		{
+			print("ASCOLLECTIONVIEW: The following section IDs are used more than once, please use unique section IDs to avoid unexpected behaviour:", sectionIDs)
+		}
+	}
+#endif
 
 	// MARK: Coordinator Class
 

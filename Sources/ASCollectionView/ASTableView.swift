@@ -111,7 +111,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		self.style = style
 		self.sections = sections
 	}
-	
+
 	@inlinable public init(style: UITableView.Style = .plain, @SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
 	{
 		self.style = style
@@ -138,12 +138,34 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		context.coordinator.updateTableViewSettings(tableViewController.tableView)
 		context.coordinator.updateContent(tableViewController.tableView, transaction: context.transaction, refreshExistingCells: true)
 		context.coordinator.configureRefreshControl(for: tableViewController.tableView)
+#if DEBUG
+		debugOnly_checkHasUniqueSections()
+#endif
 	}
 
 	public func makeCoordinator() -> Coordinator
 	{
 		Coordinator(self)
 	}
+
+#if DEBUG
+	func debugOnly_checkHasUniqueSections()
+	{
+		var sectionIDs: Set<SectionID> = []
+		var conflicts: Set<SectionID> = []
+		sections.forEach {
+			let (inserted, _) = sectionIDs.insert($0.id)
+			if !inserted
+			{
+				conflicts.insert($0.id)
+			}
+		}
+		if !conflicts.isEmpty
+		{
+			print("ASTABLEVIEW: The following section IDs are used more than once, please use unique section IDs to avoid unexpected behaviour:", sectionIDs)
+		}
+	}
+#endif
 
 	public class Coordinator: NSObject, ASTableViewCoordinator, UITableViewDelegate, UITableViewDataSourcePrefetching, UITableViewDragDelegate, UITableViewDropDelegate
 	{
@@ -695,10 +717,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				reusableView.setupForEmpty(id: section)
 			}
 		}
-		
+
 		// MARK: Context Menu Support
-		
-		public func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+
+		public func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
+		{
 			guard !indexPath.isEmpty else { return nil }
 			return parent.sections[safe: indexPath.section]?.dataSource.getContextMenu(for: indexPath)
 		}
@@ -727,8 +750,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		}
 	}
 }
-
-
 
 @available(iOS 13.0, *)
 protocol ASTableViewCoordinator: AnyObject
