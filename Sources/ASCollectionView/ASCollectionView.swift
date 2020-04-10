@@ -264,7 +264,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			cv.dropDelegate = delegate
 
 			cv.register(Cell.self, forCellWithReuseIdentifier: cellReuseID)
-			registerSupplementaries(forCollectionView: cv)
 
 			dataSource = .init(collectionView: cv)
 			{ [weak self] collectionView, indexPath, itemID in
@@ -344,6 +343,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func populateDataSource(animated: Bool = true)
 		{
 			guard hasDoneInitialSetup else { return }
+			collectionViewController.map { registerSupplementaries(forCollectionView: $0.collectionView) } // New sections might involve new types of supplementary...
 			let snapshot = ASDiffableDataSourceSnapshot(sections:
 				parent.sections.map {
 					ASDiffableDataSourceSnapshot.Section(id: $0.id, elements: $0.itemIDs)
@@ -356,33 +356,39 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func updateContent(_ cv: UICollectionView, transaction: Transaction?, refreshExistingCells: Bool)
 		{
 			guard hasDoneInitialSetup else { return }
-			registerSupplementaries(forCollectionView: cv) // New sections might involve new types of supplementary...
+
 			if refreshExistingCells
 			{
 				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
-					for case let cell as Cell in cv.visibleCells
-					{
-						guard
-							let itemID = cell.itemID,
-							let hc = cell.hostingController
-						else { return }
-						self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
-					}
-				}
-
-				supplementaryKinds().forEach
-				{ kind in
-					cv.indexPathsForVisibleSupplementaryElements(ofKind: kind).forEach
-					{
-						guard let supplementaryView = parent.sections[safe: $0.section]?.supplementary(ofKind: kind) else { return }
-						(cv.supplementaryView(forElementKind: kind, at: $0) as? ASCollectionViewSupplementaryView)?
-							.updateView(supplementaryView)
-					}
+					refreshVisibleCells()
 				}
 			}
 			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
 			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
 			updateSelectionBindings(cv)
+		}
+
+		func refreshVisibleCells()
+		{
+			guard let cv = collectionViewController?.collectionView else { return }
+			for case let cell as Cell in cv.visibleCells
+			{
+				guard
+					let itemID = cell.itemID,
+					let hc = cell.hostingController
+				else { return }
+				self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
+			}
+
+			supplementaryKinds().forEach
+			{ kind in
+				cv.indexPathsForVisibleSupplementaryElements(ofKind: kind).forEach
+				{
+					guard let supplementaryView = parent.sections[safe: $0.section]?.supplementary(ofKind: kind) else { return }
+					(cv.supplementaryView(forElementKind: kind, at: $0) as? ASCollectionViewSupplementaryView)?
+						.updateView(supplementaryView)
+				}
+			}
 		}
 
 		func onMoveToParent()

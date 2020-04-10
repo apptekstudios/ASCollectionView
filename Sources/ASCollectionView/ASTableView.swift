@@ -180,7 +180,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		// MARK: Private tracking variables
 
 		private var hasDoneInitialSetup = false
-		private var lastSnapshot: NSDiffableDataSourceSnapshot<SectionID, ASCollectionViewItemUniqueID>?
 
 		// MARK: Caching
 
@@ -301,27 +300,33 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			if refreshExistingCells
 			{
 				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
-					for case let cell as Cell in tv.visibleCells
-					{
-						guard
-							let itemID = cell.itemID,
-							let hc = cell.hostingController
-						else { return }
-						self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
-					}
-
-					tv.visibleHeaderViews.forEach { sectionIndex, view in
-						configureHeader(view, forSection: sectionIndex)
-					}
-
-					tv.visibleFooterViews.forEach { sectionIndex, view in
-						configureFooter(view, forSection: sectionIndex)
-					}
+					refreshVisibleCells()
 				}
 			}
 			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
 			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
 			updateSelectionBindings(tv)
+		}
+
+		func refreshVisibleCells()
+		{
+			guard let tv = tableViewController?.tableView else { return }
+			for case let cell as Cell in tv.visibleCells
+			{
+				guard
+					let itemID = cell.itemID,
+					let hc = cell.hostingController
+				else { return }
+				self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
+			}
+
+			tv.visibleHeaderViews.forEach { sectionIndex, view in
+				configureHeader(view, forSection: sectionIndex)
+			}
+
+			tv.visibleFooterViews.forEach { sectionIndex, view in
+				configureFooter(view, forSection: sectionIndex)
+			}
 		}
 
 		func reloadRow(_ indexPath: IndexPath, animated: Bool)
