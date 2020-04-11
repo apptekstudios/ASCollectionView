@@ -13,7 +13,8 @@ struct TableViewDragAndDropScreen: View
 	var body: some View
 	{
 		VStack {
-			Text("Drag within a tableview to move. Drag between tableviews to copy.")
+			Text("Drag within a tableview to move.\nDrag between tableviews to copy.")
+				.padding()
 			HStack {
 				ASTableView {
 					ASSection(
@@ -87,6 +88,7 @@ struct TableViewDragAndDropScreen: View
 				}
 			}
 		}
+		.navigationBarTitle("Drag & drop", displayMode: .inline)
 	}
 
 	func header(_ string: String) -> some View

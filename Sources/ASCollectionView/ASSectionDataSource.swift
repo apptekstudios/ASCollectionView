@@ -148,11 +148,6 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		hc.setView(content)
 	}
 
-	var allDataIDs: [DataID]
-	{
-		data.map { $0[keyPath: dataIDKeyPath] }
-	}
-
 	func getContent(forItemID itemID: ASCollectionViewItemUniqueID) -> Container?
 	{
 		guard let itemIndex = getIndex(of: itemID) else { return nil }
@@ -269,6 +264,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	func applyInsert(items: [UIDragItem], at index: Int)
 	{
 		let actualItems = items.compactMap(getDropItem(from:))
+		let allDataIDs = Set(dragDropConfig.dataBinding?.wrappedValue.map { $0[keyPath: dataIDKeyPath] } ?? [])
 		let noDuplicates = actualItems.filter { !allDataIDs.contains($0[keyPath: dataIDKeyPath]) }
 #if DEBUG
 		// Notify during debug build if IDs are not unique (programmer error)
