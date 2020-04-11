@@ -148,31 +148,39 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		contentView.subviews.forEach { $0.removeFromSuperview() }
 	}
 
-	func willAppear(in vc: UIViewController?)
+	func willAppear(in vc: UIViewController)
 	{
 		hostingController.map
-		{
-			if $0.viewController.parent != vc
+		{ hc in
+			if hc.viewController.parent != vc
 			{
-				$0.viewController.removeFromParent()
-				vc?.addChild($0.viewController)
-			}
-			if $0.viewController.view.superview != contentView
-			{
-				$0.viewController.view.removeFromSuperview()
-				contentView.subviews.forEach { $0.removeFromSuperview() }
-				contentView.addSubview($0.viewController.view)
+				hc.viewController.removeFromParent()
+				vc.addChild(hc.viewController)
 			}
 
-			setNeedsLayout()
+			attachView()
 
-			vc.map { hostingController?.viewController.didMove(toParent: $0) }
+			hostingController?.viewController.didMove(toParent: vc)
 		}
 	}
 
 	func didDisappear()
 	{
 		hostingController?.viewController.removeFromParent()
+	}
+
+	private func attachView()
+	{
+		guard let hcView = hostingController?.viewController.view else
+		{
+			contentView.subviews.forEach { $0.removeFromSuperview() }
+			return
+		}
+		if hcView.superview != contentView
+		{
+			contentView.subviews.forEach { $0.removeFromSuperview() }
+			contentView.addSubview(hcView)
+		}
 	}
 
 	override func prepareForReuse()
@@ -183,9 +191,12 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
+
 		if hostingController?.viewController.view.frame != contentView.bounds
 		{
 			hostingController?.viewController.view.frame = contentView.bounds
+			hostingController?.viewController.view.setNeedsLayout()
+			hostingController?.viewController.view.layoutIfNeeded()
 		}
 	}
 

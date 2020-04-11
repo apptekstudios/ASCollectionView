@@ -332,7 +332,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 				else
 				{
-					reusableView.setupAsEmptyView()
+					reusableView.setupForEmpty(id: indexPath.section)
 				}
 
 				return reusableView
@@ -386,7 +386,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				{
 					guard let supplementaryView = parent.sections[safe: $0.section]?.supplementary(ofKind: kind) else { return }
 					(cv.supplementaryView(forElementKind: kind, at: $0) as? ASCollectionViewSupplementaryView)?
-						.updateView(supplementaryView)
+						.setupFor(
+							id: $0.section,
+							view: supplementaryView)
 				}
 			}
 		}

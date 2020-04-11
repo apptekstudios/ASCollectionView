@@ -408,7 +408,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
 		{
-			(view as? ASTableViewSupplementaryView)?.willAppear(in: tableViewController)
+			tableViewController.map { (view as? ASTableViewSupplementaryView)?.willAppear(in: $0) }
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplayingHeaderView view: UIView, forSection section: Int)
@@ -418,7 +418,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int)
 		{
-			(view as? ASTableViewSupplementaryView)?.willAppear(in: tableViewController)
+			tableViewController.map { (view as? ASTableViewSupplementaryView)?.willAppear(in: $0) }
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplayingFooterView view: UIView, forSection section: Int)
