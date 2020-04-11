@@ -37,7 +37,7 @@ public extension ASDragDropConfig
 		self.dataBinding = dataBinding
 	}
 
-	func enableReordering(shouldMoveItem: ((_ sourceIndexPath: IndexPath, _ destinationIndexPath: IndexPath) -> Bool)?) -> Self
+	func enableReordering(shouldMoveItem: ((_ sourceIndexPath: IndexPath, _ destinationIndexPath: IndexPath) -> Bool)? = nil) -> Self
 	{
 		var this = self
 		this.dragEnabled = true
