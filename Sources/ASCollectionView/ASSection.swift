@@ -67,8 +67,7 @@ public struct ASSection<SectionID: Hashable>
 		shouldAllowSelection: ((_ index: Int) -> Bool)? = nil,
 		shouldAllowDeselection: ((_ index: Int) -> Bool)? = nil,
 		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
-		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
-		itemProvider: ItemProvider<DataCollection.Element>? = nil,
+		dragDropConfig: ASDragDropConfig<DataCollection.Element> = .disabled,
 		shouldAllowSwipeToDelete: ShouldAllowSwipeToDelete? = nil,
 		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
 		contextMenuProvider: ContextMenuProvider<DataCollection.Element>? = nil,
@@ -85,8 +84,7 @@ public struct ASSection<SectionID: Hashable>
 			shouldAllowSelection: shouldAllowSelection,
 			shouldAllowDeselection: shouldAllowDeselection,
 			onCellEvent: onCellEvent,
-			onDragDrop: onDragDropEvent,
-			itemProvider: itemProvider,
+			dragDropConfig: dragDropConfig,
 			shouldAllowSwipeToDelete: shouldAllowSwipeToDelete,
 			onSwipeToDelete: onSwipeToDelete,
 			contextMenuProvider: contextMenuProvider)
@@ -100,15 +98,14 @@ public struct ASSection<SectionID: Hashable>
 		shouldAllowSelection: ((_ index: Int) -> Bool)? = nil,
 		shouldAllowDeselection: ((_ index: Int) -> Bool)? = nil,
 		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
-		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
-		itemProvider: ItemProvider<DataCollection.Element>? = nil,
+		dragDropConfig: ASDragDropConfig<DataCollection.Element> = .disabled,
 		shouldAllowSwipeToDelete: ShouldAllowSwipeToDelete? = nil,
 		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
 		contextMenuProvider: ContextMenuProvider<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
 		where DataCollection.Index == Int
 	{
-		self.init(id: id, data: data, dataID: dataIDKeyPath, container: { $0 }, selectedItems: selectedItems, shouldAllowSelection: shouldAllowSelection, shouldAllowDeselection: shouldAllowDeselection, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, shouldAllowSwipeToDelete: shouldAllowSwipeToDelete, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: dataIDKeyPath, container: { $0 }, selectedItems: selectedItems, shouldAllowSelection: shouldAllowSelection, shouldAllowDeselection: shouldAllowDeselection, onCellEvent: onCellEvent, dragDropConfig: dragDropConfig, shouldAllowSwipeToDelete: shouldAllowSwipeToDelete, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}
 }
 
@@ -214,7 +211,8 @@ public extension ASCollectionViewSection
 			},
 			dataIDKeyPath: \.id,
 			container: container,
-			content: { staticContent, _ in staticContent.view })
+			content: { staticContent, _ in staticContent.view },
+			dragDropConfig: .disabled)
 	}
 
 	init(id: SectionID, @ViewArrayBuilder content: () -> ViewArrayBuilder.Wrapper)
@@ -236,7 +234,8 @@ public extension ASCollectionViewSection
 			data: [ASCollectionViewStaticContent(index: 0, view: AnyView(content()))],
 			dataIDKeyPath: \.id,
 			container: container,
-			content: { staticContent, _ in staticContent.view })
+			content: { staticContent, _ in staticContent.view },
+			dragDropConfig: .disabled)
 	}
 
 	init<Content: View>(id: SectionID, content: () -> Content) {
@@ -279,15 +278,14 @@ public extension ASCollectionViewSection
 		shouldAllowSelection: ((_ index: Int) -> Bool)? = nil,
 		shouldAllowDeselection: ((_ index: Int) -> Bool)? = nil,
 		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
-		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
-		itemProvider: ItemProvider<DataCollection.Element>? = nil,
+		dragDropConfig: ASDragDropConfig<DataCollection.Element> = .disabled,
 		shouldAllowSwipeToDelete: ShouldAllowSwipeToDelete? = nil,
 		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
 		contextMenuProvider: ContextMenuProvider<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
 		where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
-		self.init(id: id, data: data, dataID: \.id, container: container, selectedItems: selectedItems, shouldAllowSelection: shouldAllowSelection, shouldAllowDeselection: shouldAllowDeselection, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, shouldAllowSwipeToDelete: shouldAllowSwipeToDelete, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: \.id, container: container, selectedItems: selectedItems, shouldAllowSelection: shouldAllowSelection, shouldAllowDeselection: shouldAllowDeselection, onCellEvent: onCellEvent, dragDropConfig: dragDropConfig, shouldAllowSwipeToDelete: shouldAllowSwipeToDelete, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}
 
 	@inlinable init<Content: View, DataCollection: RandomAccessCollection>(
@@ -297,14 +295,13 @@ public extension ASCollectionViewSection
 		shouldAllowSelection: ((_ index: Int) -> Bool)? = nil,
 		shouldAllowDeselection: ((_ index: Int) -> Bool)? = nil,
 		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
-		onDragDropEvent: OnDragDrop<DataCollection.Element>? = nil,
-		itemProvider: ItemProvider<DataCollection.Element>? = nil,
+		dragDropConfig: ASDragDropConfig<DataCollection.Element> = .disabled,
 		shouldAllowSwipeToDelete: ShouldAllowSwipeToDelete? = nil,
 		onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil,
 		contextMenuProvider: ContextMenuProvider<DataCollection.Element>? = nil,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
 		where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
-		self.init(id: id, data: data, container: { $0 }, selectedItems: selectedItems, shouldAllowSelection: shouldAllowSelection, shouldAllowDeselection: shouldAllowDeselection, onCellEvent: onCellEvent, onDragDropEvent: onDragDropEvent, itemProvider: itemProvider, shouldAllowSwipeToDelete: shouldAllowSwipeToDelete, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, container: { $0 }, selectedItems: selectedItems, shouldAllowSelection: shouldAllowSelection, shouldAllowDeselection: shouldAllowDeselection, onCellEvent: onCellEvent, dragDropConfig: dragDropConfig, shouldAllowSwipeToDelete: shouldAllowSwipeToDelete, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}
 }

@@ -17,8 +17,11 @@ internal protocol ASSectionDataSourceProtocol
 	func onDisappear(_ indexPath: IndexPath)
 	func prefetch(_ indexPaths: [IndexPath])
 	func cancelPrefetch(_ indexPaths: [IndexPath])
+	func willAcceptDropItem(from dragItem: UIDragItem) -> Bool
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
-	func applyDragOperation(_ operation: DragDrop<UIDragItem>)
+	func getItemID<SectionID: Hashable>(for dragItem: UIDragItem, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
+	func applyRemove(atOffsets offsets: IndexSet)
+	func applyInsert(items: [UIDragItem], at index: Int)
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
@@ -31,6 +34,7 @@ internal protocol ASSectionDataSourceProtocol
 
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
+	var reorderingEnabled: Bool { get }
 
 	mutating func setSelfSizingConfig(config: @escaping SelfSizingConfig)
 }
@@ -52,21 +56,7 @@ public enum CellEvent<Data>
 }
 
 @available(iOS 13.0, *)
-public enum DragDrop<Data>
-{
-	case onRemoveItems(from: IndexSet)
-	case onMoveItems(from: IndexSet, to: Int)
-	case onInsertItems(items: [Data], to: Int)
-}
-
-@available(iOS 13.0, *)
 public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
-
-@available(iOS 13.0, *)
-public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
-
-@available(iOS 13.0, *)
-public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
 
 @available(iOS 13.0, *)
 public typealias ShouldAllowSwipeToDelete = ((_ index: Int) -> Bool)
@@ -103,8 +93,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var shouldAllowDeselection: ((_ index: Int) -> Bool)?
 
 	var onCellEvent: OnCellEvent<DataCollection.Element>?
-	var onDragDrop: OnDragDrop<DataCollection.Element>?
-	var itemProvider: ItemProvider<DataCollection.Element>?
+	var dragDropConfig: ASDragDropConfig<DataCollection.Element>
 	var shouldAllowSwipeToDelete: ShouldAllowSwipeToDelete?
 	var onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>?
 	var contextMenuProvider: ContextMenuProvider<DataCollection.Element>?
@@ -112,8 +101,9 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	var supplementaryViews: [String: AnyView] = [:]
 
-	var dragEnabled: Bool { onDragDrop != nil }
-	var dropEnabled: Bool { onDragDrop != nil }
+	var dragEnabled: Bool { dragDropConfig.dragEnabled }
+	var dropEnabled: Bool { dragDropConfig.dropEnabled }
+	var reorderingEnabled: Bool { dragDropConfig.reorderingEnabled }
 
 	var endIndex: Int { data.endIndex }
 
@@ -158,6 +148,11 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		hc.setView(content)
 	}
 
+	var allDataIDs: [DataID]
+	{
+		data.map { $0[keyPath: dataIDKeyPath] }
+	}
+
 	func getContent(forItemID itemID: ASCollectionViewItemUniqueID) -> Container?
 	{
 		guard let itemIndex = getIndex(of: itemID) else { return nil }
@@ -178,7 +173,12 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	{
-		data[safe: index].map { ASCollectionViewItemUniqueID(sectionID: sectionID, itemID: $0[keyPath: dataIDKeyPath]) }
+		data[safe: index].map { getItemID(for: $0, withSectionID: sectionID) }
+	}
+
+	func getItemID<SectionID: Hashable>(for item: Data, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID
+	{
+		ASCollectionViewItemUniqueID(sectionID: sectionID, itemID: item[keyPath: dataIDKeyPath])
 	}
 
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
@@ -236,23 +236,45 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		guard dragEnabled else { return nil }
 		guard let item = data[safe: indexPath.item] else { return nil }
 
-		let itemProvider: NSItemProvider = self.itemProvider?(item) ?? NSItemProvider()
+		let itemProvider: NSItemProvider = dragDropConfig.dragItemProvider?(item) ?? NSItemProvider()
 		let dragItem = UIDragItem(itemProvider: itemProvider)
 		dragItem.localObject = item
 		return dragItem
 	}
 
-	func applyDragOperation(_ operation: DragDrop<UIDragItem>)
+	func willAcceptDropItem(from dragItem: UIDragItem) -> Bool
 	{
-		switch operation
-		{
-		case let .onInsertItems(items, index):
-			onDragDrop?(.onInsertItems(items: items.compactMap { $0.localObject as? Data }, to: index))
-		case let .onMoveItems(fromIndexes, index):
-			onDragDrop?(.onMoveItems(from: fromIndexes, to: index))
-		case let .onRemoveItems(indexes):
-			onDragDrop?(.onRemoveItems(from: indexes))
-		}
+		getDropItem(from: dragItem) != nil
+	}
+
+	func getDropItem(from dragItem: UIDragItem) -> Data?
+	{
+		guard dropEnabled else { return nil }
+
+		let sourceItem = dragItem.localObject as? Data
+		return dragDropConfig.dropItemProvider?(sourceItem, dragItem) ?? sourceItem
+	}
+
+	func getItemID<SectionID: Hashable>(for dragItem: UIDragItem, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
+	{
+		guard let item = getDropItem(from: dragItem) else { return nil }
+		return getItemID(for: item, withSectionID: sectionID)
+	}
+
+	func applyRemove(atOffsets offsets: IndexSet)
+	{
+		dragDropConfig.dataBinding?.wrappedValue.remove(atOffsets: offsets)
+	}
+
+	func applyInsert(items: [UIDragItem], at index: Int)
+	{
+		let actualItems = items.compactMap(getDropItem(from:))
+		let noDuplicates = actualItems.filter { !allDataIDs.contains($0[keyPath: dataIDKeyPath]) }
+#if DEBUG
+		// Notify during debug build if IDs are not unique (programmer error)
+		if noDuplicates.count != actualItems.count { print("ASCOLLECTIONVIEW/ASTABLEVIEW: Attempted to insert an item with the same ID as one already in the section. This may cause unexpected behaviour.") }
+#endif
+		dragDropConfig.dataBinding?.wrappedValue.insert(contentsOf: noDuplicates, at: index)
 	}
 
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?

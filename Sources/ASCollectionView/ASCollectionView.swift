@@ -680,9 +680,15 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				let destinationSection = parent.sections[safe: destinationIndexPath.section]
 			else { return }
 
+			guard canDrop(at: destinationIndexPath) else { return }
+
+			guard let oldSnapshot = dataSource?.currentSnapshot else { return }
+			var dragSnapshot = oldSnapshot
+
 			switch coordinator.proposal.operation
 			{
 			case .move:
+				guard destinationSection.dataSource.reorderingEnabled else { return }
 				let itemsBySourceSection = Dictionary(grouping: coordinator.items) { item -> Int? in
 					if let sourceIndex = item.sourceIndexPath, !sourceIndex.isEmpty
 					{
@@ -694,67 +700,63 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					}
 				}
 
-				// Handle move within destination section + insertion from other sections
-				let itemsToMove = itemsBySourceSection[destinationIndexPath.section] ?? []
-				var itemsToInsertPrefix: [UICollectionViewDropItem] = []
-				var itemsToInsertSuffix: [UICollectionViewDropItem] = []
+				let sourceSections = itemsBySourceSection.keys.sorted { a, b in
+					guard let a = a else { return false }
+					guard let b = b else { return true }
+					return a < b
+				}
 
-				// Handle removal from source sections
-				for (sectionIndex, items) in itemsBySourceSection
+				var itemsToInsert: [UICollectionViewDropItem] = []
+
+				for sourceSectionIndex in sourceSections
 				{
-					guard
-						let sectionIndex = sectionIndex,
-						sectionIndex != destinationIndexPath.section,
-						let sourceSection = parent.sections[safe: sectionIndex]
-					else { continue }
-					// Note that these need to be inserted at destination
-					if sectionIndex < destinationIndexPath.section
+					guard let items = itemsBySourceSection[sourceSectionIndex] else { continue }
+
+					if
+						let sourceSectionIndex = sourceSectionIndex,
+						let sourceSection = parent.sections[safe: sourceSectionIndex]
 					{
-						itemsToInsertPrefix.append(contentsOf: coordinator.items)
+						guard sourceSection.dataSource.reorderingEnabled else { continue }
+
+						let sourceIndices = items.compactMap { $0.sourceIndexPath?.item }
+
+						// Remove from source section
+						dragSnapshot.sections[sourceSectionIndex].elements.remove(atOffsets: IndexSet(sourceIndices))
+						sourceSection.dataSource.applyRemove(atOffsets: IndexSet(sourceIndices))
+					}
+
+					// Add to insertion array (regardless whether sourceSection is nil)
+					itemsToInsert.append(contentsOf: items)
+				}
+
+				let itemsToInsertIDs: [ASCollectionViewItemUniqueID] = itemsToInsert.compactMap { item in
+					if let sourceIndexPath = item.sourceIndexPath
+					{
+						return oldSnapshot.sections[sourceIndexPath.section].elements[sourceIndexPath.item]
 					}
 					else
 					{
-						itemsToInsertSuffix.append(contentsOf: coordinator.items)
+						return destinationSection.dataSource.getItemID(for: item.dragItem, withSectionID: destinationSection.id)
 					}
-
-					let itemsSourceIndexSet = IndexSet(items.compactMap { $0.sourceIndexPath?.item })
-					// These items are being REMOVED from the section (moved to another section)
-					let removeOperation = DragDrop<UIDragItem>.onRemoveItems(from: itemsSourceIndexSet)
-					sourceSection.dataSource.applyDragOperation(removeOperation)
 				}
-
-				// Find index after accounting for moves
-				let itemsToMoveSourceIndexSet = IndexSet(itemsToMove.compactMap { $0.sourceIndexPath?.item })
-				let maxDestinationIndex = destinationSection.dataSource.endIndex - 1
-				let adjustedDestinationIndexForMove = itemsToMoveSourceIndexSet.reduce(into: destinationIndexPath.item) {
-					if $1 < $0 { $0 += 1 }
-				}
-
-				let adjustedDestinationIndexForSuffix = adjustedDestinationIndexForMove + itemsToMoveSourceIndexSet.count
-				let adjustedDestinationIndexForPrefix = adjustedDestinationIndexForMove
-
-				// Calculate move within destination section
-				let moveOperation: DragDrop<UIDragItem>? = (!itemsToMoveSourceIndexSet.isEmpty) ? DragDrop<UIDragItem>.onMoveItems(from: itemsToMoveSourceIndexSet, to: min(adjustedDestinationIndexForMove, maxDestinationIndex)) : nil
-
-				// Calculate insert suffix and prefix
-				let insertSuffixOperation: DragDrop<UIDragItem>? = (!itemsToInsertSuffix.isEmpty) ? DragDrop<UIDragItem>.onInsertItems(items: itemsToInsertSuffix.compactMap { $0.dragItem }, to: min(adjustedDestinationIndexForSuffix, maxDestinationIndex)) : nil
-				let insertPrefixOperation: DragDrop<UIDragItem>? = (!itemsToInsertPrefix.isEmpty) ? DragDrop<UIDragItem>.onInsertItems(items: itemsToInsertPrefix.compactMap { $0.dragItem }, to: min(adjustedDestinationIndexForPrefix, maxDestinationIndex)) : nil
-
-				// Apply operation: MOVE THEN INSERT SUFFIX, THEN INSERT PREFIX (that order is important)
-				moveOperation.map { destinationSection.dataSource.applyDragOperation($0) }
-				insertSuffixOperation.map { destinationSection.dataSource.applyDragOperation($0) } // Suffix first so that prefix index unaffected
-				insertPrefixOperation.map { destinationSection.dataSource.applyDragOperation($0) }
+				dragSnapshot.sections[destinationIndexPath.section].elements.insert(contentsOf: itemsToInsertIDs, at: destinationIndexPath.item)
+				destinationSection.dataSource.applyInsert(items: itemsToInsert.map { $0.dragItem }, at: destinationIndexPath.item)
 
 			case .copy:
-				let items = coordinator.items.map { $0.dragItem }
-				if !items.isEmpty
-				{
-					let operation = DragDrop<UIDragItem>.onInsertItems(items: items, to: destinationIndexPath.item)
-					destinationSection.dataSource.applyDragOperation(operation)
-				}
+				destinationSection.dataSource.applyInsert(items: coordinator.items.map { $0.dragItem }, at: destinationIndexPath.item)
 
-			default:
-				return
+			default: break
+			}
+
+			dataSource?.applySnapshot(dragSnapshot)
+			refreshVisibleCells()
+
+			if let dragItem = coordinator.items.first, let destination = coordinator.destinationIndexPath
+			{
+				if dragItem.sourceIndexPath != nil
+				{
+					coordinator.drop(dragItem.dragItem, toItemAt: destination)
+				}
 			}
 		}
 

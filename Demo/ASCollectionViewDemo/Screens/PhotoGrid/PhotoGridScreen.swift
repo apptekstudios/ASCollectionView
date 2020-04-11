@@ -26,21 +26,7 @@ struct PhotoGridScreen: View
 			data: data,
 			selectedItems: $selectedItems,
 			onCellEvent: onCellEvent,
-			onDragDropEvent: { event in
-				switch event
-				{
-				case let .onInsertItems(items, index):
-					self.data.insert(contentsOf: items, at: index) // If this were a multi-section CV, you'd refer to the source of data for this section, eg. `self.data[sectionIndex]`
-				case let .onMoveItems(sourceIndexSet, index):
-					self.data.move(fromOffsets: sourceIndexSet, toOffset: index)
-				case let .onRemoveItems(indexSet):
-					self.data.remove(atOffsets: indexSet)
-				}
-			},
-			itemProvider: { item in
-				// Example of returning a custom item provider (eg. to support drag-drop to other apps)
-				NSItemProvider(object: item.url as NSURL)
-			},
+			dragDropConfig: dragDropConfig,
 			contextMenuProvider: contextMenuProvider)
 		{ item, state in
 			ZStack(alignment: .bottomTrailing)
@@ -192,6 +178,15 @@ extension PhotoGridScreen
 				return section
 			}
 		}
+	}
+
+	var dragDropConfig: ASDragDropConfig<Post>
+	{
+		ASDragDropConfig<Post>(dataBinding: $data)
+			.enableReordering(shouldMoveItem: nil)
+			.dragItemProvider { item in
+				NSItemProvider(object: item.url as NSURL)
+			}
 	}
 }
 
