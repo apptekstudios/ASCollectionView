@@ -906,14 +906,18 @@ public class AS_TableViewController: UIViewController
 		coordinator?.didUpdateContentSize(tableView.contentSize)
 	}
 
+	public override func viewWillAppear(_ animated: Bool)
+	{
+		super.viewWillAppear(animated)
+		// NOTE: Due to some SwiftUI bugs currently, we've chosen to make it so that onMoveToParent is currently called from viewWillAppear
+		coordinator?.onMoveToParent()
+	}
+
 	public override func didMove(toParent parent: UIViewController?)
 	{
 		super.didMove(toParent: parent)
-		if parent != nil
-		{
-			coordinator?.onMoveToParent()
-		}
-		else
+		// NOTE: Due to some SwiftUI bugs currently, we've chosen to make it so that onMoveToParent is currently called from viewWillAppear
+		if parent == nil
 		{
 			coordinator?.onMoveFromParent()
 		}
@@ -924,12 +928,4 @@ public class AS_TableViewController: UIViewController
 class AS_UITableView: UITableView
 {
 	weak var coordinator: ASTableViewCoordinator?
-
-	public override func didMoveToWindow()
-	{
-		super.didMoveToWindow()
-
-		// Intended as a temporary workaround for a SwiftUI bug present in 13.3 -> the UIViewController is not moved to a parent when embedded in a list/scrollview
-		coordinator?.onMoveToParent()
-	}
 }

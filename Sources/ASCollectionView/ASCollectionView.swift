@@ -992,14 +992,18 @@ public class AS_CollectionViewController: UIViewController
 		fatalError("init(coder:) has not been implemented")
 	}
 
+	public override func viewWillAppear(_ animated: Bool)
+	{
+		super.viewWillAppear(animated)
+		// NOTE: Due to some SwiftUI bugs currently, we've chosen to make it so that onMoveToParent is currently called from viewWillAppear
+		coordinator?.onMoveToParent()
+	}
+
 	public override func didMove(toParent parent: UIViewController?)
 	{
 		super.didMove(toParent: parent)
-		if parent != nil
-		{
-			coordinator?.onMoveToParent()
-		}
-		else
+		// NOTE: Due to some SwiftUI bugs currently, we've chosen to make it so that onMoveToParent is currently called from viewWillAppear
+		if parent == nil
 		{
 			coordinator?.onMoveFromParent()
 		}
@@ -1059,14 +1063,6 @@ public class AS_CollectionViewController: UIViewController
 class AS_UICollectionView: UICollectionView
 {
 	weak var coordinator: ASCollectionViewCoordinator?
-
-	public override func didMoveToWindow()
-	{
-		super.didMoveToWindow()
-		guard window != nil else { return }
-		// Intended as a temporary workaround for a SwiftUI bug present in 13.3 -> the UIViewController is not moved to a parent when embedded in a list/scrollview
-		coordinator?.onMoveToParent()
-	}
 }
 
 // MARK: Modifer: Custom Delegate
