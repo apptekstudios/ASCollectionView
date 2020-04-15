@@ -223,8 +223,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			assignIfChanged(tableView, \.keyboardDismissMode, newValue: .onDrag)
 
 			let isEditing = parent.editMode?.wrappedValue.isEditing ?? false
-			assignIfChanged(tableView, \.allowsSelection, newValue: isEditing)
 			assignIfChanged(tableView, \.allowsMultipleSelection, newValue: isEditing)
+			if assignIfChanged(tableView, \.allowsSelection, newValue: isEditing)
+			{
+				updateSelectionBindings(tableView)
+			}
 		}
 
 		func setupDataSource(forTableView tv: UITableView)
@@ -265,6 +268,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 						?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
 
 				// Set itemID
+				cell.indexPath = indexPath
 				cell.itemID = itemID
 
 				// Update hostingController
@@ -479,7 +483,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		func updateSelectionBindings(_ tableView: UITableView)
 		{
-			let selected = tableView.indexPathsForSelectedRows ?? []
+			let selected = tableView.allowsSelection ? (tableView.indexPathsForSelectedRows ?? []) : []
 			let selectionBySection = Dictionary(grouping: selected) { $0.section }
 				.mapValues
 			{
@@ -845,12 +849,10 @@ public extension ASTableViewSection
 	{
 		var section = self
 		let insetGroupedContent =
-			HStack {
-				content()
-				Spacer()
-			}
-			.font(.headline)
-			.padding(EdgeInsets(top: 12, leading: 0, bottom: 6, trailing: 0))
+			content()
+				.font(.headline)
+				.frame(maxWidth: .infinity, alignment: .leading)
+				.padding(EdgeInsets(top: 12, leading: 0, bottom: 6, trailing: 0))
 
 		section.setHeaderView(insetGroupedContent)
 		return section

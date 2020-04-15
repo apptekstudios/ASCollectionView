@@ -293,6 +293,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 				// Set itemID
 				cell.itemID = itemID
+				cell.indexPath = indexPath
 
 				// Update hostingController
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]

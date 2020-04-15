@@ -12,6 +12,7 @@ protocol ASDataSourceConfigurableCell
 @available(iOS 13.0, *)
 class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 {
+	var indexPath: IndexPath?
 	var itemID: ASCollectionViewItemUniqueID?
 	var hostingController: ASHostingControllerProtocol?
 	{
@@ -67,6 +68,8 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 
 	override func prepareForReuse()
 	{
+		indexPath = nil
+		itemID = nil
 		isSelected = false
 		hostingController = nil
 	}

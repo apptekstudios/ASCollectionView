@@ -6,6 +6,7 @@ import SwiftUI
 @available(iOS 13.0, *)
 class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 {
+	var indexPath: IndexPath?
 	var itemID: ASCollectionViewItemUniqueID?
 	var hostingController: ASHostingControllerProtocol?
 	{
@@ -71,6 +72,8 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	override func prepareForReuse()
 	{
 		backgroundColor = .clear
+		indexPath = nil
+		itemID = nil
 		hostingController = nil
 		isSelected = false
 	}
