@@ -162,7 +162,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		}
 		if !conflicts.isEmpty
 		{
-			print("ASTABLEVIEW: The following section IDs are used more than once, please use unique section IDs to avoid unexpected behaviour:", sectionIDs)
+			print("ASTABLEVIEW: The following section IDs are used more than once, please use unique section IDs to avoid unexpected behaviour:", conflicts)
 		}
 	}
 #endif

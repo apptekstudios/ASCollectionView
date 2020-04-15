@@ -177,7 +177,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		}
 		if !conflicts.isEmpty
 		{
-			print("ASCOLLECTIONVIEW: The following section IDs are used more than once, please use unique section IDs to avoid unexpected behaviour:", sectionIDs)
+			print("ASCOLLECTIONVIEW: The following section IDs are used more than once, please use unique section IDs to avoid unexpected behaviour:", conflicts)
 		}
 	}
 #endif
