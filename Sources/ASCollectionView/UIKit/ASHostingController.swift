@@ -14,6 +14,7 @@ internal struct ASHostingControllerWrapper<Content: View>: View, ASHostingContro
 	var body: some View
 	{
 		content
+			.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 			.edgesIgnoringSafeArea(.all)
 			.environment(\.invalidateCellLayout, invalidateCellLayoutCallback)
 			.environment(\.collectionViewScrollToCell, collectionViewScrollToCellCallback)

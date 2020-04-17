@@ -40,43 +40,9 @@ internal protocol ASSectionDataSourceProtocol
 }
 
 @available(iOS 13.0, *)
-public enum CellEvent<Data>
+protocol ASDataSourceConfigurableCell
 {
-	/// Respond by starting necessary prefetch operations for this data to be displayed soon (eg. download images)
-	case prefetchForData(data: [Data])
-
-	/// Called when its no longer necessary to prefetch this data
-	case cancelPrefetchForData(data: [Data])
-
-	/// Called when an item is appearing on the screen
-	case onAppear(item: Data)
-
-	/// Called when an item is disappearing from the screen
-	case onDisappear(item: Data)
-}
-
-@available(iOS 13.0, *)
-public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
-
-@available(iOS 13.0, *)
-public typealias ShouldAllowSwipeToDelete = ((_ index: Int) -> Bool)
-
-@available(iOS 13.0, *)
-public typealias OnSwipeToDelete<Data> = ((_ index: Int, _ item: Data, _ completionHandler: (Bool) -> Void) -> Void)
-
-@available(iOS 13.0, *)
-public typealias ContextMenuProvider<Data> = ((_ index: Int, _ item: Data) -> UIContextMenuConfiguration?)
-
-@available(iOS 13.0, *)
-public typealias SelfSizingConfig = ((_ context: ASSelfSizingContext) -> ASSelfSizingConfig?)
-
-@available(iOS 13.0, *)
-public struct CellContext
-{
-	public var isSelected: Bool
-	public var index: Int
-	public var isFirstInSection: Bool
-	public var isLastInSection: Bool
+	var hostingController: ASHostingControllerProtocol? { get set }
 }
 
 @available(iOS 13.0, *)
@@ -86,7 +52,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var data: DataCollection
 	var dataIDKeyPath: KeyPath<Data, DataID>
 	var container: (Content) -> Container
-	var content: (DataCollection.Element, CellContext) -> Content
+	var content: (DataCollection.Element, ASCellContext) -> Content
 
 	var selectedItems: Binding<Set<Int>>?
 	var shouldAllowSelection: ((_ index: Int) -> Bool)?
@@ -112,9 +78,9 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash })
 	}
 
-	func cellContext(for index: Int) -> CellContext
+	func cellContext(for index: Int) -> ASCellContext
 	{
-		CellContext(
+		ASCellContext(
 			isSelected: isSelected(index: index),
 			index: index,
 			isFirstInSection: index == data.startIndex,

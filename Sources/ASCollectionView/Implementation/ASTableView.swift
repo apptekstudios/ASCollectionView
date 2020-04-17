@@ -25,7 +25,7 @@ extension ASTableView where SectionID == Int
 		style: UITableView.Style = .plain,
 		data: DataCollection,
 		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
-		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, ASCellContext) -> Content))
 		where DataCollection.Index == Int
 	{
 		self.style = style
@@ -43,7 +43,7 @@ extension ASTableView where SectionID == Int
 	public init<DataCollection: RandomAccessCollection, Content: View>(
 		style: UITableView.Style = .plain,
 		data: DataCollection,
-		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
+		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, ASCellContext) -> Content))
 		where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
 		self.init(style: style, data: data, dataID: \.id, contentBuilder: contentBuilder)
@@ -80,22 +80,24 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 	// MARK: Private vars set by public modifiers
 
-	private var onScrollCallback: OnScrollCallback?
-	private var onReachedBottomCallback: OnReachedBottomCallback?
+	internal var onScrollCallback: OnScrollCallback?
+	internal var onReachedBottomCallback: OnReachedBottomCallback?
 
-	private var scrollIndicatorEnabled: Bool = true
-	private var contentInsets: UIEdgeInsets = .zero
+	internal var scrollIndicatorEnabled: Bool = true
+	internal var contentInsets: UIEdgeInsets = .zero
 
-	private var separatorsEnabled: Bool = true
+	internal var separatorsEnabled: Bool = true
 
-	private var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
+	internal var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
 
-	private var alwaysBounce: Bool = false
-	private var animateOnDataRefresh: Bool = true
+	internal var alwaysBounce: Bool = false
+	internal var animateOnDataRefresh: Bool = true
 
 	// MARK: Environment variables
 
 	@Environment(\.editMode) private var editMode
+
+	@Environment(\.invalidateCellLayout) var invalidateParentCellLayout // Call this if using content size binding (nested inside another ASCollectionView)
 
 	// Other
 	var contentSizeTracker: ContentSizeTracker?
@@ -251,7 +253,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 				guard let section = self.parent.sections[safe: indexPath.section] else { return cell }
 
-				cell.backgroundColor = (self.parent.style == .plain) ? .clear : .secondarySystemGroupedBackground
+				cell.backgroundColor = (self.parent.style == .plain || section.disableDefaultTheming) ? .clear : .secondarySystemGroupedBackground
+
+				cell.separatorInset = section.tableViewSeparatorInsets ?? UIEdgeInsets(top: 0, left: UITableView.automaticDimension, bottom: 0, right: UITableView.automaticDimension)
 
 				// Cell layout invalidation callback
 				cell.invalidateLayoutCallback = { [weak self] animated in
@@ -301,14 +305,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		func updateContent(_ tv: UITableView, transaction: Transaction?, refreshExistingCells: Bool)
 		{
 			guard hasDoneInitialSetup else { return }
+
+			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
+			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
+
 			if refreshExistingCells
 			{
 				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
 					refreshVisibleCells()
 				}
 			}
-			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
-			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
 			updateSelectionBindings(tv)
 		}
 
@@ -366,8 +372,12 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		func didUpdateContentSize(_ size: CGSize)
 		{
 			guard let tv = tableViewController?.tableView, tv.contentSize != lastContentSize else { return }
+			let firstSize = lastContentSize == .zero
 			lastContentSize = tv.contentSize
 			parent.contentSizeTracker?.contentSize = size
+			DispatchQueue.main.async {
+				self.parent.invalidateParentCellLayout?(!firstSize)
+			}
 		}
 
 		func configureRefreshControl(for tv: UITableView)
@@ -767,167 +777,4 @@ protocol ASTableViewCoordinator: AnyObject
 	func onMoveToParent()
 	func onMoveFromParent()
 	func didUpdateContentSize(_ size: CGSize)
-}
-
-// MARK: PUBLIC Modifier: OnScroll / OnReachedBottom
-
-@available(iOS 13.0, *)
-public extension ASTableView
-{
-	/// Set a closure that is called whenever the tableView is scrolled
-	func onScroll(_ onScroll: @escaping OnScrollCallback) -> Self
-	{
-		var this = self
-		this.onScrollCallback = onScroll
-		return this
-	}
-
-	/// Set a closure that is called whenever the tableView is scrolled to the bottom.
-	/// This is useful to enable loading more data when scrolling to bottom
-	func onReachedBottom(_ onReachedBottom: @escaping OnReachedBottomCallback) -> Self
-	{
-		var this = self
-		this.onReachedBottomCallback = onReachedBottom
-		return this
-	}
-
-	/// Set whether to show separators between cells
-	func separatorsEnabled(_ isEnabled: Bool = true) -> Self
-	{
-		var this = self
-		this.separatorsEnabled = isEnabled
-		return this
-	}
-
-	/// Set whether to show scroll indicator
-	func scrollIndicatorEnabled(_ isEnabled: Bool = true) -> Self
-	{
-		var this = self
-		this.scrollIndicatorEnabled = isEnabled
-		return this
-	}
-
-	/// Set the content insets
-	func contentInsets(_ insets: UIEdgeInsets) -> Self
-	{
-		var this = self
-		this.contentInsets = insets
-		return this
-	}
-
-	/// Set a closure that is called when the tableView is pulled to refresh
-	func onPullToRefresh(_ callback: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?) -> Self
-	{
-		var this = self
-		this.onPullToRefresh = callback
-		return this
-	}
-
-	/// Set whether the TableView should always allow bounce vertically
-	func alwaysBounce(_ alwaysBounce: Bool = true) -> Self
-	{
-		var this = self
-		this.alwaysBounce = alwaysBounce
-		return this
-	}
-
-	/// Set whether the TableView should animate on data refresh
-	func animateOnDataRefresh(_ animate: Bool = true) -> Self
-	{
-		var this = self
-		this.animateOnDataRefresh = animate
-		return this
-	}
-}
-
-// MARK: ASTableView specific header modifiers
-
-@available(iOS 13.0, *)
-public extension ASTableViewSection
-{
-	func sectionHeaderInsetGrouped<Content: View>(content: () -> Content?) -> Self
-	{
-		var section = self
-		let insetGroupedContent =
-			content()
-				.font(.headline)
-				.frame(maxWidth: .infinity, alignment: .leading)
-				.padding(EdgeInsets(top: 12, leading: 0, bottom: 6, trailing: 0))
-
-		section.setHeaderView(insetGroupedContent)
-		return section
-	}
-}
-
-@available(iOS 13.0, *)
-public class AS_TableViewController: UIViewController
-{
-	weak var coordinator: ASTableViewCoordinator?
-	{
-		didSet
-		{
-			guard viewIfLoaded != nil else { return }
-			tableView.coordinator = coordinator
-		}
-	}
-
-	var style: UITableView.Style
-
-	lazy var tableView: AS_UITableView = {
-		let tableView = AS_UITableView(frame: .zero, style: style)
-		tableView.coordinator = coordinator
-		tableView.tableHeaderView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) // Remove unnecessary padding in Style.grouped/insetGrouped
-		tableView.tableFooterView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: 10))) // Remove separators for non-existent cells
-		return tableView
-	}()
-
-	public init(style: UITableView.Style)
-	{
-		self.style = style
-		super.init(nibName: nil, bundle: nil)
-	}
-
-	required init?(coder: NSCoder)
-	{
-		fatalError("init(coder:) has not been implemented")
-	}
-
-	public override func loadView()
-	{
-		view = tableView
-	}
-
-	public override func viewDidLoad()
-	{
-		super.viewDidLoad()
-	}
-
-	public override func viewDidLayoutSubviews()
-	{
-		super.viewDidLayoutSubviews()
-		coordinator?.didUpdateContentSize(tableView.contentSize)
-	}
-
-	public override func viewWillAppear(_ animated: Bool)
-	{
-		super.viewWillAppear(animated)
-		// NOTE: Due to some SwiftUI bugs currently, we've chosen to make it so that onMoveToParent is currently called from viewWillAppear
-		coordinator?.onMoveToParent()
-	}
-
-	public override func didMove(toParent parent: UIViewController?)
-	{
-		super.didMove(toParent: parent)
-		// NOTE: Due to some SwiftUI bugs currently, we've chosen to make it so that onMoveToParent is currently called from viewWillAppear
-		if parent == nil
-		{
-			coordinator?.onMoveFromParent()
-		}
-	}
-}
-
-@available(iOS 13.0, *)
-class AS_UITableView: UITableView
-{
-	weak var coordinator: ASTableViewCoordinator?
 }

@@ -33,6 +33,7 @@ struct SelfSizingWrapper<Content: View & ContentSize>: View
 	var content: Content
 	var shrinkDirection: ShrinkDimension
 	var isEnabled: Bool = true
+	var expandToFitMode: Bool = false
 
 	var modifiedContent: Content
 	{
@@ -43,7 +44,7 @@ struct SelfSizingWrapper<Content: View & ContentSize>: View
 
 	var body: some View
 	{
-		SubWrapper(contentSizeTracker: contentSizeTracker, content: modifiedContent, shrinkDirection: shrinkDirection, isEnabled: isEnabled)
+		SubWrapper(contentSizeTracker: contentSizeTracker, content: modifiedContent, shrinkDirection: shrinkDirection, isEnabled: isEnabled, expandToFitMode: expandToFitMode)
 	}
 }
 
@@ -56,15 +57,18 @@ struct SubWrapper<Content: View & ContentSize>: View
 	var content: Content
 	var shrinkDirection: ShrinkDimension
 	var isEnabled: Bool
+	var expandToFitMode: Bool
 
 	var body: some View
 	{
 		content
 			.frame(
+				minWidth: isEnabled && expandToFitMode && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
 				idealWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
-				maxWidth: isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil,
+				maxWidth: expandToFitMode ? .infinity : (isEnabled && shrinkDirection.shrinkHorizontal ? contentSizeTracker.contentSize?.width : nil),
+				minHeight: isEnabled && expandToFitMode && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
 				idealHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
-				maxHeight: isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil,
+				maxHeight: expandToFitMode ? .infinity : (isEnabled && shrinkDirection.shrinkVertical ? contentSizeTracker.contentSize?.height : nil),
 				alignment: .topLeading)
 	}
 }
@@ -74,22 +78,4 @@ class ContentSizeTracker: ObservableObject
 {
 	@Published
 	var contentSize: CGSize?
-}
-
-@available(iOS 13.0, *)
-public extension ASCollectionView
-{
-	func shrinkToContentSize(isEnabled: Bool = true, dimension: ShrinkDimension) -> some View
-	{
-		SelfSizingWrapper(content: self, shrinkDirection: dimension, isEnabled: isEnabled)
-	}
-}
-
-@available(iOS 13.0, *)
-public extension ASTableView
-{
-	func shrinkToContentSize(isEnabled: Bool = true) -> some View
-	{
-		SelfSizingWrapper(content: self, shrinkDirection: .vertical, isEnabled: isEnabled)
-	}
 }

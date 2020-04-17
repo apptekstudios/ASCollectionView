@@ -38,7 +38,8 @@ extension Array: Nestable
 }
 
 @available(iOS 13.0, *)
-public func buildSectionArray<SectionID: Hashable>(@SectionArrayBuilder<SectionID> _ sections: () -> [ASSection<SectionID>]) -> [ASSection<SectionID>] {
+public func buildSectionArray<SectionID: Hashable>(@SectionArrayBuilder <SectionID> _ sections: () -> [ASSection<SectionID>]) -> [ASSection<SectionID>]
+{
 	sections()
 }
 

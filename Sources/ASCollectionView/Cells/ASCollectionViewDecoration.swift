@@ -2,6 +2,7 @@
 
 import Foundation
 import SwiftUI
+import UIKit
 
 @available(iOS 13.0, *)
 public protocol Decoration: View

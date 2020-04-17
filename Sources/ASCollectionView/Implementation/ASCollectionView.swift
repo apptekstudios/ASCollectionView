@@ -3,59 +3,6 @@
 import Combine
 import SwiftUI
 
-// MARK: Init for single-section CV
-
-@available(iOS 13.0, *)
-extension ASCollectionView where SectionID == Int
-{
-	/**
-	 Initializes a  collection view with a single section.
-
-	 - Parameters:
-	 	- section: A single section (ASCollectionViewSection)
-	 */
-	public init(section: Section)
-	{
-		sections = [section]
-	}
-
-	/**
-	 Initializes a  collection view with a single section of static content
-	 */
-	public init(@ViewArrayBuilder staticContent: () -> ViewArrayBuilder.Wrapper)
-	{
-		self.init(sections: [ASCollectionViewSection(id: 0, content: staticContent)])
-	}
-
-	/**
-	 Initializes a  collection view with a single section.
-	 */
-	public init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
-		data: DataCollection,
-		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
-		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
-		where DataCollection.Index == Int
-	{
-		let section = ASCollectionViewSection(
-			id: 0,
-			data: data,
-			dataID: dataIDKeyPath,
-			contentBuilder: contentBuilder)
-		sections = [section]
-	}
-
-	/**
-	 Initializes a  collection view with a single section with identifiable data
-	 */
-	public init<DataCollection: RandomAccessCollection, Content: View>(
-		data: DataCollection,
-		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, CellContext) -> Content))
-		where DataCollection.Index == Int, DataCollection.Element: Identifiable
-	{
-		self.init(data: data, dataID: \.id, contentBuilder: contentBuilder)
-	}
-}
-
 @available(iOS 13.0, *)
 public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentable, ContentSize
 {
@@ -74,56 +21,40 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	// MARK: Internal variables modified by modifier functions
 
-	private var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
+	internal var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
 
 	internal var contentSizeTracker: ContentSizeTracker?
 
-	private var onScrollCallback: OnScrollCallback?
-	private var onReachedBoundaryCallback: OnReachedBoundaryCallback?
+	internal var onScrollCallback: OnScrollCallback?
+	internal var onReachedBoundaryCallback: OnReachedBoundaryCallback?
 
-	private var horizontalScrollIndicatorEnabled: Bool = true
-	private var verticalScrollIndicatorEnabled: Bool = true
-	private var contentInsets: UIEdgeInsets = .zero
+	internal var horizontalScrollIndicatorEnabled: Bool = true
+	internal var verticalScrollIndicatorEnabled: Bool = true
+	internal var contentInsets: UIEdgeInsets = .zero
 
-	private var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
+	internal var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
 
-	private var alwaysBounceVertical: Bool = false
-	private var alwaysBounceHorizontal: Bool = false
+	internal var alwaysBounceVertical: Bool = false
+	internal var alwaysBounceHorizontal: Bool = false
 
-	private var initialScrollPosition: ASCollectionViewScrollPosition?
+	internal var initialScrollPosition: ASCollectionViewScrollPosition?
 
-	private var animateOnDataRefresh: Bool = true
+	internal var animateOnDataRefresh: Bool = true
 
-	private var maintainScrollPositionOnOrientationChange: Bool = true
+	internal var maintainScrollPositionOnOrientationChange: Bool = true
 
-	private var shouldInvalidateLayoutOnStateChange: Bool = false
-	private var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
+	internal var shouldInvalidateLayoutOnStateChange: Bool = false
+	internal var shouldAnimateInvalidatedLayoutOnStateChange: Bool = false
 
-	private var shouldRecreateLayoutOnStateChange: Bool = false
-	private var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
+	internal var shouldRecreateLayoutOnStateChange: Bool = false
+	internal var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
 
 	// MARK: Environment variables
 
 	// SwiftUI environment
 	@Environment(\.editMode) private var editMode
 
-	// MARK: Init for multi-section CVs
-
-	/**
-	 Initializes a  collection view with the given sections
-
-	 - Parameters:
-	 	- sections: An array of sections (ASCollectionViewSection)
-	 */
-	@inlinable public init(sections: [Section])
-	{
-		self.sections = sections
-	}
-
-	@inlinable public init(@SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
-	{
-		sections = sectionBuilder()
-	}
+	@Environment(\.invalidateCellLayout) var invalidateParentCellLayout // Call this if using content size binding (nested inside another ASCollectionView)
 
 	public func makeUIViewController(context: Context) -> AS_CollectionViewController
 	{
@@ -358,14 +289,15 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			guard hasDoneInitialSetup else { return }
 
+			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
+			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
+
 			if refreshExistingCells
 			{
 				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
 					refreshVisibleCells()
 				}
 			}
-			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
-			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
 			updateSelectionBindings(cv)
 		}
 
@@ -775,8 +707,12 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func didUpdateContentSize(_ size: CGSize)
 		{
 			guard let cv = collectionViewController?.collectionView, cv.contentSize != lastContentSize else { return }
+			let firstSize = lastContentSize == .zero
 			lastContentSize = cv.contentSize
 			parent.contentSizeTracker?.contentSize = size
+			DispatchQueue.main.async {
+				self.parent.invalidateParentCellLayout?(!firstSize)
+			}
 		}
 
 		// MARK: Variables used for the custom prefetching implementation
@@ -961,290 +897,4 @@ public enum ASCollectionViewScrollPosition
 	case left
 	case right
 	case centerOnIndexPath(_: IndexPath)
-}
-
-@available(iOS 13.0, *)
-public class AS_CollectionViewController: UIViewController
-{
-	weak var coordinator: ASCollectionViewCoordinator?
-	{
-		didSet
-		{
-			guard viewIfLoaded != nil else { return }
-			collectionView.coordinator = coordinator
-		}
-	}
-
-	var collectionViewLayout: UICollectionViewLayout
-	lazy var collectionView: AS_UICollectionView = {
-		let cv = AS_UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
-		cv.coordinator = coordinator
-		return cv
-	}()
-
-	public init(collectionViewLayout layout: UICollectionViewLayout)
-	{
-		collectionViewLayout = layout
-		super.init(nibName: nil, bundle: nil)
-	}
-
-	required init?(coder: NSCoder)
-	{
-		fatalError("init(coder:) has not been implemented")
-	}
-
-	public override func viewWillAppear(_ animated: Bool)
-	{
-		super.viewWillAppear(animated)
-		// NOTE: Due to some SwiftUI bugs currently, we've chosen to make it so that onMoveToParent is currently called from viewWillAppear
-		coordinator?.onMoveToParent()
-	}
-
-	public override func didMove(toParent parent: UIViewController?)
-	{
-		super.didMove(toParent: parent)
-		// NOTE: Due to some SwiftUI bugs currently, we've chosen to make it so that onMoveToParent is currently called from viewWillAppear
-		if parent == nil
-		{
-			coordinator?.onMoveFromParent()
-		}
-	}
-
-	public override func loadView()
-	{
-		view = collectionView
-	}
-
-	public override func viewDidLoad()
-	{
-		super.viewDidLoad()
-		view.backgroundColor = .clear
-	}
-
-	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
-	{
-		// Get current central cell
-		self.coordinator?.prepareForOrientationChange()
-
-		super.viewWillTransition(to: size, with: coordinator)
-		// The following is a workaround to fix the interface rotation animation under SwiftUI
-		view.frame = CGRect(origin: view.frame.origin, size: size)
-
-		coordinator.animate(alongsideTransition: { _ in
-			self.view.setNeedsLayout()
-			self.view.layoutIfNeeded()
-			if
-				let desiredOffset = self.coordinator?.getContentOffsetForOrientationChange(),
-				self.collectionView.contentOffset != desiredOffset
-			{
-				self.collectionView.contentOffset = desiredOffset
-			}
-		})
-		{ _ in
-			// Completion
-			self.coordinator?.completedOrientationChange()
-		}
-	}
-
-	public override func viewSafeAreaInsetsDidChange()
-	{
-		super.viewSafeAreaInsetsDidChange()
-		// The following is a workaround to fix the interface rotation animation under SwiftUI
-		collectionViewLayout.invalidateLayout()
-	}
-
-	public override func viewDidLayoutSubviews()
-	{
-		super.viewDidLayoutSubviews()
-		coordinator?.didUpdateContentSize(collectionView.contentSize)
-	}
-}
-
-@available(iOS 13.0, *)
-class AS_UICollectionView: UICollectionView
-{
-	weak var coordinator: ASCollectionViewCoordinator?
-}
-
-// MARK: Modifer: Custom Delegate
-
-@available(iOS 13.0, *)
-public extension ASCollectionView
-{
-	/// Use this modifier to assign a custom delegate type (subclass of ASCollectionViewDelegate). This allows support for old UICollectionViewLayouts that require a delegate.
-	func customDelegate(_ delegateInitialiser: @escaping (() -> ASCollectionViewDelegate)) -> Self
-	{
-		var cv = self
-		cv.delegateInitialiser = delegateInitialiser
-		return cv
-	}
-}
-
-// MARK: Modifer: Layout Invalidation
-
-@available(iOS 13.0, *)
-public extension ASCollectionView
-{
-	/// For use in cases where you would like to change layout settings in response to a change in variables referenced by your layout closure.
-	/// Note: this ensures the layout is invalidated
-	/// - For UICollectionViewCompositionalLayout this means that your SectionLayout closure will be called again
-	/// - closures capture value types when created, therefore you must refer to a reference type in your layout closure if you want it to update.
-	func shouldInvalidateLayoutOnStateChange(_ shouldInvalidate: Bool, animated: Bool = true) -> Self
-	{
-		var this = self
-		this.shouldInvalidateLayoutOnStateChange = shouldInvalidate
-		this.shouldAnimateInvalidatedLayoutOnStateChange = animated
-		return this
-	}
-
-	/// For use in cases where you would like to recreate the layout object in response to a change in state. Eg. for changing layout types completely
-	/// If not changing the type of layout (eg. to a different class) t is preferable to invalidate the layout and update variables in the `configureCustomLayout` closure
-	func shouldRecreateLayoutOnStateChange(_ shouldRecreate: Bool, animated: Bool = true) -> Self
-	{
-		var this = self
-		this.shouldRecreateLayoutOnStateChange = shouldRecreate
-		this.shouldAnimateRecreatedLayoutOnStateChange = animated
-		return this
-	}
-}
-
-// MARK: Modifer: Other Modifiers
-
-@available(iOS 13.0, *)
-public extension ASCollectionView
-{
-	/// Set a closure that is called whenever the collectionView is scrolled
-	func onScroll(_ onScroll: @escaping OnScrollCallback) -> Self
-	{
-		var this = self
-		this.onScrollCallback = onScroll
-		return this
-	}
-
-	/// Set a closure that is called whenever the collectionView is scrolled to a boundary. eg. the bottom.
-	/// This is useful to enable loading more data when scrolling to bottom
-	func onReachedBoundary(_ onReachedBoundary: @escaping OnReachedBoundaryCallback) -> Self
-	{
-		var this = self
-		this.onReachedBoundaryCallback = onReachedBoundary
-		return this
-	}
-
-	/// Set whether to show scroll indicators
-	func scrollIndicatorsEnabled(horizontal: Bool = true, vertical: Bool = true) -> Self
-	{
-		var this = self
-		this.horizontalScrollIndicatorEnabled = horizontal
-		this.verticalScrollIndicatorEnabled = vertical
-		return this
-	}
-
-	/// Set the content insets
-	func contentInsets(_ insets: UIEdgeInsets) -> Self
-	{
-		var this = self
-		this.contentInsets = insets
-		return this
-	}
-
-	/// Set a closure that is called when the collectionView is pulled to refresh
-	func onPullToRefresh(_ callback: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?) -> Self
-	{
-		var this = self
-		this.onPullToRefresh = callback
-		return this
-	}
-
-	/// Set whether the ASCollectionView should always allow bounce vertically
-	func alwaysBounceVertical(_ alwaysBounce: Bool = true) -> Self
-	{
-		var this = self
-		this.alwaysBounceVertical = alwaysBounce
-		return this
-	}
-
-	/// Set whether the ASCollectionView should always allow bounce horizontally
-	func alwaysBounceHorizontal(_ alwaysBounce: Bool = true) -> Self
-	{
-		var this = self
-		this.alwaysBounceHorizontal = alwaysBounce
-		return this
-	}
-
-	/// Set an initial scroll position for the ASCollectionView
-	func initialScrollPosition(_ position: ASCollectionViewScrollPosition?) -> Self
-	{
-		var this = self
-		this.initialScrollPosition = position
-		return this
-	}
-
-	/// Set whether the ASCollectionView should animate on data refresh
-	func animateOnDataRefresh(_ animate: Bool = true) -> Self
-	{
-		var this = self
-		this.animateOnDataRefresh = animate
-		return this
-	}
-
-	/// Set whether the ASCollectionView should attempt to maintain scroll position on orientation change, default is true
-	func shouldAttemptToMaintainScrollPositionOnOrientationChange(maintainPosition: Bool) -> Self
-	{
-		var this = self
-		this.maintainScrollPositionOnOrientationChange = true
-		return this
-	}
-}
-
-// MARK: PUBLIC layout modifier functions
-
-@available(iOS 13.0, *)
-public extension ASCollectionView
-{
-	func layout(_ layout: Layout) -> Self
-	{
-		var this = self
-		this.layout = layout
-		return this
-	}
-
-	func layout(
-		scrollDirection: UICollectionView.ScrollDirection = .vertical,
-		interSectionSpacing: CGFloat = 10,
-		layoutPerSection: @escaping CompositionalLayout<SectionID>) -> Self
-	{
-		var this = self
-		this.layout = Layout(
-			scrollDirection: scrollDirection,
-			interSectionSpacing: interSectionSpacing,
-			layoutPerSection: layoutPerSection)
-		return this
-	}
-
-	func layout(
-		scrollDirection: UICollectionView.ScrollDirection = .vertical,
-		interSectionSpacing: CGFloat = 10,
-		layout: @escaping CompositionalLayoutIgnoringSections) -> Self
-	{
-		var this = self
-		this.layout = Layout(
-			scrollDirection: scrollDirection,
-			interSectionSpacing: interSectionSpacing,
-			layout: layout)
-		return this
-	}
-
-	func layout(customLayout: @escaping (() -> UICollectionViewLayout)) -> Self
-	{
-		var this = self
-		this.layout = Layout(customLayout: customLayout)
-		return this
-	}
-
-	func layout<LayoutClass: UICollectionViewLayout>(createCustomLayout: @escaping (() -> LayoutClass), configureCustomLayout: @escaping ((LayoutClass) -> Void)) -> Self
-	{
-		var this = self
-		this.layout = Layout(createCustomLayout: createCustomLayout, configureCustomLayout: configureCustomLayout)
-		return this
-	}
 }
