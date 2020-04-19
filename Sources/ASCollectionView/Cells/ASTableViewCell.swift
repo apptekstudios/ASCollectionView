@@ -37,17 +37,14 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 
 	func willAppear(in vc: UIViewController)
 	{
-		hostingController.map
-		{ hc in
-			if hc.viewController.parent != vc
-			{
-				hc.viewController.removeFromParent()
-				vc.addChild(hc.viewController)
-			}
-
+		if hostingController?.viewController.parent != vc
+		{
+			hostingController?.viewController.removeFromParent()
+			hostingController.map { vc.addChild($0.viewController) }
 			attachView()
-
 			hostingController?.viewController.didMove(toParent: vc)
+		} else {
+			attachView()
 		}
 	}
 
@@ -67,6 +64,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		{
 			contentView.subviews.forEach { $0.removeFromSuperview() }
 			contentView.addSubview(hcView)
+			setNeedsLayout()
 		}
 	}
 

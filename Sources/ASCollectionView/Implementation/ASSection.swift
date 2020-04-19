@@ -32,7 +32,6 @@ public struct ASSection<SectionID: Hashable>
 {
 	public var id: SectionID
 
-	private var supplementaryViews: [String: AnyView] = [:]
 
 	internal var dataSource: ASSectionDataSourceProtocol
 
@@ -69,20 +68,20 @@ internal extension ASCollectionViewSection
 	{
 		guard let view = view else
 		{
-			supplementaryViews.removeValue(forKey: kind)
+			dataSource.supplementaryViews.removeValue(forKey: kind)
 			return
 		}
 
-		supplementaryViews[kind] = AnyView(view)
+		dataSource.supplementaryViews[kind] = AnyView(view)
 	}
 
 	var supplementaryKinds: Set<String>
 	{
-		Set(supplementaryViews.keys)
+		Set(dataSource.supplementaryViews.keys)
 	}
 
 	func supplementary(ofKind kind: String) -> AnyView?
 	{
-		supplementaryViews[kind]
+		dataSource.supplementaryViews[kind]
 	}
 }

@@ -34,10 +34,11 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 
 		guard let tableView = tableView else { return }
 
+		firstLoad = false
+		
 		CATransaction.begin()
 		if shouldDisableAnimation
 		{
-			firstLoad = false
 			CATransaction.setDisableActions(true)
 		}
 		CATransaction.setCompletionBlock(completion)
@@ -47,15 +48,18 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 		CATransaction.commit()
 	}
 
-	func reloadItem(_ indexPath: IndexPath, animated: Bool = true)
+	func reloadItems(_ indexPaths: Set<IndexPath>, animated: Bool = true)
 	{
 		guard let tableView = tableView else { return }
+		guard !indexPaths.isEmpty else { return }
 		CATransaction.begin()
 		if !animated
 		{
 			CATransaction.setDisableActions(true)
 		}
-		(tableView.cellForRow(at: indexPath) as? ASTableViewCell)?.prepareForSizing()
+		indexPaths.forEach {
+			(tableView.cellForRow(at: $0) as? ASTableViewCell)?.prepareForSizing()
+			}
 		tableView.performBatchUpdates(nil, completion: nil)
 		CATransaction.commit()
 	}

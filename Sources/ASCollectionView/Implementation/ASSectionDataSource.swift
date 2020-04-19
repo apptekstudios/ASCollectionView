@@ -12,6 +12,9 @@ internal protocol ASSectionDataSourceProtocol
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
 	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
 	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
+	func updateOrCreateHostController(forSupplementaryKind supplementaryKind: String, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
+	func update(_ hc: ASHostingControllerProtocol, forSupplementaryKind supplementaryKind: String)
+	var supplementaryViews: [String: AnyView] { get set }
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
@@ -26,7 +29,7 @@ internal protocol ASSectionDataSourceProtocol
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
-
+	
 	func isSelected(index: Int) -> Bool
 	func updateSelection(_ indices: Set<Int>)
 	func shouldSelect(_ indexPath: IndexPath) -> Bool
@@ -90,8 +93,29 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
 	{
 		guard let content = getContent(forItemID: itemID) else { return nil }
+		return updateOrCreateHostController(content: content, existingHC: existingHC)
+	}
 
-		if let hc = (existingHC as? ASHostingController<Container>)
+	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
+	{
+		guard let content = getContent(forItemID: itemID) else { return }
+		update(hc, withContent: content)
+	}
+	
+	
+	func updateOrCreateHostController(forSupplementaryKind supplementaryKind: String, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol? {
+		guard let content = supplementaryViews[supplementaryKind] else { return nil }
+		return updateOrCreateHostController(content: content, existingHC: existingHC)
+	}
+	
+	func update(_ hc: ASHostingControllerProtocol, forSupplementaryKind supplementaryKind: String)
+	{
+		guard let content = supplementaryViews[supplementaryKind] else { return }
+		update(hc, withContent: content)
+	}
+	
+	private func updateOrCreateHostController<Wrapped: View>(content: Wrapped, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol? {
+		if let hc = (existingHC as? ASHostingController<Wrapped>)
 		{
 			hc.setView(content)
 			hc.disableSwiftUIDropInteraction = dropEnabled
@@ -106,11 +130,10 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			return newHC
 		}
 	}
-
-	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
+	
+	private func update<Wrapped: View>(_ hc: ASHostingControllerProtocol, withContent content: Wrapped)
 	{
-		guard let hc = hc as? ASHostingController<Container> else { return }
-		guard let content = getContent(forItemID: itemID) else { return }
+		guard let hc = hc as? ASHostingController<Wrapped> else { return }
 		hc.setView(content)
 	}
 
@@ -277,6 +300,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
 		return shouldAllowDeselection?(indexPath.item) ?? (selectedItems != nil)
 	}
+	
 }
 
 // MARK: SELF SIZING MODIFIERS - INTERNAL

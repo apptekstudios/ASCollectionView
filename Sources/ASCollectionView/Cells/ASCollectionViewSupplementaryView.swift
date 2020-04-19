@@ -35,17 +35,14 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 
 	func willAppear(in vc: UIViewController?)
 	{
-		hostingController.map
-		{ hc in
-			if hc.viewController.parent != vc
-			{
-				hc.viewController.removeFromParent()
-				vc?.addChild(hc.viewController)
-			}
-
+		if hostingController?.viewController.parent != vc
+		{
+			hostingController?.viewController.removeFromParent()
+			hostingController.map { vc?.addChild($0.viewController) }
 			attachView()
-
-			vc.map { hostingController?.viewController.didMove(toParent: $0) }
+			hostingController?.viewController.didMove(toParent: vc)
+		} else {
+			attachView()
 		}
 	}
 
@@ -65,6 +62,7 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 		{
 			subviews.forEach { $0.removeFromSuperview() }
 			addSubview(hcView)
+			setNeedsLayout()
 		}
 	}
 

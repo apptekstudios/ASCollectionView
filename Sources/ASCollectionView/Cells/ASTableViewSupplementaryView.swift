@@ -8,7 +8,7 @@ import UIKit
 class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 {
 	var hostingController: ASHostingControllerProtocol?
-	private(set) var id: Int?
+	var id: Int?
 
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
 
@@ -23,39 +23,22 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		fatalError("init(coder:) has not been implemented")
 	}
 
-	func setupFor<Content: View>(id: Int, view: Content)
+	func setupForEmpty()
 	{
-		self.id = id
-		if let hc = hostingController as? ASHostingController<Content>
-		{
-			hc.setView(view)
-		}
-		else
-		{
-			hostingController = ASHostingController<Content>(view)
-		}
-	}
-
-	func setupForEmpty(id: Int)
-	{
-		self.id = id
 		hostingController = nil
-		contentView.subviews.forEach { $0.removeFromSuperview() }
+		attachView()
 	}
 
 	func willAppear(in vc: UIViewController)
 	{
-		hostingController.map
-		{ hc in
-			if hc.viewController.parent != vc
-			{
-				hc.viewController.removeFromParent()
-				vc.addChild(hc.viewController)
-			}
-
+		if hostingController?.viewController.parent != vc
+		{
+			hostingController?.viewController.removeFromParent()
+			hostingController.map { vc.addChild($0.viewController) }
 			attachView()
-
 			hostingController?.viewController.didMove(toParent: vc)
+		} else {
+			attachView()
 		}
 	}
 
@@ -75,6 +58,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		{
 			contentView.subviews.forEach { $0.removeFromSuperview() }
 			contentView.addSubview(hcView)
+			setNeedsLayout()
 		}
 	}
 

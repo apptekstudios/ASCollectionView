@@ -182,12 +182,15 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		// MARK: Private tracking variables
 
 		private var hasDoneInitialSetup = false
+		private var rowsToReload: Set<IndexPath> = []
 
 		// MARK: Caching
 
 		private var autoCachingHostingControllers = ASPriorityCache<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 		private var explicitlyCachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
-
+		private var autoCachingSupplementaryHostControllers = ASPriorityCache<ASSupplementaryCellID<SectionID>, ASHostingControllerProtocol>()
+		
+		
 		typealias Cell = ASTableViewCell
 
 		init(_ parent: ASTableView)
@@ -259,7 +262,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 				// Cell layout invalidation callback
 				cell.invalidateLayoutCallback = { [weak self] animated in
-					self?.reloadRow(indexPath, animated: animated)
+					self?.reloadRows([indexPath], animated: true) //Reload now in case the state change is within the cell (aka no reload of ASTableView)
+					self?.rowsToReload.insert(indexPath)
 				}
 				cell.scrollToCellCallback = { [weak self] position in
 					self?.scrollToRow(indexPath: indexPath, position: position)
@@ -287,7 +291,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 				return cell
 			}
-			dataSource?.defaultRowAnimation = .none
 		}
 
 		func populateDataSource(animated: Bool = true)
@@ -313,6 +316,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			{
 				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
 					refreshVisibleCells()
+					reloadRows(rowsToReload, animated: transactionAnimationEnabled)
+					rowsToReload.removeAll()
 				}
 			}
 			updateSelectionBindings(tv)
@@ -331,17 +336,17 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 
 			tv.visibleHeaderViews.forEach { sectionIndex, view in
-				configureHeader(view, forSection: sectionIndex)
+				configureSupplementary(view, supplementaryKind: UICollectionView.elementKindSectionHeader, forSection: sectionIndex)
 			}
 
 			tv.visibleFooterViews.forEach { sectionIndex, view in
-				configureFooter(view, forSection: sectionIndex)
+				configureSupplementary(view, supplementaryKind: UICollectionView.elementKindSectionFooter, forSection: sectionIndex)
 			}
 		}
 
-		func reloadRow(_ indexPath: IndexPath, animated: Bool)
+		func reloadRows(_ indexPaths: Set<IndexPath>, animated: Bool)
 		{
-			dataSource?.reloadItem(indexPath, animated: animated)
+			dataSource?.reloadItems(indexPaths, animated: animated)
 		}
 
 		func scrollToRow(indexPath: IndexPath, position: UITableView.ScrollPosition = .none)
@@ -642,15 +647,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 		}
 
-		public func tableView(_ tableView: UITableView, estimatedHeightForHeaderInSection section: Int) -> CGFloat
-		{
-			guard parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else
-			{
-				return CGFloat.leastNormalMagnitude
-			}
-			return parent.sections[safe: section]?.estimatedHeaderHeight ?? 50
-		}
-
 		public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat
 		{
 			guard parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionHeader) != nil else
@@ -658,15 +654,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				return CGFloat.leastNormalMagnitude
 			}
 			return UITableView.automaticDimension
-		}
-
-		public func tableView(_ tableView: UITableView, estimatedHeightForFooterInSection section: Int) -> CGFloat
-		{
-			guard parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionFooter) != nil else
-			{
-				return CGFloat.leastNormalMagnitude
-			}
-			return parent.sections[safe: section]?.estimatedFooterHeight ?? 50
 		}
 
 		public func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat
@@ -681,61 +668,42 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		public func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView?
 		{
 			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: supplementaryReuseID) else { return nil }
-			configureHeader(reusableView, forSection: section)
+			configureSupplementary(reusableView, supplementaryKind: UICollectionView.elementKindSectionHeader, forSection: section)
 			return reusableView
 		}
-
-		func configureHeader(_ headerCell: UITableViewHeaderFooterView, forSection section: Int)
-		{
-			guard let reusableView = headerCell as? ASTableViewSupplementaryView
-			else { return }
-			if let supplementaryView = parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionHeader)
-			{
-				// Self Sizing Settings
-				let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(UICollectionView.elementKindSectionHeader), indexPath: IndexPath(row: 0, section: section))
-				reusableView.selfSizingConfig =
-					parent.sections[safe: section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
-						?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
-
-				// Cell Content Setup
-				reusableView.setupFor(
-					id: section,
-					view: supplementaryView)
-			}
-			else
-			{
-				reusableView.setupForEmpty(id: section)
-			}
-		}
-
+		
 		public func tableView(_ tableView: UITableView, viewForFooterInSection section: Int) -> UIView?
 		{
 			guard let reusableView = tableView.dequeueReusableHeaderFooterView(withIdentifier: supplementaryReuseID) else { return nil }
-			configureFooter(reusableView, forSection: section)
+			configureSupplementary(reusableView, supplementaryKind: UICollectionView.elementKindSectionFooter, forSection: section)
 			return reusableView
 		}
 
-		func configureFooter(_ footerCell: UITableViewHeaderFooterView, forSection section: Int)
+		func configureSupplementary(_ cell: UITableViewHeaderFooterView, supplementaryKind: String, forSection sectionIndex: Int)
 		{
-			guard let reusableView = footerCell as? ASTableViewSupplementaryView
+			guard let reusableView = cell as? ASTableViewSupplementaryView
 			else { return }
-			if let supplementaryView = parent.sections[safe: section]?.supplementary(ofKind: UICollectionView.elementKindSectionFooter)
-			{
-				// Self Sizing Settings
-				let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(UICollectionView.elementKindSectionFooter), indexPath: IndexPath(row: 0, section: section))
-				reusableView.selfSizingConfig =
-					parent.sections[safe: section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
-						?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
-
-				// Cell Content Setup
-				reusableView.setupFor(
-					id: section,
-					view: supplementaryView)
+		
+			let ifEmpty = {
+				reusableView.setupForEmpty()
 			}
-			else
-			{
-				reusableView.setupForEmpty(id: section)
-			}
+			
+			reusableView.id = sectionIndex
+			
+			guard let section = parent.sections[safe: sectionIndex] else { ifEmpty(); return }
+			let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: supplementaryKind)
+			
+			// Self Sizing Settings
+			let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(supplementaryKind), indexPath: IndexPath(row: 0, section: sectionIndex))
+			reusableView.selfSizingConfig =
+				section.dataSource.getSelfSizingSettings(context: selfSizingContext)
+				?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
+			
+			// Update hostingController
+			let cachedHC = self.autoCachingSupplementaryHostControllers[supplementaryID]
+			reusableView.hostingController = section.dataSource.updateOrCreateHostController(forSupplementaryKind: supplementaryKind, existingHC: cachedHC)
+			// Cache the HC
+			self.autoCachingSupplementaryHostControllers[supplementaryID] = reusableView.hostingController
 		}
 
 		// MARK: Context Menu Support
