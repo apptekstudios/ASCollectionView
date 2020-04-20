@@ -23,8 +23,10 @@ struct TableViewDragAndDropScreen: View
 						dataID: \.self,
 						dragDropConfig: ASDragDropConfig(dataBinding: $groupA).enableReordering(),
 						onSwipeToDelete: { index, _, callback in
-							self.groupA.remove(at: index)
-							callback(true)
+							withAnimation {
+								self.groupA.remove(at: index)
+								callback(true)
+							}
 					})
 					{ item, _ in
 						Text(item)
@@ -40,8 +42,10 @@ struct TableViewDragAndDropScreen: View
 						dataID: \.self,
 						dragDropConfig: ASDragDropConfig(dataBinding: $groupB).enableReordering(),
 						onSwipeToDelete: { index, _, callback in
-							self.groupB.remove(at: index)
-							callback(true)
+							withAnimation {
+								self.groupB.remove(at: index)
+								callback(true)
+							}
 					}) { item, _ in
 						Text(item)
 							.padding()
@@ -59,8 +63,10 @@ struct TableViewDragAndDropScreen: View
 						dataID: \.self,
 						dragDropConfig: ASDragDropConfig(dataBinding: $groupC).enableReordering(),
 						onSwipeToDelete: { index, _, callback in
-							self.groupC.remove(at: index)
-							callback(true)
+							withAnimation {
+								self.groupC.remove(at: index)
+								callback(true)
+							}
 					}) { item, _ in
 						Text(item)
 							.padding()
@@ -75,8 +81,10 @@ struct TableViewDragAndDropScreen: View
 						dataID: \.self,
 						dragDropConfig: ASDragDropConfig(dataBinding: $groupD).enableReordering(),
 						onSwipeToDelete: { index, _, callback in
-							self.groupD.remove(at: index)
-							callback(true)
+							withAnimation {
+								self.groupD.remove(at: index)
+								callback(true)
+							}
 					}) { item, _ in
 						Text(item)
 							.padding()
