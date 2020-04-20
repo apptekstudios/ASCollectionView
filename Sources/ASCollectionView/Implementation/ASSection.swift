@@ -32,7 +32,6 @@ public struct ASSection<SectionID: Hashable>
 {
 	public var id: SectionID
 
-
 	internal var dataSource: ASSectionDataSourceProtocol
 
 	public var itemIDs: [ASCollectionViewItemUniqueID]

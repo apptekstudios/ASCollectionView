@@ -74,7 +74,7 @@ class ASDiffableDataSourceCollectionView<SectionID: Hashable>: ASDiffableDataSou
 		guard let cell = supplementaryViewProvider?(collectionView, kind, indexPath) else
 		{
 			let empty = collectionView.dequeueReusableSupplementaryView(ofKind: supplementaryEmptyKind, withReuseIdentifier: supplementaryEmptyReuseID, for: indexPath)
-			(empty as? ASCollectionViewSupplementaryView)?.setupForEmpty(id: indexPath.section)
+			(empty as? ASCollectionViewSupplementaryView)?.setupForEmpty()
 			return empty
 		}
 		return cell

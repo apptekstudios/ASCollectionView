@@ -138,6 +138,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		private var autoCachingHostingControllers = ASPriorityCache<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 		private var explicitlyCachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
+		private var autoCachingSupplementaryHostControllers = ASPriorityCache<ASSupplementaryCellID<SectionID>, ASHostingControllerProtocol>()
 
 		typealias Cell = ASCollectionViewCell
 
@@ -249,23 +250,24 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				guard let reusableView = cv.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
 				else { return nil }
 
+				let ifEmpty = {
+					reusableView.setupForEmpty()
+				}
+
+				guard let section = self.parent.sections[safe: indexPath.section] else { ifEmpty(); return reusableView }
+				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: kind)
+
 				// Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(kind), indexPath: indexPath)
 				reusableView.selfSizingConfig =
-					self.parent.sections[safe: indexPath.section]?.dataSource.getSelfSizingSettings(context: selfSizingContext)
-						?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
+					section.dataSource.getSelfSizingSettings(context: selfSizingContext)
 						?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
 
-				if let supplementaryView = self.parent.sections[safe: indexPath.section]?.supplementary(ofKind: kind)
-				{
-					reusableView.setupFor(
-						id: indexPath.section,
-						view: supplementaryView)
-				}
-				else
-				{
-					reusableView.setupForEmpty(id: indexPath.section)
-				}
+				// Update hostingController
+				let cachedHC = self.autoCachingSupplementaryHostControllers[supplementaryID]
+				reusableView.hostingController = section.dataSource.updateOrCreateHostController(forSupplementaryKind: kind, existingHC: cachedHC)
+				// Cache the HC
+				self.autoCachingSupplementaryHostControllers[supplementaryID] = reusableView.hostingController
 
 				return reusableView
 			}
@@ -319,9 +321,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				{
 					guard let supplementaryView = parent.sections[safe: $0.section]?.supplementary(ofKind: kind) else { return }
 					(cv.supplementaryView(forElementKind: kind, at: $0) as? ASCollectionViewSupplementaryView)?
-						.setupFor(
-							id: $0.section,
-							view: supplementaryView)
+						.setupFor(view: supplementaryView)
 				}
 			}
 		}

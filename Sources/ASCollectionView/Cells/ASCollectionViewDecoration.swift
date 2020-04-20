@@ -17,7 +17,7 @@ class ASCollectionViewDecoration<Content: Decoration>: ASCollectionViewSupplemen
 	{
 		super.init(frame: frame)
 		let view = Content()
-		setupFor(id: 0, view: view)
+		setupFor(view: view)
 		willAppear(in: nil)
 	}
 

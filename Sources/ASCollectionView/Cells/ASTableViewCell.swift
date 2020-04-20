@@ -43,7 +43,9 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 			hostingController.map { vc.addChild($0.viewController) }
 			attachView()
 			hostingController?.viewController.didMove(toParent: vc)
-		} else {
+		}
+		else
+		{
 			attachView()
 		}
 	}
@@ -84,8 +86,8 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		let modifiedBounds = CGRect(
 			x: contentView.bounds.origin.x,
 			y: contentView.bounds.origin.y,
-			width: max(fittedSize.width, contentView.bounds.width),
-			height: max(fittedSize.height, contentView.bounds.height))
+			width: contentView.bounds.width,
+			height: fittedSize.height) // ALIGN TO TOP. Particularly relevant for animating a reduction in cell height
 		if hostingController?.viewController.view.frame != modifiedBounds
 		{
 			hostingController?.viewController.view.frame = modifiedBounds

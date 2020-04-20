@@ -33,7 +33,9 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 			hostingController.map { vc.addChild($0.viewController) }
 			attachView()
 			hostingController?.viewController.didMove(toParent: vc)
-		} else {
+		}
+		else
+		{
 			attachView()
 		}
 	}

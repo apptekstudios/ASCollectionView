@@ -8,7 +8,6 @@ import UIKit
 class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 {
 	var hostingController: ASHostingControllerProtocol?
-	var id: Int?
 
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
 
@@ -37,7 +36,9 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 			hostingController.map { vc.addChild($0.viewController) }
 			attachView()
 			hostingController?.viewController.didMove(toParent: vc)
-		} else {
+		}
+		else
+		{
 			attachView()
 		}
 	}
