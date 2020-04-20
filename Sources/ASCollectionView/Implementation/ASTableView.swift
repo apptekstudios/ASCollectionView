@@ -185,8 +185,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				cell.separatorInset = section.tableViewSeparatorInsets ?? UIEdgeInsets(top: 0, left: UITableView.automaticDimension, bottom: 0, right: UITableView.automaticDimension)
 
 				// Cell layout invalidation callback
-				cell.invalidateLayoutCallback = { [weak self] animated in
-					self?.invalidateLayout(animated: animated)
+				cell.invalidateLayoutCallback = { [weak self, weak cell] animated in
+					cell.map { self?.invalidateLayout(animated: animated, cell: $0) }
 				}
 				cell.scrollToCellCallback = { [weak self] position in
 					self?.scrollToRow(indexPath: indexPath, position: position)
@@ -237,8 +237,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			{
 				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
 					refreshVisibleCells()
-					dataSource?.updateCellSizes(animated: transactionAnimationEnabled)
 				}
+				dataSource?.updateCellSizes(animated: transactionAnimationEnabled)
 			}
 			updateSelectionBindings(tv)
 		}
@@ -274,9 +274,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 		}
 
-		func invalidateLayout(animated: Bool)
+		func invalidateLayout(animated: Bool, cell: ASTableViewCell)
 		{
-			dataSource?.updateCellSizes(animated: animated) // Do now for state changes internal to the cell
+			cell.recalculateSize()
+			dataSource?.updateCellSizes(animated: animated)
 		}
 
 		func scrollToRow(indexPath: IndexPath, position: UITableView.ScrollPosition = .none)

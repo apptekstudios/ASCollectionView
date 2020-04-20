@@ -77,6 +77,12 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		isSelected = false
 	}
 
+	func recalculateSize()
+	{
+		hostingController?.viewController.view.setNeedsLayout()
+		hostingController?.viewController.view.layoutIfNeeded()
+	}
+
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()

@@ -57,6 +57,7 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 			CATransaction.setDisableActions(true)
 		}
 		tableView.performBatchUpdates(nil, completion: nil)
+
 		CATransaction.commit()
 	}
 
