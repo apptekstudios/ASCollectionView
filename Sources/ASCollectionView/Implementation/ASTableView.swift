@@ -107,6 +107,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		// MARK: Private tracking variables
 
 		private var hasDoneInitialSetup = false
+		private var hasSkippedFirstUpdate = false
 
 		// MARK: Caching
 
@@ -184,19 +185,12 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				cell.separatorInset = section.tableViewSeparatorInsets ?? UIEdgeInsets(top: 0, left: UITableView.automaticDimension, bottom: 0, right: UITableView.automaticDimension)
 
 				// Cell layout invalidation callback
-				cell.invalidateLayoutCallback = { [weak self, weak cell] _ in
-					cell?.prepareForSizing()
-					self?.dataSource?.updateCellSizes()
+				cell.invalidateLayoutCallback = { [weak self] animated in
+					self?.invalidateLayout(animated: animated)
 				}
 				cell.scrollToCellCallback = { [weak self] position in
 					self?.scrollToRow(indexPath: indexPath, position: position)
 				}
-
-				// Self Sizing Settings
-				let selfSizingContext = ASSelfSizingContext(cellType: .content, indexPath: indexPath)
-				cell.selfSizingConfig =
-					section.dataSource.getSelfSizingSettings(context: selfSizingContext)
-						?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
 
 				// Set itemID
 				cell.indexPath = indexPath
@@ -225,12 +219,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				}
 			)
 			dataSource?.applySnapshot(snapshot, animated: animated)
-			tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
 		}
 
 		func updateContent(_ tv: UITableView, transaction: Transaction?, refreshExistingCells: Bool)
 		{
 			guard hasDoneInitialSetup else { return }
+			guard hasSkippedFirstUpdate else
+			{
+				hasSkippedFirstUpdate = true
+				return
+			}
 
 			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
 			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
@@ -239,6 +237,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			{
 				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
 					refreshVisibleCells()
+					dataSource?.updateCellSizes(animated: transactionAnimationEnabled)
 				}
 			}
 			updateSelectionBindings(tv)
@@ -256,23 +255,28 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
 			}
 
-			tv.visibleHeaderViews.forEach { sectionIndex, view in
+			tv.visibleHeaderViews.forEach { view in
 				guard
 					let view = view as? ASTableViewSupplementaryView,
+					let sectionIDHash = view.sectionIDHash,
 					let hc = view.hostingController
 				else { return }
-				self.parent.sections[safe: sectionIndex]?.dataSource.update(hc, forSupplementaryKind: UICollectionView.elementKindSectionHeader)
+				self.parent.sections.first(where: { $0.id.hashValue == sectionIDHash })?.dataSource.update(hc, forSupplementaryKind: UICollectionView.elementKindSectionHeader)
 			}
 
-			tv.visibleFooterViews.forEach { sectionIndex, view in
+			tv.visibleFooterViews.forEach { view in
 				guard
 					let view = view as? ASTableViewSupplementaryView,
+					let sectionIDHash = view.sectionIDHash,
 					let hc = view.hostingController
 				else { return }
-				self.parent.sections[safe: sectionIndex]?.dataSource.update(hc, forSupplementaryKind: UICollectionView.elementKindSectionFooter)
+				self.parent.sections.first(where: { $0.id.hashValue == sectionIDHash })?.dataSource.update(hc, forSupplementaryKind: UICollectionView.elementKindSectionFooter)
 			}
+		}
 
-			dataSource?.updateCellSizes()
+		func invalidateLayout(animated: Bool)
+		{
+			dataSource?.updateCellSizes(animated: animated) // Do now for state changes internal to the cell
 		}
 
 		func scrollToRow(indexPath: IndexPath, position: UITableView.ScrollPosition = .none)
@@ -294,8 +298,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 		}
 
-		func onMoveFromParent()
-		{}
+		func onMoveFromParent() {}
 
 		// MARK: Function for updating contentSize binding
 
@@ -534,7 +537,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 						let sourceIndices = items.compactMap { $0.sourceIndexPath?.item }
 
 						// Remove from source section
-						dragSnapshot.sections[sourceSectionIndex].elements.remove(atOffsets: IndexSet(sourceIndices))
+						dragSnapshot.removeItems(fromSectionIndex: sourceSectionIndex, atOffsets: IndexSet(sourceIndices))
 						sourceSection.dataSource.applyRemove(atOffsets: IndexSet(sourceIndices))
 					}
 
@@ -545,7 +548,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				let itemsToInsertIDs: [ASCollectionViewItemUniqueID] = itemsToInsert.compactMap { item in
 					if let sourceIndexPath = item.sourceIndexPath
 					{
-						return oldSnapshot.sections[sourceIndexPath.section].elements[sourceIndexPath.item]
+						return oldSnapshot.sections[sourceIndexPath.section].elements[sourceIndexPath.item].differenceIdentifier
 					}
 					else
 					{
@@ -553,7 +556,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					}
 				}
 				let safeDestinationIndex = min(destinationIndexPath.item, dragSnapshot.sections[destinationIndexPath.section].elements.endIndex)
-				dragSnapshot.sections[destinationIndexPath.section].elements.insert(contentsOf: itemsToInsertIDs, at: safeDestinationIndex)
+				dragSnapshot.insertItems(itemsToInsertIDs, atSectionIndex: destinationIndexPath.section, atOffset: destinationIndexPath.item)
 				destinationSection.dataSource.applyInsert(items: itemsToInsert.map { $0.dragItem }, at: safeDestinationIndex)
 
 			case .copy:
@@ -616,13 +619,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 
 			guard let section = parent.sections[safe: sectionIndex] else { ifEmpty(); return }
+			reusableView.sectionIDHash = section.id.hashValue
 			let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: supplementaryKind)
-
-			// Self Sizing Settings
-			let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(supplementaryKind), indexPath: IndexPath(row: 0, section: sectionIndex))
-			reusableView.selfSizingConfig =
-				section.dataSource.getSelfSizingSettings(context: selfSizingContext)
-					?? ASSelfSizingConfig(selfSizeHorizontally: false, selfSizeVertically: true)
 
 			// Update hostingController
 			let cachedHC = autoCachingSupplementaryHostControllers[supplementaryID]

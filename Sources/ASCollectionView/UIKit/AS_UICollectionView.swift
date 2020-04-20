@@ -7,18 +7,10 @@ import SwiftUI
 public class AS_CollectionViewController: UIViewController
 {
 	weak var coordinator: ASCollectionViewCoordinator?
-	{
-		didSet
-		{
-			guard viewIfLoaded != nil else { return }
-			collectionView.coordinator = coordinator
-		}
-	}
 
 	var collectionViewLayout: UICollectionViewLayout
 	lazy var collectionView: AS_UICollectionView = {
 		let cv = AS_UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
-		cv.coordinator = coordinator
 		return cv
 	}()
 
@@ -36,18 +28,15 @@ public class AS_CollectionViewController: UIViewController
 	public override func viewWillAppear(_ animated: Bool)
 	{
 		super.viewWillAppear(animated)
-		// NOTE: Due to some SwiftUI bugs currently, we've chosen to make it so that onMoveToParent is currently called from viewWillAppear
+		// NOTE: Due to some SwiftUI bugs currently, we've chosen to call this here instead of actual parent call
 		coordinator?.onMoveToParent()
 	}
 
-	public override func didMove(toParent parent: UIViewController?)
+	public override func viewDidDisappear(_ animated: Bool)
 	{
-		super.didMove(toParent: parent)
-		// NOTE: Due to some SwiftUI bugs currently, we've chosen to make it so that onMoveToParent is currently called from viewWillAppear
-		if parent == nil
-		{
-			coordinator?.onMoveFromParent()
-		}
+		super.viewDidDisappear(animated)
+		// NOTE: Due to some SwiftUI bugs currently, we've chosen to call this here instead of actual parent call
+		coordinator?.onMoveFromParent()
 	}
 
 	public override func loadView()
@@ -101,7 +90,4 @@ public class AS_CollectionViewController: UIViewController
 }
 
 @available(iOS 13.0, *)
-class AS_UICollectionView: UICollectionView
-{
-	weak var coordinator: ASCollectionViewCoordinator?
-}
+class AS_UICollectionView: UICollectionView {}

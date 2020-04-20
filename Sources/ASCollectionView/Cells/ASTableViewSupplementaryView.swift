@@ -8,8 +8,7 @@ import UIKit
 class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 {
 	var hostingController: ASHostingControllerProtocol?
-
-	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
+	var sectionIDHash: Int?
 
 	override init(reuseIdentifier: String?)
 	{
@@ -66,6 +65,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	override func prepareForReuse()
 	{
 		hostingController = nil
+		sectionIDHash = nil
 	}
 
 	override func layoutSubviews()
@@ -74,9 +74,11 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 
 		if hostingController?.viewController.view.frame != contentView.bounds
 		{
-			hostingController?.viewController.view.frame = contentView.bounds
-			hostingController?.viewController.view.setNeedsLayout()
-			hostingController?.viewController.view.layoutIfNeeded()
+			UIView.performWithoutAnimation {
+				hostingController?.viewController.view.frame = contentView.bounds
+				hostingController?.viewController.view.setNeedsLayout()
+				hostingController?.viewController.view.layoutIfNeeded()
+			}
 		}
 	}
 
@@ -87,7 +89,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 			in: targetSize,
 			maxSize: ASOptionalSize(),
 			selfSizeHorizontal: false,
-			selfSizeVertical: selfSizingConfig.selfSizeVertically)
+			selfSizeVertical: true)
 		return size
 	}
 

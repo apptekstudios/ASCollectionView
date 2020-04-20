@@ -130,8 +130,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		// MARK: Private tracking variables
 
 		private var hasDoneInitialSetup = false
-		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
+		private var hasSkippedFirstUpdate = false
+		private var hasSetInitialScrollPosition = false
 
+		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
 		private var haveRegisteredForSupplementaryOfKind: Set<String> = []
 
 		// MARK: Caching
@@ -290,6 +292,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func updateContent(_ cv: UICollectionView, transaction: Transaction?, refreshExistingCells: Bool)
 		{
 			guard hasDoneInitialSetup else { return }
+			guard hasSkippedFirstUpdate else
+			{
+				hasSkippedFirstUpdate = true
+				return
+			}
 
 			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
 			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
@@ -334,14 +341,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 				// Populate data source
 				populateDataSource(animated: false)
-
-				// Set initial scroll position
-				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
 			}
 		}
 
-		func onMoveFromParent()
-		{}
+		func onMoveFromParent() {}
 
 		func invalidateLayout(animated: Bool)
 		{
@@ -656,7 +659,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						let sourceIndices = items.compactMap { $0.sourceIndexPath?.item }
 
 						// Remove from source section
-						dragSnapshot.sections[sourceSectionIndex].elements.remove(atOffsets: IndexSet(sourceIndices))
+						dragSnapshot.removeItems(fromSectionIndex: sourceSectionIndex, atOffsets: IndexSet(sourceIndices))
 						sourceSection.dataSource.applyRemove(atOffsets: IndexSet(sourceIndices))
 					}
 
@@ -667,14 +670,14 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				let itemsToInsertIDs: [ASCollectionViewItemUniqueID] = itemsToInsert.compactMap { item in
 					if let sourceIndexPath = item.sourceIndexPath
 					{
-						return oldSnapshot.sections[sourceIndexPath.section].elements[sourceIndexPath.item]
+						return oldSnapshot.sections[sourceIndexPath.section].elements[sourceIndexPath.item].differenceIdentifier
 					}
 					else
 					{
 						return destinationSection.dataSource.getItemID(for: item.dragItem, withSectionID: destinationSection.id)
 					}
 				}
-				dragSnapshot.sections[destinationIndexPath.section].elements.insert(contentsOf: itemsToInsertIDs, at: destinationIndexPath.item)
+				dragSnapshot.insertItems(itemsToInsertIDs, atSectionIndex: destinationIndexPath.section, atOffset: destinationIndexPath.item)
 				destinationSection.dataSource.applyInsert(items: itemsToInsert.map { $0.dragItem }, at: destinationIndexPath.item)
 
 			case .copy:
@@ -706,10 +709,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		var lastContentSize: CGSize = .zero
 		func didUpdateContentSize(_ size: CGSize)
 		{
-			guard let cv = collectionViewController?.collectionView, cv.contentSize != lastContentSize else { return }
+			guard let cv = collectionViewController?.collectionView, cv.contentSize != lastContentSize, cv.contentSize.width != 0, cv.contentSize.height != 0 else { return }
 			let firstSize = lastContentSize == .zero
 			lastContentSize = cv.contentSize
 			parent.contentSizeTracker?.contentSize = size
+			if !hasSetInitialScrollPosition
+			{
+				hasSetInitialScrollPosition = true
+				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
+			}
+
 			DispatchQueue.main.async {
 				self.parent.invalidateParentCellLayout?(!firstSize)
 			}

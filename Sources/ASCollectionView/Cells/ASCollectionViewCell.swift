@@ -74,9 +74,11 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 
 		if hostingController?.viewController.view.frame != contentView.bounds
 		{
-			hostingController?.viewController.view.frame = contentView.bounds
-			hostingController?.viewController.view.setNeedsLayout()
-			hostingController?.viewController.view.layoutIfNeeded()
+			UIView.performWithoutAnimation {
+				hostingController?.viewController.view.frame = contentView.bounds
+				hostingController?.viewController.view.setNeedsLayout()
+				hostingController?.viewController.view.layoutIfNeeded()
+			}
 		}
 	}
 

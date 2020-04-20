@@ -29,12 +29,12 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 
 	func applySnapshot(_ newSnapshot: Snapshot, animated: Bool = true, completion: (() -> Void)? = nil)
 	{
-		let changeset = StagedChangeset(source: currentSnapshot.sections, target: newSnapshot.sections)
-		let shouldDisableAnimation = firstLoad || !animated
-
 		guard let tableView = tableView else { return }
 
 		firstLoad = false
+
+		let changeset = StagedChangeset(source: currentSnapshot.sections, target: newSnapshot.sections)
+		let shouldDisableAnimation = firstLoad || !animated
 
 		CATransaction.begin()
 		if shouldDisableAnimation
@@ -42,15 +42,15 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 			CATransaction.setDisableActions(true)
 		}
 		CATransaction.setCompletionBlock(completion)
-		tableView.reload(using: changeset, with: shouldDisableAnimation ? .none : defaultRowAnimation) { newSections in
-			self.currentSnapshot.sections = newSections
+		tableView.reload(using: changeset, with: .none) { newSections in
+			self.currentSnapshot = .init(sections: newSections)
 		}
 		CATransaction.commit()
 	}
 
 	func updateCellSizes(animated: Bool = true)
 	{
-		guard let tableView = tableView else { return }
+		guard let tableView = tableView, !firstLoad else { return }
 		CATransaction.begin()
 		if !animated
 		{

@@ -18,8 +18,6 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		}
 	}
 
-	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: false, selfSizeVertically: true)
-
 	var invalidateLayoutCallback: ((_ animated: Bool) -> Void)?
 	var scrollToCellCallback: ((UITableView.ScrollPosition) -> Void)?
 
@@ -83,26 +81,28 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	{
 		super.layoutSubviews()
 
-		let modifiedBounds = CGRect(
-			x: contentView.bounds.origin.x,
-			y: contentView.bounds.origin.y,
-			width: contentView.bounds.width,
-			height: fittedSize.height) // ALIGN TO TOP. Particularly relevant for animating a reduction in cell height
-		if hostingController?.viewController.view.frame != modifiedBounds
+		if hostingController?.viewController.view.frame != contentView.bounds
 		{
-			hostingController?.viewController.view.frame = modifiedBounds
-			hostingController?.viewController.view.setNeedsLayout()
-			hostingController?.viewController.view.layoutIfNeeded()
+			UIView.performWithoutAnimation {
+				hostingController?.viewController.view.frame = contentView.bounds
+				hostingController?.viewController.view.setNeedsLayout()
+				hostingController?.viewController.view.layoutIfNeeded()
+			}
 		}
 	}
 
-	func prepareForSizing()
+	var fittedSize: CGSize = .zero
 	{
-		hostingController?.viewController.view.setNeedsLayout()
-		hostingController?.viewController.view.layoutIfNeeded()
+		didSet
+		{
+			if fittedSize != oldValue
+			{
+				setNeedsLayout()
+				layoutIfNeeded()
+			}
+		}
 	}
 
-	var fittedSize: CGSize = .zero
 	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
 	{
 		guard let hc = hostingController else { return .zero }
@@ -110,7 +110,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 			in: targetSize,
 			maxSize: ASOptionalSize(),
 			selfSizeHorizontal: false,
-			selfSizeVertical: selfSizingConfig.selfSizeVertically)
+			selfSizeVertical: true)
 		fittedSize = size
 		return size
 	}
