@@ -12,18 +12,6 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: true, selfSizeVertically: true)
 	var maxSizeForSelfSizing: ASOptionalSize = .none
 
-	func setupFor<Content: View>(view: Content)
-	{
-		if let hc = hostingController as? ASHostingController<Content>
-		{
-			hc.setView(view)
-		}
-		else
-		{
-			hostingController = ASHostingController<Content>(view)
-		}
-	}
-
 	func setupForEmpty()
 	{
 		hostingController = nil

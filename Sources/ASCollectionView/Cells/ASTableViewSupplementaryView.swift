@@ -7,7 +7,11 @@ import UIKit
 @available(iOS 13.0, *)
 class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 {
-	var hostingController: ASHostingControllerProtocol?
+	var hostingController: ASHostingControllerProtocol? {
+		didSet {
+			setNeedsLayout()
+		}
+	}
 	var sectionIDHash: Int?
 
 	override init(reuseIdentifier: String?)

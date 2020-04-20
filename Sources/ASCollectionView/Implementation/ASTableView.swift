@@ -108,6 +108,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		private var hasDoneInitialSetup = false
 		private var hasSkippedFirstUpdate = false
+		
+		private var visibleSupplementaries: [ASSupplementaryCellID<SectionID>: ASTableViewSupplementaryView] = [:]
 
 		// MARK: Caching
 
@@ -254,23 +256,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				else { return }
 				self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
 			}
-
-			tv.visibleHeaderViews.forEach { view in
-				guard
-					let view = view as? ASTableViewSupplementaryView,
-					let sectionIDHash = view.sectionIDHash,
-					let hc = view.hostingController
-				else { return }
-				self.parent.sections.first(where: { $0.id.hashValue == sectionIDHash })?.dataSource.update(hc, forSupplementaryKind: UICollectionView.elementKindSectionHeader)
-			}
-
-			tv.visibleFooterViews.forEach { view in
-				guard
-					let view = view as? ASTableViewSupplementaryView,
-					let sectionIDHash = view.sectionIDHash,
-					let hc = view.hostingController
-				else { return }
-				self.parent.sections.first(where: { $0.id.hashValue == sectionIDHash })?.dataSource.update(hc, forSupplementaryKind: UICollectionView.elementKindSectionFooter)
+			
+			visibleSupplementaries.forEach { (key, view) in
+				guard let section = self.parent.sections.first(where: { $0.id.hashValue == key.sectionID.hashValue }) else { return }
+				view.hostingController = section.dataSource.updateOrCreateHostController(forSupplementaryKind: key.supplementaryKind, existingHC: view.hostingController)
 			}
 		}
 
@@ -306,7 +295,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		var lastContentSize: CGSize = .zero
 		func didUpdateContentSize(_ size: CGSize)
 		{
-			guard let tv = tableViewController?.tableView, tv.contentSize != lastContentSize else { return }
+			guard let tv = tableViewController?.tableView, tv.contentSize != lastContentSize, tv.contentSize.height != 0 else { return }
 			let firstSize = lastContentSize == .zero
 			lastContentSize = tv.contentSize
 			parent.contentSizeTracker?.contentSize = size
@@ -357,22 +346,42 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
 		{
-			tableViewController.map { (view as? ASTableViewSupplementaryView)?.willAppear(in: $0) }
+			guard let view = (view as? ASTableViewSupplementaryView) else { return }
+			if let section = parent.sections[safe: section] {
+				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: UICollectionView.elementKindSectionHeader)
+				visibleSupplementaries[supplementaryID] = view
+			}
+			tableViewController.map { view.willAppear(in: $0) }
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplayingHeaderView view: UIView, forSection section: Int)
 		{
-			(view as? ASTableViewSupplementaryView)?.didDisappear()
+			guard let view = (view as? ASTableViewSupplementaryView) else { return }
+			if let section = parent.sections[safe: section] {
+				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: UICollectionView.elementKindSectionHeader)
+				visibleSupplementaries.removeValue(forKey: supplementaryID)
+			}
+			view.didDisappear()
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int)
 		{
-			tableViewController.map { (view as? ASTableViewSupplementaryView)?.willAppear(in: $0) }
+			guard let view = (view as? ASTableViewSupplementaryView) else { return }
+			if let section = parent.sections[safe: section] {
+				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: UICollectionView.elementKindSectionFooter)
+				visibleSupplementaries[supplementaryID] = view
+			}
+			tableViewController.map { view.willAppear(in: $0) }
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplayingFooterView view: UIView, forSection section: Int)
 		{
-			(view as? ASTableViewSupplementaryView)?.didDisappear()
+			guard let view = (view as? ASTableViewSupplementaryView) else { return }
+			if let section = parent.sections[safe: section] {
+				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: UICollectionView.elementKindSectionFooter)
+				visibleSupplementaries.removeValue(forKey: supplementaryID)
+			}
+			view.didDisappear()
 		}
 
 		public func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath])

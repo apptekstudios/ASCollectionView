@@ -326,9 +326,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			{ kind in
 				cv.indexPathsForVisibleSupplementaryElements(ofKind: kind).forEach
 				{
-					guard let supplementaryView = parent.sections[safe: $0.section]?.supplementary(ofKind: kind) else { return }
-					(cv.supplementaryView(forElementKind: kind, at: $0) as? ASCollectionViewSupplementaryView)?
-						.setupFor(view: supplementaryView)
+					guard let view = (cv.supplementaryView(forElementKind: kind, at: $0) as? ASCollectionViewSupplementaryView) else { return }
+					view.hostingController = parent.sections[safe: $0.section]?.dataSource.updateOrCreateHostController(forSupplementaryKind: kind, existingHC: view.hostingController)
 				}
 			}
 		}

@@ -17,7 +17,7 @@ class ASCollectionViewDecoration<Content: Decoration>: ASCollectionViewSupplemen
 	{
 		super.init(frame: frame)
 		let view = Content()
-		setupFor(view: view)
+		hostingController = ASHostingController(view)
 		willAppear(in: nil)
 	}
 
