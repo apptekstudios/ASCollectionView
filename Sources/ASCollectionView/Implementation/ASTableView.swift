@@ -108,7 +108,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		private var hasDoneInitialSetup = false
 		private var hasSkippedFirstUpdate = false
-		
+
 		private var visibleSupplementaries: [ASSupplementaryCellID<SectionID>: ASTableViewSupplementaryView] = [:]
 
 		// MARK: Caching
@@ -256,8 +256,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				else { return }
 				self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
 			}
-			
-			visibleSupplementaries.forEach { (key, view) in
+
+			visibleSupplementaries.forEach { key, view in
 				guard let section = self.parent.sections.first(where: { $0.id.hashValue == key.sectionID.hashValue }) else { return }
 				view.hostingController = section.dataSource.updateOrCreateHostController(forSupplementaryKind: key.supplementaryKind, existingHC: view.hostingController)
 			}
@@ -347,7 +347,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
 		{
 			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			if let section = parent.sections[safe: section] {
+			if let section = parent.sections[safe: section]
+			{
 				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: UICollectionView.elementKindSectionHeader)
 				visibleSupplementaries[supplementaryID] = view
 			}
@@ -357,7 +358,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		public func tableView(_ tableView: UITableView, didEndDisplayingHeaderView view: UIView, forSection section: Int)
 		{
 			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			if let section = parent.sections[safe: section] {
+			if let section = parent.sections[safe: section]
+			{
 				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: UICollectionView.elementKindSectionHeader)
 				visibleSupplementaries.removeValue(forKey: supplementaryID)
 			}
@@ -367,7 +369,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		public func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int)
 		{
 			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			if let section = parent.sections[safe: section] {
+			if let section = parent.sections[safe: section]
+			{
 				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: UICollectionView.elementKindSectionFooter)
 				visibleSupplementaries[supplementaryID] = view
 			}
@@ -377,7 +380,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		public func tableView(_ tableView: UITableView, didEndDisplayingFooterView view: UIView, forSection section: Int)
 		{
 			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			if let section = parent.sections[safe: section] {
+			if let section = parent.sections[safe: section]
+			{
 				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: UICollectionView.elementKindSectionFooter)
 				visibleSupplementaries.removeValue(forKey: supplementaryID)
 			}
