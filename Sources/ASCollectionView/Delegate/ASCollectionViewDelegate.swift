@@ -29,32 +29,32 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 		.scrollableAxes
 	}
 
-	public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
+	open func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	{
 		coordinator?.collectionView(collectionView, willDisplay: cell, forItemAt: indexPath)
 	}
 
-	public func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
+	open func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	{
 		coordinator?.collectionView(collectionView, didEndDisplaying: cell, forItemAt: indexPath)
 	}
 
-	public func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
+	open func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
 	{
 		coordinator?.collectionView(collectionView, willDisplaySupplementaryView: view, forElementKind: elementKind, at: indexPath)
 	}
 
-	public func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
+	open func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
 	{
 		coordinator?.collectionView(collectionView, didEndDisplayingSupplementaryView: view, forElementOfKind: elementKind, at: indexPath)
 	}
 
-	public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
+	open func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 	{
 		coordinator?.collectionView(collectionView, didSelectItemAt: indexPath)
 	}
 
-	public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
+	open func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
 	{
 		coordinator?.collectionView(collectionView, didDeselectItemAt: indexPath)
 	}
@@ -69,27 +69,27 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 @available(iOS 13.0, *)
 extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionViewDropDelegate
 {
-	public func collectionView(_ collectionView: UICollectionView, dragSessionAllowsMoveOperation session: UIDragSession) -> Bool
+	open func collectionView(_ collectionView: UICollectionView, dragSessionAllowsMoveOperation session: UIDragSession) -> Bool
 	{
 		true
 	}
 
-	public func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
+	open func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
 	{
 		coordinator?.collectionView(collectionView, itemsForBeginning: session, at: indexPath) ?? []
 	}
 
-	public func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal
+	open func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal
 	{
 		coordinator?.collectionView(collectionView, dropSessionDidUpdate: session, withDestinationIndexPath: destinationIndexPath) ?? UICollectionViewDropProposal(operation: .cancel)
 	}
 
-	public func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator)
+	open func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator)
 	{
 		self.coordinator?.collectionView(collectionView, performDropWith: coordinator)
 	}
 
-	public func scrollViewDidScroll(_ scrollView: UIScrollView)
+	open func scrollViewDidScroll(_ scrollView: UIScrollView)
 	{
 		coordinator?.scrollViewDidScroll(scrollView)
 	}
@@ -98,7 +98,7 @@ extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionVi
 @available(iOS 13.0, *)
 extension ASCollectionViewDelegate
 {
-	public func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
+	open func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
 	{
 		coordinator?.collectionView(collectionView, contextMenuConfigurationForItemAt: indexPath, point: point)
 	}
