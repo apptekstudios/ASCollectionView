@@ -291,8 +291,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func updateContent(_ cv: UICollectionView, transaction: Transaction?, refreshExistingCells: Bool)
 		{
-			guard hasDoneInitialSetup else { return }
-			guard hasSkippedFirstUpdate else
+			guard hasDoneInitialSetup, hasSkippedFirstUpdate else
 			{
 				hasSkippedFirstUpdate = true
 				return

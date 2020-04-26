@@ -225,8 +225,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		func updateContent(_ tv: UITableView, transaction: Transaction?, refreshExistingCells: Bool)
 		{
-			guard hasDoneInitialSetup else { return }
-			guard hasSkippedFirstUpdate else
+			guard hasDoneInitialSetup, hasSkippedFirstUpdate else
 			{
 				hasSkippedFirstUpdate = true
 				return
