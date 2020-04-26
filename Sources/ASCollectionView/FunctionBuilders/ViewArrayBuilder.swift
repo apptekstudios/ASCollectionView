@@ -87,7 +87,7 @@ public struct ViewArrayBuilder
 	{
 		.group([Wrapper(header), .group(array.map { Wrapper($0) })])
 	}
-	
+
 	public static func buildBlock<C0: View, CX: View, C1: View>(_ header: C0, _ array: [CX], _ footer: C1) -> Output
 	{
 		.group([Wrapper(header), .group(array.map { Wrapper($0) }), Wrapper(footer)])

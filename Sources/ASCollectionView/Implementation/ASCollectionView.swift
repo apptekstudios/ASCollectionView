@@ -8,7 +8,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 {
 	// MARK: Type definitions
 
-	public typealias Section = ASCollectionViewSection<SectionID>
+	public typealias Section = ASSectionWrapped<SectionID>
 	public typealias Layout = ASCollectionLayout<SectionID>
 
 	public typealias OnScrollCallback = ((_ contentOffset: CGPoint, _ contentSize: CGSize) -> Void)
@@ -163,7 +163,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func supplementaryKinds() -> Set<String>
 		{
 			parent.sections.reduce(into: Set<String>()) { result, section in
-				result.formUnion(section.supplementaryKinds)
+				result.formUnion(section.section.supplementaryKinds)
 			}
 		}
 
@@ -220,7 +220,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				// Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .content, indexPath: indexPath)
 				cell.selfSizingConfig =
-					section.dataSource.getSelfSizingSettings(context: selfSizingContext)
+					section.section.getSelfSizingSettings(context: selfSizingContext)
 						?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
 						?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizingConfig
 						?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
@@ -231,11 +231,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 				// Update hostingController
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
-				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: cachedHC)
+				cell.hostingController = section.section.updateOrCreateHostController(forItemID: itemID, existingHC: cachedHC)
 
 				// Cache the HC
 				self.autoCachingHostingControllers[itemID] = cell.hostingController
-				if section.shouldCacheCells
+				if section.section.shouldCacheCells
 				{
 					self.explicitlyCachedHostingControllers[itemID] = cell.hostingController
 				}
@@ -262,12 +262,12 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				// Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(kind), indexPath: indexPath)
 				reusableView.selfSizingConfig =
-					section.dataSource.getSelfSizingSettings(context: selfSizingContext)
+					section.section.getSelfSizingSettings(context: selfSizingContext)
 						?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
 
 				// Update hostingController
 				let cachedHC = self.autoCachingSupplementaryHostControllers[supplementaryID]
-				reusableView.hostingController = section.dataSource.updateOrCreateHostController(forSupplementaryKind: kind, existingHC: cachedHC)
+				reusableView.hostingController = section.section.updateOrCreateHostController(forSupplementaryKind: kind, existingHC: cachedHC)
 				// Cache the HC
 				self.autoCachingSupplementaryHostControllers[supplementaryID] = reusableView.hostingController
 
@@ -282,7 +282,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			collectionViewController.map { registerSupplementaries(forCollectionView: $0.collectionView) } // New sections might involve new types of supplementary...
 			let snapshot = ASDiffableDataSourceSnapshot(sections:
 				parent.sections.map {
-					ASDiffableDataSourceSnapshot.Section(id: $0.id, elements: $0.itemIDs)
+					ASDiffableDataSourceSnapshot.Section(id: $0.id, elements: $0.section.getUniqueItemIDs())
 				}
 			)
 			dataSource?.applySnapshot(snapshot, animated: animated)
@@ -291,8 +291,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func updateContent(_ cv: UICollectionView, transaction: Transaction?, refreshExistingCells: Bool)
 		{
-			guard hasDoneInitialSetup else { return }
-			guard hasSkippedFirstUpdate else
+			guard hasDoneInitialSetup, hasSkippedFirstUpdate else
 			{
 				hasSkippedFirstUpdate = true
 				return
@@ -319,7 +318,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					let itemID = cell.itemID,
 					let hc = cell.hostingController
 				else { return }
-				self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
+				self.section(forItemID: itemID)?.section.update(hc, forItemID: itemID)
 			}
 
 			supplementaryKinds().forEach
@@ -327,7 +326,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				cv.indexPathsForVisibleSupplementaryElements(ofKind: kind).forEach
 				{
 					guard let view = (cv.supplementaryView(forElementKind: kind, at: $0) as? ASCollectionViewSupplementaryView) else { return }
-					view.hostingController = parent.sections[safe: $0.section]?.dataSource.updateOrCreateHostController(forSupplementaryKind: kind, existingHC: view.hostingController)
+					view.hostingController = parent.sections[safe: $0.section]?.section.updateOrCreateHostController(forSupplementaryKind: kind, existingHC: view.hostingController)
 				}
 			}
 		}
@@ -515,7 +514,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			collectionViewController.map { (cell as? Cell)?.willAppear(in: $0) }
 			currentlyPrefetching.remove(indexPath)
 			guard !indexPath.isEmpty else { return }
-			parent.sections[safe: indexPath.section]?.dataSource.onAppear(indexPath)
+			parent.sections[safe: indexPath.section]?.section.onAppear(indexPath)
 			queuePrefetch.send()
 		}
 
@@ -523,7 +522,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			(cell as? Cell)?.didDisappear()
 			guard !indexPath.isEmpty else { return }
-			parent.sections[safe: indexPath.section]?.dataSource.onDisappear(indexPath)
+			parent.sections[safe: indexPath.section]?.section.onDisappear(indexPath)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
@@ -538,7 +537,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, willSelectItemAt indexPath: IndexPath) -> IndexPath?
 		{
-			guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? true else
+			guard parent.sections[safe: indexPath.section]?.section.shouldSelect(indexPath) ?? true else
 			{
 				return nil
 			}
@@ -547,7 +546,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, willDeselectItemAt indexPath: IndexPath) -> IndexPath?
 		{
-			guard parent.sections[safe: indexPath.section]?.dataSource.shouldDeselect(indexPath) ?? true else
+			guard parent.sections[safe: indexPath.section]?.section.shouldDeselect(indexPath) ?? true else
 			{
 				return nil
 			}
@@ -573,20 +572,20 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				Set($0.map { $0.item })
 			}
 			parent.sections.enumerated().forEach { offset, section in
-				section.dataSource.updateSelection(selectionBySection[offset] ?? [])
+				section.section.updateSelection(selectionBySection[offset] ?? [])
 			}
 		}
 
 		func canDrop(at indexPath: IndexPath) -> Bool
 		{
 			guard !indexPath.isEmpty else { return false }
-			return parent.sections[safe: indexPath.section]?.dataSource.dropEnabled ?? false
+			return parent.sections[safe: indexPath.section]?.section.dropEnabled ?? false
 		}
 
 		func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
 		{
 			guard !indexPath.isEmpty else { return [] }
-			guard let dragItem = parent.sections[safe: indexPath.section]?.dataSource.getDragItem(for: indexPath) else { return [] }
+			guard let dragItem = parent.sections[safe: indexPath.section]?.section.getDragItem(for: indexPath) else { return [] }
 			return [dragItem]
 		}
 
@@ -625,7 +624,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			switch coordinator.proposal.operation
 			{
 			case .move:
-				guard destinationSection.dataSource.reorderingEnabled else { return }
+				guard destinationSection.section.reorderingEnabled else { return }
 				let itemsBySourceSection = Dictionary(grouping: coordinator.items) { item -> Int? in
 					if let sourceIndex = item.sourceIndexPath, !sourceIndex.isEmpty
 					{
@@ -653,13 +652,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						let sourceSectionIndex = sourceSectionIndex,
 						let sourceSection = parent.sections[safe: sourceSectionIndex]
 					{
-						guard sourceSection.dataSource.reorderingEnabled else { continue }
+						guard sourceSection.section.reorderingEnabled else { continue }
 
 						let sourceIndices = items.compactMap { $0.sourceIndexPath?.item }
 
 						// Remove from source section
 						dragSnapshot.removeItems(fromSectionIndex: sourceSectionIndex, atOffsets: IndexSet(sourceIndices))
-						sourceSection.dataSource.applyRemove(atOffsets: IndexSet(sourceIndices))
+						sourceSection.section.applyRemove(atOffsets: IndexSet(sourceIndices))
 					}
 
 					// Add to insertion array (regardless whether sourceSection is nil)
@@ -673,14 +672,14 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					}
 					else
 					{
-						return destinationSection.dataSource.getItemID(for: item.dragItem, withSectionID: destinationSection.id)
+						return destinationSection.section.getItemID(for: item.dragItem)
 					}
 				}
 				dragSnapshot.insertItems(itemsToInsertIDs, atSectionIndex: destinationIndexPath.section, atOffset: destinationIndexPath.item)
-				destinationSection.dataSource.applyInsert(items: itemsToInsert.map { $0.dragItem }, at: destinationIndexPath.item)
+				destinationSection.section.applyInsert(items: itemsToInsert.map { $0.dragItem }, at: destinationIndexPath.item)
 
 			case .copy:
-				destinationSection.dataSource.applyInsert(items: coordinator.items.map { $0.dragItem }, at: destinationIndexPath.item)
+				destinationSection.section.applyInsert(items: coordinator.items.map { $0.dragItem }, at: destinationIndexPath.item)
 
 			default: break
 			}
@@ -700,7 +699,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func typeErasedDataForItem(at indexPath: IndexPath) -> Any?
 		{
 			guard !indexPath.isEmpty else { return nil }
-			return parent.sections[safe: indexPath.section]?.dataSource.getTypeErasedData(for: indexPath)
+			return parent.sections[safe: indexPath.section]?.section.getTypeErasedData(for: indexPath)
 		}
 
 		// MARK: Functions for updating contentSize binding
@@ -789,7 +788,7 @@ public extension ASCollectionView.Coordinator
 	func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
 	{
 		guard !indexPath.isEmpty else { return nil }
-		return parent.sections[safe: indexPath.section]?.dataSource.getContextMenu(for: indexPath)
+		return parent.sections[safe: indexPath.section]?.section.getContextMenu(for: indexPath)
 	}
 }
 
@@ -843,7 +842,7 @@ extension ASCollectionView.Coordinator
 			}
 			var toPrefetch: [Int: [IndexPath]] = visibleIndexPathsBySection.compactMapValues
 			{ item in
-				guard let sectionIndexPaths = self.parent.sections[safe: item.section]?.dataSource.getIndexPaths(withSectionIndex: item.section) else { return nil }
+				guard let sectionIndexPaths = self.parent.sections[safe: item.section]?.section.getIndexPaths(withSectionIndex: item.section) else { return nil }
 				let nextItemsInSection: ArraySlice<IndexPath> = {
 					guard (item.last + 1) < sectionIndexPaths.endIndex else { return [] }
 					return sectionIndexPaths[(item.last + 1) ..< min(item.last + numberToPreload + 1, sectionIndexPaths.endIndex)]
@@ -861,18 +860,18 @@ extension ASCollectionView.Coordinator
 				let firstIndex = visibleIndexPathsBySection[firstSection]?.first, firstIndex < numberToPreload // CHECK HOW CLOSE TO THIS SECTION WE ARE
 			{
 				let precedingSection = firstSection - 1
-				toPrefetch[precedingSection] = self.parent.sections[precedingSection].dataSource.getIndexPaths(withSectionIndex: precedingSection).suffix(numberToPreload)
+				toPrefetch[precedingSection] = self.parent.sections[precedingSection].section.getIndexPaths(withSectionIndex: precedingSection).suffix(numberToPreload)
 			}
 			// CHECK IF THERES A LATER SECTION TO PRELOAD
 			if
 				let lastSection = toPrefetch.keys.max(), // FIND THE LAST VISIBLE SECTION
 				(lastSection + 1) < self.parent.sections.endIndex, // CHECK THERE IS A SECTION AFTER THIS
 				let lastIndex = visibleIndexPathsBySection[lastSection]?.last,
-				let lastSectionEndIndex = self.parent.sections[lastSection].dataSource.getIndexPaths(withSectionIndex: lastSection).last?.item,
+				let lastSectionEndIndex = self.parent.sections[lastSection].section.getIndexPaths(withSectionIndex: lastSection).last?.item,
 				(lastSectionEndIndex - lastIndex) < numberToPreload // CHECK HOW CLOSE TO THIS SECTION WE ARE
 			{
 				let nextSection = lastSection + 1
-				toPrefetch[nextSection] = Array(self.parent.sections[nextSection].dataSource.getIndexPaths(withSectionIndex: nextSection).prefix(numberToPreload))
+				toPrefetch[nextSection] = Array(self.parent.sections[nextSection].section.getIndexPaths(withSectionIndex: nextSection).prefix(numberToPreload))
 			}
 			return toPrefetch
 		}
@@ -882,13 +881,13 @@ extension ASCollectionView.Coordinator
 			{ sectionIndex, toPrefetch in
 				if !toPrefetch.isEmpty
 				{
-					self?.parent.sections[safe: sectionIndex]?.dataSource.prefetch(toPrefetch)
+					self?.parent.sections[safe: sectionIndex]?.section.prefetch(toPrefetch)
 				}
 				if
 					let toCancel = self?.currentlyPrefetching.filter({ $0.section == sectionIndex }).subtracting(toPrefetch),
 					!toCancel.isEmpty
 				{
-					self?.parent.sections[safe: sectionIndex]?.dataSource.cancelPrefetch(Array(toCancel))
+					self?.parent.sections[safe: sectionIndex]?.section.cancelPrefetch(Array(toCancel))
 				}
 			}
 

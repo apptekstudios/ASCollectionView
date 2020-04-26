@@ -77,7 +77,7 @@ public extension ASTableView
 // MARK: ASTableView specific header modifiers
 
 @available(iOS 13.0, *)
-public extension ASTableViewSection
+public extension ASSection
 {
 	func sectionHeaderInsetGrouped<Content: View>(content: () -> Content?) -> Self
 	{

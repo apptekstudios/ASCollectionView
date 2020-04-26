@@ -12,7 +12,7 @@ public extension ASCollectionView
 	 Initializes a  collection view with the given sections
 
 	 - Parameters:
-	 - sections: An array of sections (ASCollectionViewSection)
+	 - sections: An array of sections (ASSection)
 	 */
 	init(sections: [Section])
 	{
@@ -23,7 +23,7 @@ public extension ASCollectionView
 	 Initializes a  collection view with the given sections
 
 	 - Parameters:
-	 - sectionBuilder: A closure containing multiple sections (ASCollectionViewSection)
+	 - sectionBuilder: A closure containing multiple sections (ASSection)
 	 */
 	init(@SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
 	{
@@ -40,7 +40,7 @@ public extension ASCollectionView where SectionID == Int
 	 Initializes a  collection view with a single section.
 
 	 - Parameters:
-	 - section: A single section (ASCollectionViewSection)
+	 - section: A single section (ASSection)
 	 */
 	init(section: Section)
 	{
@@ -50,9 +50,9 @@ public extension ASCollectionView where SectionID == Int
 	/**
 	 Initializes a  collection view with a single section of static content
 	 */
-	init(@ViewArrayBuilder staticContent: () -> ViewArrayBuilder.Wrapper)
+	static func `static`(@ViewArrayBuilder staticContent: () -> ViewArrayBuilder.Wrapper) -> ASCollectionView
 	{
-		self.init(sections: [ASCollectionViewSection(id: 0, content: staticContent)])
+		self.init(sections: [ASSectionWrapped(ASSection(id: 0, content: staticContent))])
 	}
 
 	/**
@@ -64,12 +64,12 @@ public extension ASCollectionView where SectionID == Int
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, ASCellContext) -> Content))
 		where DataCollection.Index == Int
 	{
-		let section = ASCollectionViewSection(
+		let section = ASSection(
 			id: 0,
 			data: data,
 			dataID: dataIDKeyPath,
 			contentBuilder: contentBuilder)
-		sections = [section]
+		sections = [ASSectionWrapped(section)]
 	}
 
 	/**

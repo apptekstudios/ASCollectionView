@@ -21,41 +21,43 @@ struct AdjustableGridScreen: View
 
 	typealias SectionID = Int
 
-	var section: ASCollectionViewSection<SectionID>
+	var section: ASSectionWrapped<SectionID>
 	{
-		ASCollectionViewSection(
-			id: 0,
-			data: data,
-			onCellEvent: onCellEvent)
-		{ item, state in
-			ZStack(alignment: .bottomTrailing)
-			{
-				GeometryReader
-				{ geom in
-					ASRemoteImageView(item.url)
-						.aspectRatio(1, contentMode: .fill)
-						.frame(width: geom.size.width, height: geom.size.height)
-						.clipped()
-						.opacity(state.isSelected ? 0.7 : 1.0)
-				}
-
-				if state.isSelected
+		ASSectionWrapped(
+			ASSection(
+				id: 0,
+				data: data,
+				onCellEvent: onCellEvent)
+			{ item, state in
+				ZStack(alignment: .bottomTrailing)
 				{
-					ZStack
-					{
-						Circle()
-							.fill(Color.blue)
-						Circle()
-							.strokeBorder(Color.white, lineWidth: 2)
-						Image(systemName: "checkmark")
-							.font(.system(size: 10, weight: .bold))
-							.foregroundColor(.white)
+					GeometryReader
+					{ geom in
+						ASRemoteImageView(item.url)
+							.aspectRatio(1, contentMode: .fill)
+							.frame(width: geom.size.width, height: geom.size.height)
+							.clipped()
+							.opacity(state.isSelected ? 0.7 : 1.0)
 					}
-					.frame(width: 20, height: 20)
-					.padding(10)
+
+					if state.isSelected
+					{
+						ZStack
+						{
+							Circle()
+								.fill(Color.blue)
+							Circle()
+								.strokeBorder(Color.white, lineWidth: 2)
+							Image(systemName: "checkmark")
+								.font(.system(size: 10, weight: .bold))
+								.foregroundColor(.white)
+						}
+						.frame(width: 20, height: 20)
+						.padding(10)
+					}
 				}
 			}
-		}
+		)
 	}
 
 	var config: some View

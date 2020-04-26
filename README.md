@@ -79,7 +79,7 @@ struct ExampleView: View {
     {
         ASCollectionView
 		{
-			ASCollectionViewSection(
+			ASSection(
 				id: 0,
 				data: dataExampleA,
 				dataID: \.self)
@@ -89,7 +89,7 @@ struct ExampleView: View {
 						Text("\(item)")
 					)
 			}
-			ASCollectionViewSection(
+			ASSection(
 				id: 1,
 				data: dataExampleB,
 				dataID: \.self)
@@ -133,12 +133,12 @@ struct ExampleView: View {
 ```
 
 ### Supplementary Views
-ASCollectionView has support for supplementary views. To add a supplementary view, use the `sectionHeader`, `sectionFooter`, or `sectionSupplementary` modifiers on your ASCollectionViewSection.
+ASCollectionView has support for supplementary views. To add a supplementary view, use the `sectionHeader`, `sectionFooter`, or `sectionSupplementary` modifiers on your ASSection.
  * `sectionHeader` and `sectionFooter` set the supplementary for `UICollectionView.elementKindSectionHeader` and `UICollectionView.elementKindSectionHeader` respectively.
  * `sectionSupplementary` lets you specify any supplementaryKind.
 
 ```swift
-ASCollectionViewSection(...) { ... }
+ASSection(...) { ... }
 	.sectionHeader
 	{
 		Text("Section header")

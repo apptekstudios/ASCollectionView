@@ -12,26 +12,27 @@ struct MagazineLayoutScreen: View
 		DataSource.postsForGridSection($0, number: 10)
 	}
 
-	var sections: [ASCollectionViewSection<Int>]
+	var sections: [ASSectionWrapped<Int>]
 	{
 		data.enumerated().map
-		{ (offset, sectionData) -> ASCollectionViewSection<Int> in
-			ASCollectionViewSection(
-				id: offset,
-				data: sectionData,
-				onCellEvent: onCellEvent,
-				contextMenuProvider: contextMenuProvider)
-			{ item, _ in
-				ASRemoteImageView(item.url)
-					.aspectRatio(1, contentMode: .fit)
-			}
-			.sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader)
-			{
-				Text("Section \(offset)")
-					.padding()
-					.frame(maxWidth: .infinity, alignment: .leading)
-					.background(Color.blue)
-			}
+		{ (offset, sectionData) -> ASSectionWrapped<Int> in
+			ASSectionWrapped(
+				ASSection(
+					id: offset,
+					data: sectionData,
+					onCellEvent: onCellEvent,
+					contextMenuProvider: contextMenuProvider)
+				{ item, _ in
+					ASRemoteImageView(item.url)
+						.aspectRatio(1, contentMode: .fit)
+				}
+				.sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader)
+				{
+					Text("Section \(offset)")
+						.padding()
+						.frame(maxWidth: .infinity, alignment: .leading)
+						.background(Color.blue)
+			})
 		}
 	}
 

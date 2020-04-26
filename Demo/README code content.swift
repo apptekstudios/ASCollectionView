@@ -38,9 +38,9 @@ struct READMEContent
 
 		var body: some View
 		{
-			ASCollectionView
+			ASCollectionView<Int>
 			{
-				ASCollectionViewSection(
+				ASSection(
 					id: 0,
 					data: dataExampleA,
 					dataID: \.self)
@@ -50,7 +50,7 @@ struct READMEContent
 							Text("\(item)")
 						)
 				}
-				ASCollectionViewSection(
+				ASSection(
 					id: 1,
 					data: dataExampleB,
 					dataID: \.self)
@@ -87,26 +87,28 @@ struct READMEContent
 		}
 	}
 
-	var sectionHeaderExample: ASCollectionViewSection<Int>
+	var sectionHeaderExample: ASSectionWrapped<Int>
 	{
-		ASCollectionViewSection(id: 0) {
-			Text("Cell 1")
-			Text("Cell 2")
-		}
-		.sectionHeader
-		{
-			Text("Section header")
-				.background(Color.yellow)
-		}
-		.sectionFooter
-		{
-			Text("Section footer")
-				.background(Color.blue)
-		}
-		.sectionSupplementary(ofKind: "someOtherSupplementaryKindRequestedByYourLayout") {
-			Text("Section supplementary")
-				.background(Color.green)
-		}
+		ASSectionWrapped(
+			ASSection(id: 0) {
+				Text("Cell 1")
+				Text("Cell 2")
+			}
+			.sectionHeader
+			{
+				Text("Section header")
+					.background(Color.yellow)
+			}
+			.sectionFooter
+			{
+				Text("Section footer")
+					.background(Color.blue)
+			}
+			.sectionSupplementary(ofKind: "someOtherSupplementaryKindRequestedByYourLayout") {
+				Text("Section supplementary")
+					.background(Color.green)
+			}
+		)
 	}
 
 	// MARK: DecorationView Example

@@ -35,16 +35,18 @@ struct TagsScreen: View
 
 			ASCollectionView(
 				section:
-				ASCollectionViewSection(id: 0, data: store.items)
-				{ item, _ in
-					Text(item.displayString)
-						.fixedSize(horizontal: false, vertical: true)
-						.padding(5)
-						.background(Color(.systemGray))
-						.cornerRadius(5)
-				}.selfSizingConfig { _ in
-					ASSelfSizingConfig(canExceedCollectionWidth: false)
-				}
+				ASSectionWrapped(
+					ASSection(id: 0, data: store.items)
+					{ item, _ in
+						Text(item.displayString)
+							.fixedSize(horizontal: false, vertical: true)
+							.padding(5)
+							.background(Color(.systemGray))
+							.cornerRadius(5)
+					}.selfSizingConfig { _ in
+						ASSelfSizingConfig(canExceedCollectionWidth: false)
+					}
+				)
 			)
 			.layout
 			{

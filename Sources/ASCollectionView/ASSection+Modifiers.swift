@@ -6,7 +6,7 @@ import SwiftUI
 // MARK: SUPPLEMENTARY VIEWS - PUBLIC MODIFIERS
 
 @available(iOS 13.0, *)
-public extension ASCollectionViewSection
+public extension ASSection
 {
 	func sectionHeader<Content: View>(content: () -> Content?) -> Self
 	{
@@ -64,7 +64,7 @@ public extension ASCollectionViewSection
 	func selfSizingConfig(_ config: @escaping SelfSizingConfig) -> Self
 	{
 		var section = self
-		section.dataSource.setSelfSizingConfig(config: config)
+		section.setSelfSizingConfig(config: config)
 		return section
 	}
 }

@@ -26,34 +26,36 @@ struct AppStoreScreen: View
 		}
 	}
 
-	var sections: [ASCollectionViewSection<Int>]
+	var sections: [ASSectionWrapped<Int>]
 	{
 		data.enumerated().map
-		{ (sectionID, sectionData) -> ASCollectionViewSection<Int> in
-			ASCollectionViewSection(
-				id: sectionID,
-				data: sectionData.apps,
-				onCellEvent: {
-					self.onCellEvent($0, sectionID: sectionID)
+		{ (sectionID, sectionData) -> ASSectionWrapped<Int> in
+			ASSectionWrapped(
+				ASSection(
+					id: sectionID,
+					data: sectionData.apps,
+					onCellEvent: {
+						self.onCellEvent($0, sectionID: sectionID)
 			})
-			{ item, _ in
-				if sectionID == 0
-				{
-					AppViewFeature(app: item)
+				{ item, _ in
+					if sectionID == 0
+					{
+						AppViewFeature(app: item)
+					}
+					else if sectionID == 1
+					{
+						AppViewLarge(app: item)
+					}
+					else
+					{
+						AppViewCompact(app: item)
+					}
 				}
-				else if sectionID == 1
+				.sectionHeader
 				{
-					AppViewLarge(app: item)
+					self.header(withTitle: sectionData.sectionTitle)
 				}
-				else
-				{
-					AppViewCompact(app: item)
-				}
-			}
-			.sectionHeader
-			{
-				self.header(withTitle: sectionData.sectionTitle)
-			}
+			)
 		}
 	}
 

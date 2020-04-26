@@ -19,59 +19,61 @@ struct WaterfallScreen: View
 
 	typealias SectionID = Int
 
-	var sections: [ASCollectionViewSection<SectionID>]
+	var sections: [ASSectionWrapped<SectionID>]
 	{
 		data.enumerated().map { offset, sectionData in
-			ASCollectionViewSection(
-				id: offset,
-				data: sectionData,
-				selectedItems: $selectedItems[offset],
-				onCellEvent: onCellEvent)
-			{ item, state in
-				GeometryReader
-				{ geom in
-					ZStack(alignment: .bottomTrailing)
-					{
-						ASRemoteImageView(item.url)
-							.scaledToFill()
-							.frame(width: geom.size.width, height: geom.size.height)
-							.opacity(state.isSelected ? 0.7 : 1.0)
+			ASSectionWrapped(
+				ASSection(
+					id: offset,
+					data: sectionData,
+					selectedItems: $selectedItems[offset],
+					onCellEvent: onCellEvent)
+				{ item, state in
+					GeometryReader
+					{ geom in
+						ZStack(alignment: .bottomTrailing)
+						{
+							ASRemoteImageView(item.url)
+								.scaledToFill()
+								.frame(width: geom.size.width, height: geom.size.height)
+								.opacity(state.isSelected ? 0.7 : 1.0)
 
-						if state.isSelected
-						{
-							ZStack
+							if state.isSelected
 							{
-								Circle()
-									.fill(Color.blue)
-								Circle()
-									.strokeBorder(Color.white, lineWidth: 2)
-								Image(systemName: "checkmark")
-									.font(.system(size: 10, weight: .bold))
-									.foregroundColor(.white)
-							}
-							.frame(width: 20, height: 20)
-							.padding(10)
-						}
-						else
-						{
-							Text("\(item.offset)")
-								.font(.title)
-								.bold()
-								.padding(2)
-								.background(Color(.systemBackground).opacity(0.5))
-								.cornerRadius(4)
+								ZStack
+								{
+									Circle()
+										.fill(Color.blue)
+									Circle()
+										.strokeBorder(Color.white, lineWidth: 2)
+									Image(systemName: "checkmark")
+										.font(.system(size: 10, weight: .bold))
+										.foregroundColor(.white)
+								}
+								.frame(width: 20, height: 20)
 								.padding(10)
+							}
+							else
+							{
+								Text("\(item.offset)")
+									.font(.title)
+									.bold()
+									.padding(2)
+									.background(Color(.systemBackground).opacity(0.5))
+									.cornerRadius(4)
+									.padding(10)
+							}
 						}
+						.frame(width: geom.size.width, height: geom.size.height)
+						.clipped()
 					}
-					.frame(width: geom.size.width, height: geom.size.height)
-					.clipped()
+				}.sectionHeader {
+					Text("Section \(offset)")
+						.padding()
+						.frame(idealWidth: .infinity, maxWidth: .infinity, idealHeight: .infinity, maxHeight: .infinity, alignment: .leading)
+						.background(Color.blue)
 				}
-			}.sectionHeader {
-				Text("Section \(offset)")
-					.padding()
-					.frame(idealWidth: .infinity, maxWidth: .infinity, idealHeight: .infinity, maxHeight: .infinity, alignment: .leading)
-					.background(Color.blue)
-			}
+			)
 		}
 	}
 

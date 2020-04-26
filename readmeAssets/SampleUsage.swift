@@ -32,9 +32,9 @@ struct ExampleView: View
 
 	var body: some View
 	{
-		ASCollectionView
+		ASCollectionView<Int>
 		{
-			ASCollectionViewSection(
+			ASSection(
 				id: 0,
 				data: dataExampleA,
 				dataID: \.self)
@@ -44,7 +44,7 @@ struct ExampleView: View
 						Text("\(item)")
 					)
 			}
-			ASCollectionViewSection(
+			ASSection(
 				id: 1,
 				data: dataExampleB,
 				dataID: \.self)

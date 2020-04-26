@@ -8,8 +8,8 @@ internal protocol ASSectionDataSourceProtocol
 {
 	var endIndex: Int { get }
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
-	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
-	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
+	func getUniqueItemIDs() -> [ASCollectionViewItemUniqueID]
+	func getItemID(for index: Int) -> ASCollectionViewItemUniqueID?
 	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
 	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
 	func updateOrCreateHostController(forSupplementaryKind supplementaryKind: String, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
@@ -22,13 +22,22 @@ internal protocol ASSectionDataSourceProtocol
 	func cancelPrefetch(_ indexPaths: [IndexPath])
 	func willAcceptDropItem(from dragItem: UIDragItem) -> Bool
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
-	func getItemID<SectionID: Hashable>(for dragItem: UIDragItem, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
+	func getItemID(for dragItem: UIDragItem) -> ASCollectionViewItemUniqueID?
 	func applyRemove(atOffsets offsets: IndexSet)
 	func applyInsert(items: [UIDragItem], at index: Int)
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
+
+	var disableDefaultTheming: Bool { get }
+	var tableViewSeparatorInsets: UIEdgeInsets? { get }
+	var estimatedHeaderHeight: CGFloat? { get }
+	var estimatedFooterHeight: CGFloat? { get }
+
+	var shouldCacheCells: Bool { get }
+	var supplementaryKinds: Set<String> { get }
+	func supplementary(ofKind kind: String) -> AnyView?
 
 	func isSelected(index: Int) -> Bool
 	func updateSelection(_ indices: Set<Int>)
@@ -49,9 +58,14 @@ protocol ASDataSourceConfigurableCell
 }
 
 @available(iOS 13.0, *)
-internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, DataID, Content, Container>: ASSectionDataSourceProtocol where DataID: Hashable, Content: View, Container: View, DataCollection.Index == Int
+public struct ASSection<SectionID: Hashable, DataCollection: RandomAccessCollection, DataID: Hashable, Content: View, Container: View>: ASSectionDataSourceProtocol where DataCollection.Index == Int
 {
 	typealias Data = DataCollection.Element
+
+	public var id: SectionID
+
+	// MARK: Stored vars
+
 	var data: DataCollection
 	var dataIDKeyPath: KeyPath<Data, DataID>
 	var container: (Content) -> Container
@@ -69,6 +83,16 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var selfSizingConfig: (SelfSizingConfig)?
 
 	var supplementaryViews: [String: AnyView] = [:]
+
+	var shouldCacheCells: Bool = false
+
+	// Only relevant for ASTableView
+	var disableDefaultTheming: Bool = false
+	var tableViewSeparatorInsets: UIEdgeInsets?
+	var estimatedHeaderHeight: CGFloat?
+	var estimatedFooterHeight: CGFloat?
+
+	// MARK: Functions
 
 	var dragEnabled: Bool { dragDropConfig.dragEnabled }
 	var dropEnabled: Bool { dragDropConfig.dropEnabled }
@@ -156,21 +180,21 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		data.indices.map { IndexPath(item: $0, section: sectionIndex) }
 	}
 
-	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
+	func getItemID(for index: Int) -> ASCollectionViewItemUniqueID?
 	{
-		data[safe: index].map { getItemID(for: $0, withSectionID: sectionID) }
+		data[safe: index].map { getItemID(for: $0) }
 	}
 
-	func getItemID<SectionID: Hashable>(for item: Data, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID
+	func getItemID(for item: Data) -> ASCollectionViewItemUniqueID
 	{
-		ASCollectionViewItemUniqueID(sectionID: sectionID, itemID: item[keyPath: dataIDKeyPath])
+		ASCollectionViewItemUniqueID(sectionID: id, itemID: item[keyPath: dataIDKeyPath])
 	}
 
-	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
+	func getUniqueItemIDs() -> [ASCollectionViewItemUniqueID]
 	{
 		data.map
 		{
-			ASCollectionViewItemUniqueID(sectionID: sectionID, itemID: $0[keyPath: dataIDKeyPath])
+			ASCollectionViewItemUniqueID(sectionID: id, itemID: $0[keyPath: dataIDKeyPath])
 		}
 	}
 
@@ -240,10 +264,10 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		return dragDropConfig.dropItemProvider?(sourceItem, dragItem) ?? sourceItem
 	}
 
-	func getItemID<SectionID: Hashable>(for dragItem: UIDragItem, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
+	func getItemID(for dragItem: UIDragItem) -> ASCollectionViewItemUniqueID?
 	{
 		guard let item = getDropItem(from: dragItem) else { return nil }
-		return getItemID(for: item, withSectionID: sectionID)
+		return getItemID(for: item)
 	}
 
 	func applyRemove(atOffsets offsets: IndexSet)
@@ -306,10 +330,47 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 // MARK: SELF SIZING MODIFIERS - INTERNAL
 
 @available(iOS 13.0, *)
-internal extension ASSectionDataSource
+internal extension ASSection
 {
 	mutating func setSelfSizingConfig(config: @escaping SelfSizingConfig)
 	{
 		selfSizingConfig = config
+	}
+}
+
+// MARK: SUPPLEMENTARY VIEWS - INTERNAL
+
+@available(iOS 13.0, *)
+internal extension ASSection
+{
+	mutating func setHeaderView<Content: View>(_ view: Content?)
+	{
+		setSupplementaryView(view, ofKind: UICollectionView.elementKindSectionHeader)
+	}
+
+	mutating func setFooterView<Content: View>(_ view: Content?)
+	{
+		setSupplementaryView(view, ofKind: UICollectionView.elementKindSectionFooter)
+	}
+
+	mutating func setSupplementaryView<Content: View>(_ view: Content?, ofKind kind: String)
+	{
+		guard let view = view else
+		{
+			supplementaryViews.removeValue(forKey: kind)
+			return
+		}
+
+		supplementaryViews[kind] = AnyView(view)
+	}
+
+	var supplementaryKinds: Set<String>
+	{
+		Set(supplementaryViews.keys)
+	}
+
+	func supplementary(ofKind kind: String) -> AnyView?
+	{
+		supplementaryViews[kind]
 	}
 }

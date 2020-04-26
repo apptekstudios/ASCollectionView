@@ -28,12 +28,12 @@ struct RemindersScreen: View
 	{
 		ASCollectionView
 		{
-			ASCollectionViewSection<Section>(id: .upper, data: self.upperData)
+			ASSection(id: Section.upper, data: self.upperData)
 			{ model, _ in
 				GroupLarge(model: model)
 			}
 
-			ASCollectionViewSection<Section>(id: .list, data: self.lowerData)
+			ASSection(id: Section.list, data: self.lowerData)
 			{ model, info in
 				VStack(spacing: 0)
 				{
@@ -53,12 +53,12 @@ struct RemindersScreen: View
 					.frame(maxWidth: .infinity, alignment: .leading)
 			}
 
-			ASCollectionViewSection<Section>(id: .addNew)
+			ASSection(id: Section.addNew)
 			{
 				GroupSmall(model: self.addNewModel)
 			}
 
-			ASCollectionViewSection<Section>(id: .footnote)
+			ASSection(id: Section.footnote)
 			{
 				Text("Try rotating the screen")
 					.padding()

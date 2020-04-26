@@ -16,7 +16,8 @@ struct TableViewDragAndDropScreen: View
 			Text("Drag within a tableview to move.\nDrag between tableviews to copy.")
 				.padding()
 			HStack {
-				ASTableView {
+				ASTableView<Int>
+				{
 					ASSection(
 						id: 0,
 						data: groupA,
@@ -56,7 +57,8 @@ struct TableViewDragAndDropScreen: View
 					}
 				}
 				Color.blue.frame(width: 10)
-				ASTableView {
+				ASTableView<Int>
+				{
 					ASSection(
 						id: 0,
 						data: groupC,

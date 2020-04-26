@@ -10,7 +10,7 @@ public extension ASTableView
 	 Initializes a  table view with the given sections
 
 	 - Parameters:
-	 - sections: An array of sections (ASTableViewSection)
+	 - sections: An array of sections (ASSection)
 	 */
 	@inlinable init(style: UITableView.Style = .plain, sections: [Section])
 	{
@@ -32,7 +32,7 @@ public extension ASTableView where SectionID == Int
 	 Initializes a  table view with a single section.
 
 	 - Parameters:
-	 - section: A single section (ASTableViewSection)
+	 - section: A single section (ASSection)
 	 */
 	init(style: UITableView.Style = .plain, section: Section)
 	{
@@ -56,7 +56,7 @@ public extension ASTableView where SectionID == Int
 			data: data,
 			dataID: dataIDKeyPath,
 			contentBuilder: contentBuilder)
-		sections = [section]
+		sections = [ASSectionWrapped(section)]
 	}
 
 	/**
@@ -78,6 +78,6 @@ public extension ASTableView where SectionID == Int
 	{
 		ASTableView(
 			style: .plain,
-			sections: [ASTableViewSection(id: 0, content: staticContent)])
+			sections: [ASSectionWrapped(ASSection(id: 0, content: staticContent))])
 	}
 }

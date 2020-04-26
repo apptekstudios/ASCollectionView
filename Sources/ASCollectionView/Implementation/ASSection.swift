@@ -25,62 +25,13 @@ public struct ASCollectionViewItemUniqueID: Hashable
 }
 
 @available(iOS 13.0, *)
-public typealias ASCollectionViewSection = ASSection
-
-@available(iOS 13.0, *)
-public struct ASSection<SectionID: Hashable>
+public struct ASSectionWrapped<SectionID: Hashable>
 {
-	public var id: SectionID
+	var id: SectionID
+	var section: ASSectionDataSourceProtocol
 
-	internal var dataSource: ASSectionDataSourceProtocol
-
-	public var itemIDs: [ASCollectionViewItemUniqueID]
-	{
-		dataSource.getUniqueItemIDs(withSectionID: id)
-	}
-
-	var shouldCacheCells: Bool = false
-
-	// Only relevant for ASTableView
-	var disableDefaultTheming: Bool = false
-	var tableViewSeparatorInsets: UIEdgeInsets?
-	var estimatedHeaderHeight: CGFloat?
-	var estimatedFooterHeight: CGFloat?
-}
-
-// MARK: SUPPLEMENTARY VIEWS - INTERNAL
-
-@available(iOS 13.0, *)
-internal extension ASCollectionViewSection
-{
-	mutating func setHeaderView<Content: View>(_ view: Content?)
-	{
-		setSupplementaryView(view, ofKind: UICollectionView.elementKindSectionHeader)
-	}
-
-	mutating func setFooterView<Content: View>(_ view: Content?)
-	{
-		setSupplementaryView(view, ofKind: UICollectionView.elementKindSectionFooter)
-	}
-
-	mutating func setSupplementaryView<Content: View>(_ view: Content?, ofKind kind: String)
-	{
-		guard let view = view else
-		{
-			dataSource.supplementaryViews.removeValue(forKey: kind)
-			return
-		}
-
-		dataSource.supplementaryViews[kind] = AnyView(view)
-	}
-
-	var supplementaryKinds: Set<String>
-	{
-		Set(dataSource.supplementaryViews.keys)
-	}
-
-	func supplementary(ofKind kind: String) -> AnyView?
-	{
-		dataSource.supplementaryViews[kind]
+	public init<DataCollection: RandomAccessCollection, DataID, Content: View, Container: View>(_ section: ASSection<SectionID, DataCollection, DataID, Content, Container>) {
+		id = section.id
+		self.section = section
 	}
 }

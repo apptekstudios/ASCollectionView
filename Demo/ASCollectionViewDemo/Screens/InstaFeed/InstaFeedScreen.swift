@@ -13,13 +13,14 @@ struct InstaFeedScreen: View
 	{
 		ASCollectionView(
 			section:
-			ASCollectionViewSection(
-				id: 0,
-				data: storiesData,
-				onCellEvent: onCellEventStories)
-			{ item, _ in
-				StoryView(post: item)
-		})
+			ASSectionWrapped(
+				ASSection(
+					id: 0,
+					data: storiesData,
+					onCellEvent: onCellEventStories)
+				{ item, _ in
+					StoryView(post: item)
+		}))
 			.layout(scrollDirection: .horizontal)
 		{
 			.list(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
@@ -31,48 +32,48 @@ struct InstaFeedScreen: View
 		.frame(height: 100)
 	}
 
-	var storiesSection: ASTableViewSection<Int>
+	var storiesSection: ASSectionWrapped<Int>
 	{
-		ASTableViewSection(id: 0)
-		{
-			storiesCollectionView
-		}
-		.cacheCells() // Used so that the nested collectionView is cached even when offscreen (which maintains scroll position etc)
+		ASSectionWrapped(
+			ASSection(id: 0)
+			{
+				storiesCollectionView
+			}
+			.cacheCells() // Used so that the nested collectionView is cached even when offscreen (which maintains scroll position etc)
+		)
 	}
 
-	var postSections: [ASTableViewSection<Int>]
+	var postSections: [ASSectionWrapped<Int>]
 	{
 		data.enumerated().map
 		{ i, sectionData in
-			ASTableViewSection(
-				id: i + 1,
-				data: sectionData,
-				onCellEvent: onCellEventPosts)
-			{ item, _ in
-				PostView(post: item)
-			}
-			.tableViewSetEstimatedSizes(headerHeight: 50) // Optional: Provide reasonable estimated heights for this section
-			.sectionHeader
-			{
-				VStack(spacing: 0)
-				{
-					Text("Section \(i)")
-						.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
-						.frame(maxWidth: .infinity, alignment: .leading)
-					Divider()
+			ASSectionWrapped(
+				ASSection(
+					id: i + 1,
+					data: sectionData,
+					onCellEvent: onCellEventPosts)
+				{ item, _ in
+					PostView(post: item)
 				}
-				.background(Color(.secondarySystemBackground))
-			}
+				.tableViewSetEstimatedSizes(headerHeight: 50) // Optional: Provide reasonable estimated heights for this section
+				.sectionHeader
+				{
+					VStack(spacing: 0)
+					{
+						Text("Section \(i)")
+							.padding(EdgeInsets(top: 4, leading: 20, bottom: 4, trailing: 20))
+							.frame(maxWidth: .infinity, alignment: .leading)
+						Divider()
+					}
+					.background(Color(.secondarySystemBackground))
+				})
 		}
 	}
 
 	var body: some View
 	{
-		ASTableView {
-			storiesSection // An ASSection
-			postSections // An array of ASSection's
-		}
-		.onReachedBottom
+		ASTableView(sections: [storiesSection] + postSections)
+			.onReachedBottom
 		{
 			self.loadMoreContent() // REACHED BOTTOM, LOADING MORE CONTENT
 		}
