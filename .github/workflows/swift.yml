@@ -14,4 +14,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build
-      run: swift build -v
+      run: xcodebuild -project Demo/ASCollectionViewDemo.xcodeproj -scheme ASCollectionView -destination platform\=iOS\ Simulator,OS\=13.3,name\=iPhone\ 11 build | xcpretty
+    - name: Lint podspec
+      run: pod lib lint
