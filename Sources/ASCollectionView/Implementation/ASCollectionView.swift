@@ -81,8 +81,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	{
 		context.coordinator.parent = self
 		context.coordinator.updateCollectionViewSettings(collectionViewController.collectionView)
-		context.coordinator.updateLayout()
 		context.coordinator.updateContent(collectionViewController.collectionView, transaction: context.transaction, refreshExistingCells: true)
+		context.coordinator.updateLayout()
 		context.coordinator.configureRefreshControl(for: collectionViewController.collectionView)
 #if DEBUG
 		debugOnly_checkHasUniqueSections()
@@ -129,8 +129,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		// MARK: Private tracking variables
 
-		private var hasDoneInitialSetup = false
-		private var hasSkippedFirstUpdate = false
+		private var hasMovedToParent = true
 		private var hasSetInitialScrollPosition = false
 
 		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
@@ -278,7 +277,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func populateDataSource(animated: Bool = true)
 		{
-			guard hasDoneInitialSetup else { return }
+			guard hasMovedToParent else { return }
 			collectionViewController.map { registerSupplementaries(forCollectionView: $0.collectionView) } // New sections might involve new types of supplementary...
 			let snapshot = ASDiffableDataSourceSnapshot(sections:
 				parent.sections.map {
@@ -291,11 +290,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func updateContent(_ cv: UICollectionView, transaction: Transaction?, refreshExistingCells: Bool)
 		{
-			guard hasDoneInitialSetup, hasSkippedFirstUpdate else
-			{
-				hasSkippedFirstUpdate = true
-				return
-			}
+			guard hasMovedToParent else { return }
 
 			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
 			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
@@ -333,13 +328,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func onMoveToParent()
 		{
-			if !hasDoneInitialSetup
-			{
-				hasDoneInitialSetup = true
-
-				// Populate data source
-				populateDataSource(animated: false)
-			}
+			guard !hasMovedToParent else { return }
+			
+			hasMovedToParent = true
+			populateDataSource(animated: false)
 		}
 
 		func onMoveFromParent() {}
@@ -470,7 +462,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func updateLayout()
 		{
-			guard let collectionViewController = collectionViewController else { return }
+			guard
+				hasMovedToParent,
+				let collectionViewController = collectionViewController else { return }
 			// Configure any custom layout
 			parent.layout.configureLayout(layoutObject: collectionViewController.collectionView.collectionViewLayout)
 
@@ -478,16 +472,15 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			if parent.shouldRecreateLayoutOnStateChange
 			{
 				let newLayout = parent.layout.makeLayout(withCoordinator: self)
-				collectionViewController.collectionView.setCollectionViewLayout(newLayout, animated: parent.shouldAnimateRecreatedLayoutOnStateChange && hasDoneInitialSetup)
+				collectionViewController.collectionView.setCollectionViewLayout(newLayout, animated: parent.shouldAnimateRecreatedLayoutOnStateChange && hasMovedToParent)
 			}
 			// If enabled, invalidate the layout
 			else if parent.shouldInvalidateLayoutOnStateChange
 			{
 				let changes = {
 					collectionViewController.collectionViewLayout.invalidateLayout()
-					collectionViewController.collectionView.layoutIfNeeded()
 				}
-				if parent.shouldAnimateInvalidatedLayoutOnStateChange, hasDoneInitialSetup
+				if parent.shouldAnimateInvalidatedLayoutOnStateChange, hasMovedToParent
 				{
 					UIView.animate(
 						withDuration: 0.4,

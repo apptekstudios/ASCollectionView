@@ -26,6 +26,7 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 	public var defaultRowAnimation: UITableView.RowAnimation = .automatic
 
 	private var firstLoad: Bool = true
+	private var canRefreshSizes: Bool = false
 
 	func applySnapshot(_ newSnapshot: Snapshot, animated: Bool = true, completion: (() -> Void)? = nil)
 	{
@@ -41,7 +42,10 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 		{
 			CATransaction.setDisableActions(true)
 		}
-		CATransaction.setCompletionBlock(completion)
+		CATransaction.setCompletionBlock({ [weak self] in
+			self?.canRefreshSizes = true
+			completion?()
+		})
 		tableView.reload(using: changeset, with: .none) { newSections in
 			self.currentSnapshot = .init(sections: newSections)
 		}
@@ -50,7 +54,7 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 
 	func updateCellSizes(animated: Bool = true)
 	{
-		guard let tableView = tableView, !firstLoad else { return }
+		guard let tableView = tableView, canRefreshSizes, !tableView.visibleCells.isEmpty else { return }
 		CATransaction.begin()
 		if !animated
 		{

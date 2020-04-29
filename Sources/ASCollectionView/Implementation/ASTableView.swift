@@ -106,8 +106,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		// MARK: Private tracking variables
 
-		private var hasDoneInitialSetup = false
-		private var hasSkippedFirstUpdate = false
+		private var hasMovedToParent = false
 
 		private var visibleSupplementaries: [ASSupplementaryCellID<SectionID>: ASTableViewSupplementaryView] = [:]
 
@@ -214,7 +213,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		func populateDataSource(animated: Bool = true)
 		{
-			guard hasDoneInitialSetup else { return }
+			guard hasMovedToParent else { return }
 			let snapshot = ASDiffableDataSourceSnapshot(sections:
 				parent.sections.map {
 					ASDiffableDataSourceSnapshot.Section(id: $0.id, elements: $0.itemIDs)
@@ -225,11 +224,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		func updateContent(_ tv: UITableView, transaction: Transaction?, refreshExistingCells: Bool)
 		{
-			guard hasDoneInitialSetup, hasSkippedFirstUpdate else
-			{
-				hasSkippedFirstUpdate = true
-				return
-			}
+			guard hasMovedToParent else { return }
 
 			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
 			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
@@ -275,16 +270,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		func onMoveToParent()
 		{
-			if !hasDoneInitialSetup
-			{
-				hasDoneInitialSetup = true
+			guard !hasMovedToParent else { return }
 
-				// Populate data source
-				populateDataSource(animated: false)
-
-				// Check if reached bottom already
-				tableViewController.map { checkIfReachedBottom($0.tableView) }
-			}
+			hasMovedToParent = true
+			populateDataSource(animated: false)
+			tableViewController.map { checkIfReachedBottom($0.tableView) }
 		}
 
 		func onMoveFromParent() {}
