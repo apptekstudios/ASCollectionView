@@ -13,14 +13,12 @@ struct InstaFeedScreen: View
 	{
 		ASCollectionView(
 			section:
-			ASSectionWrapped(
-				ASSection(
-					id: 0,
-					data: storiesData,
-					onCellEvent: onCellEventStories)
+			ASWrappedSection(
+				ASSection(id: 0, data: storiesData)
 				{ item, _ in
 					StoryView(post: item)
-		}))
+				}.onCellEvent(onCellEventStories)
+		))
 			.layout(scrollDirection: .horizontal)
 		{
 			.list(itemSize: .absolute(100), sectionInsets: NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10))
@@ -32,9 +30,9 @@ struct InstaFeedScreen: View
 		.frame(height: 100)
 	}
 
-	var storiesSection: ASSectionWrapped<Int>
+	var storiesSection: ASWrappedSection<Int>
 	{
-		ASSectionWrapped(
+		ASWrappedSection(
 			ASSection(id: 0)
 			{
 				storiesCollectionView
@@ -43,18 +41,16 @@ struct InstaFeedScreen: View
 		)
 	}
 
-	var postSections: [ASSectionWrapped<Int>]
+	var postSections: [ASWrappedSection<Int>]
 	{
 		data.enumerated().map
 		{ i, sectionData in
-			ASSectionWrapped(
-				ASSection(
-					id: i + 1,
-					data: sectionData,
-					onCellEvent: onCellEventPosts)
+			ASWrappedSection(
+				ASSection(id: i + 1, data: sectionData)
 				{ item, _ in
 					PostView(post: item)
 				}
+				.onCellEvent(onCellEventPosts)
 				.tableViewSetEstimatedSizes(headerHeight: 50) // Optional: Provide reasonable estimated heights for this section
 				.sectionHeader
 				{

@@ -19,16 +19,12 @@ struct PhotoGridScreen: View
 
 	typealias SectionID = Int
 
-	var section: ASSectionWrapped<SectionID>
+	var section: ASWrappedSection<SectionID>
 	{
-		ASSectionWrapped(
+		ASWrappedSection(
 			ASSection(
 				id: 0,
-				data: data,
-				selectedItems: $selectedItems,
-				onCellEvent: onCellEvent,
-				dragDropConfig: dragDropConfig,
-				contextMenuProvider: contextMenuProvider)
+				data: data)
 			{ item, state in
 				ZStack(alignment: .bottomTrailing)
 				{
@@ -61,6 +57,10 @@ struct PhotoGridScreen: View
 					}
 				}
 			}
+			.selectedItems($selectedItems)
+			.onCellEvent(onCellEvent)
+			.dragDropConfig(dragDropConfig)
+			.contextMenuProvider(contextMenuProvider)
 		)
 	}
 

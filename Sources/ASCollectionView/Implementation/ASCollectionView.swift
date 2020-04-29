@@ -8,7 +8,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 {
 	// MARK: Type definitions
 
-	public typealias Section = ASSectionWrapped<SectionID>
+	public typealias Section = ASWrappedSection<SectionID>
 	public typealias Layout = ASCollectionLayout<SectionID>
 
 	public typealias OnScrollCallback = ((_ contentOffset: CGPoint, _ contentSize: CGSize) -> Void)
@@ -329,7 +329,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func onMoveToParent()
 		{
 			guard !hasMovedToParent else { return }
-			
+
 			hasMovedToParent = true
 			populateDataSource(animated: false)
 		}
@@ -479,6 +479,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			{
 				let changes = {
 					collectionViewController.collectionViewLayout.invalidateLayout()
+					collectionViewController.collectionView.layoutIfNeeded()
 				}
 				if parent.shouldAnimateInvalidatedLayoutOnStateChange, hasMovedToParent
 				{

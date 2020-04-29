@@ -21,18 +21,18 @@ struct TableViewDragAndDropScreen: View
 					ASSection(
 						id: 0,
 						data: groupA,
-						dataID: \.self,
-						dragDropConfig: ASDragDropConfig(dataBinding: $groupA).enableReordering(),
-						onSwipeToDelete: { index, _, callback in
-							withAnimation {
-								self.groupA.remove(at: index)
-								callback(true)
-							}
-					})
+						dataID: \.self)
 					{ item, _ in
 						Text(item)
 							.padding()
 							.frame(maxWidth: .infinity, alignment: .leading)
+					}
+					.dragDropConfig(ASDragDropConfig(dataBinding: $groupA).enableReordering())
+					.onSwipeToDelete { index, _, callback in
+						withAnimation {
+							self.groupA.remove(at: index)
+							callback(true)
+						}
 					}
 					.sectionHeader {
 						header("Section A")
@@ -40,17 +40,17 @@ struct TableViewDragAndDropScreen: View
 					ASSection(
 						id: 1,
 						data: groupB,
-						dataID: \.self,
-						dragDropConfig: ASDragDropConfig(dataBinding: $groupB).enableReordering(),
-						onSwipeToDelete: { index, _, callback in
-							withAnimation {
-								self.groupB.remove(at: index)
-								callback(true)
-							}
-					}) { item, _ in
+						dataID: \.self) { item, _ in
 						Text(item)
 							.padding()
 							.frame(maxWidth: .infinity, alignment: .leading)
+					}
+					.dragDropConfig(ASDragDropConfig(dataBinding: $groupB).enableReordering())
+					.onSwipeToDelete { index, _, callback in
+						withAnimation {
+							self.groupB.remove(at: index)
+							callback(true)
+						}
 					}
 					.sectionHeader {
 						header("Section B")
@@ -62,17 +62,17 @@ struct TableViewDragAndDropScreen: View
 					ASSection(
 						id: 0,
 						data: groupC,
-						dataID: \.self,
-						dragDropConfig: ASDragDropConfig(dataBinding: $groupC).enableReordering(),
-						onSwipeToDelete: { index, _, callback in
-							withAnimation {
-								self.groupC.remove(at: index)
-								callback(true)
-							}
-					}) { item, _ in
+						dataID: \.self) { item, _ in
 						Text(item)
 							.padding()
 							.frame(maxWidth: .infinity, alignment: .leading)
+					}
+					.dragDropConfig(ASDragDropConfig(dataBinding: $groupC).enableReordering())
+					.onSwipeToDelete { index, _, callback in
+						withAnimation {
+							self.groupC.remove(at: index)
+							callback(true)
+						}
 					}
 					.sectionHeader {
 						header("Section C")
@@ -80,17 +80,17 @@ struct TableViewDragAndDropScreen: View
 					ASSection(
 						id: 1,
 						data: groupD,
-						dataID: \.self,
-						dragDropConfig: ASDragDropConfig(dataBinding: $groupD).enableReordering(),
-						onSwipeToDelete: { index, _, callback in
-							withAnimation {
-								self.groupD.remove(at: index)
-								callback(true)
-							}
-					}) { item, _ in
+						dataID: \.self) { item, _ in
 						Text(item)
 							.padding()
 							.frame(maxWidth: .infinity, alignment: .leading)
+					}
+					.dragDropConfig(ASDragDropConfig(dataBinding: $groupD).enableReordering())
+					.onSwipeToDelete { index, _, callback in
+						withAnimation {
+							self.groupD.remove(at: index)
+							callback(true)
+						}
 					}
 					.sectionHeader {
 						header("Section D")

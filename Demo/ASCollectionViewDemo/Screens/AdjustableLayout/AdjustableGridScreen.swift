@@ -21,13 +21,10 @@ struct AdjustableGridScreen: View
 
 	typealias SectionID = Int
 
-	var section: ASSectionWrapped<SectionID>
+	var section: ASWrappedSection<SectionID>
 	{
-		ASSectionWrapped(
-			ASSection(
-				id: 0,
-				data: data,
-				onCellEvent: onCellEvent)
+		ASWrappedSection(
+			ASSection(id: 0, data: data)
 			{ item, state in
 				ZStack(alignment: .bottomTrailing)
 				{
@@ -57,6 +54,7 @@ struct AdjustableGridScreen: View
 					}
 				}
 			}
+			.onCellEvent(onCellEvent)
 		)
 	}
 

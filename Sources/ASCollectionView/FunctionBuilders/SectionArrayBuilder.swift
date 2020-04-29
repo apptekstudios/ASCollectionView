@@ -11,9 +11,9 @@ public protocol Nestable
 }
 
 @available(iOS 13.0, *)
-extension ASSectionWrapped: Nestable
+extension ASWrappedSection: Nestable
 {
-	public func asArray() -> [ASSectionWrapped]
+	public func asArray() -> [ASWrappedSection]
 	{
 		[self]
 	}
@@ -38,7 +38,7 @@ extension Array: Nestable
 }
 
 @available(iOS 13.0, *)
-public func buildSectionArray<SectionID: Hashable>(@SectionArrayBuilder <SectionID> _ sections: () -> [ASSectionWrapped<SectionID>]) -> [ASSectionWrapped<SectionID>]
+public func buildSectionArray<SectionID: Hashable>(@SectionArrayBuilder <SectionID> _ sections: () -> [ASWrappedSection<SectionID>]) -> [ASWrappedSection<SectionID>]
 {
 	sections()
 }
@@ -47,7 +47,7 @@ public func buildSectionArray<SectionID: Hashable>(@SectionArrayBuilder <Section
 @_functionBuilder
 public struct SectionArrayBuilder<SectionID> where SectionID: Hashable
 {
-	public typealias Section = ASSectionWrapped<SectionID>
+	public typealias Section = ASWrappedSection<SectionID>
 	public typealias Output = [Section]
 
 	public static func buildEither<C0: Nestable>(first: C0) -> Output where C0.T == Section
@@ -72,7 +72,7 @@ public struct SectionArrayBuilder<SectionID> where SectionID: Hashable
 
 	public static func buildExpression<DataCollection: RandomAccessCollection, DataID, Content: View, Container: View>(_ section: ASSection<SectionID, DataCollection, DataID, Content, Container>) -> Section
 	{
-		ASSectionWrapped(section)
+		ASWrappedSection(section)
 	}
 
 	public static func buildBlock<C0: Nestable, C1: Nestable>(_ item0: C0, _ item1: C1) -> Output where C0.T == Section, C1.T == Section

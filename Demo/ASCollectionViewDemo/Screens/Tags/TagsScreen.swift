@@ -35,7 +35,7 @@ struct TagsScreen: View
 
 			ASCollectionView(
 				section:
-				ASSectionWrapped(
+				ASWrappedSection(
 					ASSection(id: 0, data: store.items)
 					{ item, _ in
 						Text(item.displayString)

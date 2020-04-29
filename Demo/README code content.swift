@@ -87,9 +87,9 @@ struct READMEContent
 		}
 	}
 
-	var sectionHeaderExample: ASSectionWrapped<Int>
+	var sectionHeaderExample: ASWrappedSection<Int>
 	{
-		ASSectionWrapped(
+		ASWrappedSection(
 			ASSection(id: 0) {
 				Text("Cell 1")
 				Text("Cell 2")

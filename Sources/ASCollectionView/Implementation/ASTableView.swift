@@ -8,7 +8,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 {
 	// MARK: Type definitions
 
-	public typealias Section = ASSectionWrapped<SectionID>
+	public typealias Section = ASWrappedSection<SectionID>
 
 	public typealias OnScrollCallback = ((_ contentOffset: CGPoint, _ contentSize: CGSize) -> Void)
 	public typealias OnReachedBottomCallback = (() -> Void)

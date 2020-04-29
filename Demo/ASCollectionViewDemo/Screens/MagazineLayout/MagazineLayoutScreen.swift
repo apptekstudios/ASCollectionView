@@ -12,20 +12,20 @@ struct MagazineLayoutScreen: View
 		DataSource.postsForGridSection($0, number: 10)
 	}
 
-	var sections: [ASSectionWrapped<Int>]
+	var sections: [ASWrappedSection<Int>]
 	{
 		data.enumerated().map
-		{ (offset, sectionData) -> ASSectionWrapped<Int> in
-			ASSectionWrapped(
+		{ (offset, sectionData) -> ASWrappedSection<Int> in
+			ASWrappedSection(
 				ASSection(
 					id: offset,
-					data: sectionData,
-					onCellEvent: onCellEvent,
-					contextMenuProvider: contextMenuProvider)
+					data: sectionData)
 				{ item, _ in
 					ASRemoteImageView(item.url)
 						.aspectRatio(1, contentMode: .fit)
 				}
+				.onCellEvent(onCellEvent)
+				.contextMenuProvider(contextMenuProvider)
 				.sectionSupplementary(ofKind: MagazineLayout.SupplementaryViewKind.sectionHeader)
 				{
 					Text("Section \(offset)")

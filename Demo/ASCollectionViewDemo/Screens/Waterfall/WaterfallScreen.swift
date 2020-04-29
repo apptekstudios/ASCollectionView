@@ -19,15 +19,11 @@ struct WaterfallScreen: View
 
 	typealias SectionID = Int
 
-	var sections: [ASSectionWrapped<SectionID>]
+	var sections: [ASWrappedSection<SectionID>]
 	{
 		data.enumerated().map { offset, sectionData in
-			ASSectionWrapped(
-				ASSection(
-					id: offset,
-					data: sectionData,
-					selectedItems: $selectedItems[offset],
-					onCellEvent: onCellEvent)
+			ASWrappedSection(
+				ASSection(id: offset, data: sectionData)
 				{ item, state in
 					GeometryReader
 					{ geom in
@@ -67,7 +63,10 @@ struct WaterfallScreen: View
 						.frame(width: geom.size.width, height: geom.size.height)
 						.clipped()
 					}
-				}.sectionHeader {
+				}
+				.selectedItems($selectedItems[offset])
+				.onCellEvent(onCellEvent)
+				.sectionHeader {
 					Text("Section \(offset)")
 						.padding()
 						.frame(idealWidth: .infinity, maxWidth: .infinity, idealHeight: .infinity, maxHeight: .infinity, alignment: .leading)

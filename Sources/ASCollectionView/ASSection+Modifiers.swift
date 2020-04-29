@@ -67,4 +67,60 @@ public extension ASSection
 		section.setSelfSizingConfig(config: config)
 		return section
 	}
+
+	func selectedItems(_ selectedItemsBinding: Binding<Set<Int>>? = nil) -> Self
+	{
+		var section = self
+		section.selectedItems = selectedItemsBinding
+		return section
+	}
+
+	func shouldAllowSelection(_ shouldAllow: ((_ index: Int) -> Bool)? = nil) -> Self
+	{
+		var section = self
+		section.shouldAllowSelection = shouldAllow
+		return section
+	}
+
+	func shouldAllowDeselection(_ shouldAllow: ((_ index: Int) -> Bool)? = nil) -> Self
+	{
+		var section = self
+		section.shouldAllowDeselection = shouldAllow
+		return section
+	}
+
+	func onCellEvent(_ onCellEvent: OnCellEvent<DataCollection.Element>? = nil) -> Self
+	{
+		var section = self
+		section.onCellEvent = onCellEvent
+		return section
+	}
+
+	func dragDropConfig(_ config: ASDragDropConfig<DataCollection.Element>) -> Self
+	{
+		var section = self
+		section.dragDropConfig = config
+		return section
+	}
+
+	func shouldAllowSwipeToDelete(_ shouldAllow: ShouldAllowSwipeToDelete? = nil) -> Self
+	{
+		var section = self
+		section.shouldAllowSwipeToDelete = shouldAllow
+		return section
+	}
+
+	func onSwipeToDelete(_ onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>? = nil) -> Self
+	{
+		var section = self
+		section.onSwipeToDelete = onSwipeToDelete
+		return section
+	}
+
+	func contextMenuProvider(_ provider: ContextMenuProvider<DataCollection.Element>? = nil) -> Self
+	{
+		var section = self
+		section.contextMenuProvider = provider
+		return section
+	}
 }

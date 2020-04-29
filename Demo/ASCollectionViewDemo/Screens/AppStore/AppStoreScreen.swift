@@ -26,17 +26,12 @@ struct AppStoreScreen: View
 		}
 	}
 
-	var sections: [ASSectionWrapped<Int>]
+	var sections: [ASWrappedSection<Int>]
 	{
 		data.enumerated().map
-		{ (sectionID, sectionData) -> ASSectionWrapped<Int> in
-			ASSectionWrapped(
-				ASSection(
-					id: sectionID,
-					data: sectionData.apps,
-					onCellEvent: {
-						self.onCellEvent($0, sectionID: sectionID)
-			})
+		{ (sectionID, sectionData) -> ASWrappedSection<Int> in
+			ASWrappedSection(
+				ASSection(id: sectionID, data: sectionData.apps)
 				{ item, _ in
 					if sectionID == 0
 					{
@@ -50,6 +45,9 @@ struct AppStoreScreen: View
 					{
 						AppViewCompact(app: item)
 					}
+				}
+				.onCellEvent {
+					self.onCellEvent($0, sectionID: sectionID)
 				}
 				.sectionHeader
 				{

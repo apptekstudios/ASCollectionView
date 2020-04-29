@@ -56,7 +56,7 @@ public extension ASTableView where SectionID == Int
 			data: data,
 			dataID: dataIDKeyPath,
 			contentBuilder: contentBuilder)
-		sections = [ASSectionWrapped(section)]
+		sections = [ASWrappedSection(section)]
 	}
 
 	/**
@@ -78,6 +78,6 @@ public extension ASTableView where SectionID == Int
 	{
 		ASTableView(
 			style: .plain,
-			sections: [ASSectionWrapped(ASSection(id: 0, content: staticContent))])
+			sections: [ASWrappedSection(ASSection(id: 0, content: staticContent))])
 	}
 }

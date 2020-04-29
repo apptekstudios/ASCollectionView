@@ -52,7 +52,7 @@ public extension ASCollectionView where SectionID == Int
 	 */
 	static func `static`(@ViewArrayBuilder staticContent: () -> ViewArrayBuilder.Wrapper) -> ASCollectionView
 	{
-		self.init(sections: [ASSectionWrapped(ASSection(id: 0, content: staticContent))])
+		self.init(sections: [ASWrappedSection(ASSection(id: 0, content: staticContent))])
 	}
 
 	/**
@@ -69,7 +69,7 @@ public extension ASCollectionView where SectionID == Int
 			data: data,
 			dataID: dataIDKeyPath,
 			contentBuilder: contentBuilder)
-		sections = [ASSectionWrapped(section)]
+		sections = [ASWrappedSection(section)]
 	}
 
 	/**
