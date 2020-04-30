@@ -13,6 +13,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		{
 			if hostingController !== oldValue, hostingController != nil
 			{
+				//WillAppear is not reliably called for tableView headers/footers, so we also attach the view here if needed
 				attachView()
 			}
 		}
