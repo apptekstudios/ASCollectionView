@@ -60,12 +60,15 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		}
 	}
 
+	var shouldSkipNextRefresh: Bool = true
+
 	override func prepareForReuse()
 	{
 		indexPath = nil
 		itemID = nil
 		isSelected = false
 		hostingController = nil
+		shouldSkipNextRefresh = true
 	}
 
 	override func layoutSubviews()

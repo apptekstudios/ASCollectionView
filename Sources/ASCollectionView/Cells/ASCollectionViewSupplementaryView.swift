@@ -53,9 +53,11 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 		}
 	}
 
+	var shouldSkipNextRefresh: Bool = true
 	override func prepareForReuse()
 	{
 		hostingController = nil
+		shouldSkipNextRefresh = true
 	}
 
 	override func layoutSubviews()

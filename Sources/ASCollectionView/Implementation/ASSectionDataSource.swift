@@ -13,7 +13,6 @@ internal protocol ASSectionDataSourceProtocol
 	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
 	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
 	func updateOrCreateHostController(forSupplementaryKind supplementaryKind: String, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
-	func update(_ hc: ASHostingControllerProtocol, forSupplementaryKind supplementaryKind: String)
 	var supplementaryViews: [String: AnyView] { get set }
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	func onAppear(_ indexPath: IndexPath)
@@ -106,12 +105,6 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		guard let content = supplementaryViews[supplementaryKind] else { return nil }
 		return updateOrCreateHostController(content: content, existingHC: existingHC)
-	}
-
-	func update(_ hc: ASHostingControllerProtocol, forSupplementaryKind supplementaryKind: String)
-	{
-		guard let content = supplementaryViews[supplementaryKind] else { return }
-		update(hc, withContent: content)
 	}
 
 	private func updateOrCreateHostController<Wrapped: View>(content: Wrapped, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol

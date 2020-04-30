@@ -81,7 +81,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	{
 		context.coordinator.parent = self
 		context.coordinator.updateCollectionViewSettings(collectionViewController.collectionView)
-		context.coordinator.updateContent(collectionViewController.collectionView, transaction: context.transaction, refreshExistingCells: true)
+		context.coordinator.updateContent(collectionViewController.collectionView, transaction: context.transaction)
 		context.coordinator.updateLayout()
 		context.coordinator.configureRefreshControl(for: collectionViewController.collectionView)
 #if DEBUG
@@ -275,7 +275,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			setupPrefetching()
 		}
 
-		func populateDataSource(animated: Bool = true)
+		func populateDataSource(animated: Bool = true, transaction: Transaction? = nil)
 		{
 			guard hasMovedToParent else { return }
 			collectionViewController.map { registerSupplementaries(forCollectionView: $0.collectionView) } // New sections might involve new types of supplementary...
@@ -285,22 +285,21 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 			)
 			dataSource?.applySnapshot(snapshot, animated: animated)
+			withAnimation(animated ? transaction?.animation : nil) {
+				refreshVisibleCells()
+			}
 			collectionViewController.map { self.didUpdateContentSize($0.collectionView.contentSize) }
 		}
 
-		func updateContent(_ cv: UICollectionView, transaction: Transaction?, refreshExistingCells: Bool)
+		func updateContent(_ cv: UICollectionView, transaction: Transaction?)
 		{
 			guard hasMovedToParent else { return }
 
 			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
-			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
+			populateDataSource(
+				animated: parent.animateOnDataRefresh && transactionAnimationEnabled,
+				transaction: transaction)
 
-			if refreshExistingCells
-			{
-				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
-					refreshVisibleCells()
-				}
-			}
 			updateSelectionBindings(cv)
 		}
 
@@ -309,19 +308,22 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			guard let cv = collectionViewController?.collectionView else { return }
 			for case let cell as Cell in cv.visibleCells
 			{
+				guard !cell.shouldSkipNextRefresh else { cell.shouldSkipNextRefresh = false; continue }
 				guard
 					let itemID = cell.itemID,
 					let hc = cell.hostingController
-				else { return }
+				else { continue }
 				self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
 			}
 
 			supplementaryKinds().forEach
 			{ kind in
-				cv.indexPathsForVisibleSupplementaryElements(ofKind: kind).forEach
+				for indexPath in cv.indexPathsForVisibleSupplementaryElements(ofKind: kind)
 				{
-					guard let view = (cv.supplementaryView(forElementKind: kind, at: $0) as? ASCollectionViewSupplementaryView) else { return }
-					view.hostingController = parent.sections[safe: $0.section]?.dataSource.updateOrCreateHostController(forSupplementaryKind: kind, existingHC: view.hostingController)
+					guard let view = (cv.supplementaryView(forElementKind: kind, at: indexPath) as? ASCollectionViewSupplementaryView) else { continue }
+					guard !view.shouldSkipNextRefresh else { view.shouldSkipNextRefresh = false; continue }
+
+					view.hostingController = parent.sections[safe: indexPath.section]?.dataSource.updateOrCreateHostController(forSupplementaryKind: kind, existingHC: view.hostingController)
 				}
 			}
 		}
@@ -329,7 +331,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func onMoveToParent()
 		{
 			guard !hasMovedToParent else { return }
-			
+
 			hasMovedToParent = true
 			populateDataSource(animated: false)
 		}
@@ -488,7 +490,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						usingSpringWithDamping: 1.0,
 						initialSpringVelocity: 0.0,
 						options: UIView.AnimationOptions(),
-						animations: changes,
+						animations: {
+							changes()
+							collectionViewController.collectionView.layoutIfNeeded()
+						},
 						completion: nil)
 				}
 				else

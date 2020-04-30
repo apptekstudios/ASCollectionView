@@ -42,10 +42,10 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 		{
 			CATransaction.setDisableActions(true)
 		}
-		CATransaction.setCompletionBlock({ [weak self] in
+		CATransaction.setCompletionBlock { [weak self] in
 			self?.canRefreshSizes = true
 			completion?()
-		})
+		}
 		tableView.reload(using: changeset, with: .none) { newSections in
 			self.currentSnapshot = .init(sections: newSections)
 		}
