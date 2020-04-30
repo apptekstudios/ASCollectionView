@@ -83,6 +83,16 @@ public struct ViewArrayBuilder
 		.group([Wrapper(item0), Wrapper(item1)])
 	}
 
+	public static func buildBlock<C0: View, CX: View>(_ header: C0, _ array: [CX]) -> Output
+	{
+		.group([Wrapper(header), .group(array.map { Wrapper($0) })])
+	}
+	
+	public static func buildBlock<C0: View, CX: View, C1: View>(_ header: C0, _ array: [CX], _ footer: C1) -> Output
+	{
+		.group([Wrapper(header), .group(array.map { Wrapper($0) }), Wrapper(footer)])
+	}
+
 	public static func buildBlock<C0: View, C1: View, C2: View>(_ item0: C0, _ item1: C1, _ item2: C2) -> Output
 	{
 		.group([Wrapper(item0), Wrapper(item1), Wrapper(item2)])

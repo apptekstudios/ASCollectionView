@@ -76,7 +76,7 @@ struct PostView: View
 			.onTapGesture
 			{
 				self.captionExpanded.toggle()
-				self.invalidateCellLayout()
+				self.invalidateCellLayout?(false)
 			}
 			Text("View all \(post.comments) comments").foregroundColor(Color(.systemGray))
 		}

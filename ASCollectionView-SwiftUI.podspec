@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'ASCollectionView-SwiftUI'
-  s.version          = '1.5.0'
+  s.version          = '1.6.0'
   s.summary          = 'A SwiftUI collection view with support for custom layouts, preloading, and more. '
 
   s.description      = <<-DESC
@@ -22,5 +22,5 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '11.0'
   s.swift_versions = '5.2'
   s.source_files = 'Sources/ASCollectionView/**/*'
-
+  s.dependency 'DifferenceKit', '~> 1.1'
 end

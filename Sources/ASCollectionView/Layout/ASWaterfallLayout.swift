@@ -245,7 +245,6 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 	public override func shouldInvalidateLayout(forPreferredLayoutAttributes preferredAttributes: UICollectionViewLayoutAttributes, withOriginalAttributes originalAttributes: UICollectionViewLayoutAttributes) -> Bool
 	{
 		guard !hasDelegate else { return false }
-		print(preferredAttributes.indexPath)
 		if originalAttributes.indexPath.item == -1
 		{
 			guard

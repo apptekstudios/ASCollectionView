@@ -2,6 +2,7 @@
 
 import Foundation
 import SwiftUI
+import UIKit
 
 @available(iOS 13.0, *)
 public protocol Decoration: View
@@ -16,7 +17,7 @@ class ASCollectionViewDecoration<Content: Decoration>: ASCollectionViewSupplemen
 	{
 		super.init(frame: frame)
 		let view = Content()
-		setupFor(id: 0, view: view)
+		hostingController = ASHostingController(view)
 		willAppear(in: nil)
 	}
 

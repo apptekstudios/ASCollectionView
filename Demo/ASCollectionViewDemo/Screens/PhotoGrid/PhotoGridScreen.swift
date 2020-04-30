@@ -26,10 +26,8 @@ struct PhotoGridScreen: View
 			data: data,
 			selectedItems: $selectedItems,
 			onCellEvent: onCellEvent,
-			itemProvider: { item in
-				// Example of returning a custom item provider (eg. to support drag-drop to other apps)
-				NSItemProvider(object: item.url as NSURL)
-		})
+			dragDropConfig: dragDropConfig,
+			contextMenuProvider: contextMenuProvider)
 		{ item, state in
 			ZStack(alignment: .bottomTrailing)
 			{
@@ -114,6 +112,20 @@ struct PhotoGridScreen: View
 		}
 	}
 
+	func contextMenuProvider(int: Int, post: Post) -> UIContextMenuConfiguration?
+	{
+		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { (_) -> UIMenu? in
+			let testAction = UIAction(title: "Do nothing") { _ in
+				//
+			}
+			let testAction2 = UIAction(title: "Try dragging the photo") { _ in
+				//
+			}
+			return UIMenu(title: "", image: nil, identifier: nil, options: [], children: [testAction, testAction2])
+		}
+		return configuration
+	}
+
 	func destinationForItem(_ item: Post) -> some View
 	{
 		ScrollView {
@@ -166,6 +178,15 @@ extension PhotoGridScreen
 				return section
 			}
 		}
+	}
+
+	var dragDropConfig: ASDragDropConfig<Post>
+	{
+		ASDragDropConfig<Post>(dataBinding: $data)
+			.enableReordering(shouldMoveItem: nil)
+			.dragItemProvider { item in
+				NSItemProvider(object: item.url as NSURL)
+			}
 	}
 }
 

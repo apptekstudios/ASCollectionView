@@ -16,7 +16,11 @@ struct MagazineLayoutScreen: View
 	{
 		data.enumerated().map
 		{ (offset, sectionData) -> ASCollectionViewSection<Int> in
-			ASCollectionViewSection(id: offset, data: sectionData, onCellEvent: onCellEvent, contextMenuProvider: contextMenuProvider)
+			ASCollectionViewSection(
+				id: offset,
+				data: sectionData,
+				onCellEvent: onCellEvent,
+				contextMenuProvider: contextMenuProvider)
 			{ item, _ in
 				ASRemoteImageView(item.url)
 					.aspectRatio(1, contentMode: .fit)
@@ -64,7 +68,7 @@ struct MagazineLayoutScreen: View
 		}
 	}
 
-	func contextMenuProvider(_ post: Post) -> UIContextMenuConfiguration?
+	func contextMenuProvider(index: Int, post: Post) -> UIContextMenuConfiguration?
 	{
 		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { (_) -> UIMenu? in
 			let testAction = UIAction(title: "Test") { _ in

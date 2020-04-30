@@ -5,18 +5,18 @@ import UIKit
 extension UITableView
 {
 	/// The section header views that are visible in the table view.
-	var visibleHeaderViews: [(sectionIndex: Int, view: UITableViewHeaderFooterView)]
+	var visibleHeaderViews: [UITableViewHeaderFooterView]
 	{
 		visibleSections.compactMap { index in
-			headerView(forSection: index).map { (sectionIndex: index, view: $0) }
+			headerView(forSection: index)
 		}
 	}
 
 	/// The section footer views that are visible in the table view.
-	var visibleFooterViews: [(sectionIndex: Int, view: UITableViewHeaderFooterView)]
+	var visibleFooterViews: [UITableViewHeaderFooterView]
 	{
 		visibleSections.compactMap { index in
-			footerView(forSection: index).map { (sectionIndex: index, view: $0) }
+			footerView(forSection: index)
 		}
 	}
 

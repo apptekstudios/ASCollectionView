@@ -6,19 +6,25 @@ import SwiftUI
 @available(iOS 13.0, *)
 internal protocol ASSectionDataSourceProtocol
 {
+	var endIndex: Int { get }
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
 	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
 	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
+	func updateOrCreateHostController(forSupplementaryKind supplementaryKind: String, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
+	func update(_ hc: ASHostingControllerProtocol, forSupplementaryKind supplementaryKind: String)
+	var supplementaryViews: [String: AnyView] { get set }
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
 	func prefetch(_ indexPaths: [IndexPath])
 	func cancelPrefetch(_ indexPaths: [IndexPath])
+	func willAcceptDropItem(from dragItem: UIDragItem) -> Bool
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
-	func removeItem(from indexPath: IndexPath)
-	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
+	func getItemID<SectionID: Hashable>(for dragItem: UIDragItem, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
+	func applyRemove(atOffsets offsets: IndexSet)
+	func applyInsert(items: [UIDragItem], at index: Int)
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
@@ -31,57 +37,15 @@ internal protocol ASSectionDataSourceProtocol
 
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
+	var reorderingEnabled: Bool { get }
 
 	mutating func setSelfSizingConfig(config: @escaping SelfSizingConfig)
 }
 
 @available(iOS 13.0, *)
-public enum CellEvent<Data>
+protocol ASDataSourceConfigurableCell
 {
-	/// Respond by starting necessary prefetch operations for this data to be displayed soon (eg. download images)
-	case prefetchForData(data: [Data])
-
-	/// Called when its no longer necessary to prefetch this data
-	case cancelPrefetchForData(data: [Data])
-
-	/// Called when an item is appearing on the screen
-	case onAppear(item: Data)
-
-	/// Called when an item is disappearing from the screen
-	case onDisappear(item: Data)
-}
-
-@available(iOS 13.0, *)
-public enum DragDrop<Data>
-{
-	case onRemoveItem(indexPath: IndexPath)
-	case onAddItems(items: [Data], atIndexPath: IndexPath)
-}
-
-@available(iOS 13.0, *)
-public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
-
-@available(iOS 13.0, *)
-public typealias OnDragDrop<Data> = ((_ event: DragDrop<Data>) -> Void)
-
-@available(iOS 13.0, *)
-public typealias ItemProvider<Data> = ((_ item: Data) -> NSItemProvider)
-
-@available(iOS 13.0, *)
-public typealias OnSwipeToDelete<Data> = ((Data, _ completionHandler: (Bool) -> Void) -> Void)
-
-@available(iOS 13.0, *)
-public typealias ContextMenuProvider<Data> = ((_ item: Data) -> UIContextMenuConfiguration?)
-
-@available(iOS 13.0, *)
-public typealias SelfSizingConfig = ((_ context: ASSelfSizingContext) -> ASSelfSizingConfig?)
-
-@available(iOS 13.0, *)
-public struct CellContext
-{
-	public var isSelected: Bool
-	public var isFirstInSection: Bool
-	public var isLastInSection: Bool
+	var hostingController: ASHostingControllerProtocol? { get set }
 }
 
 @available(iOS 13.0, *)
@@ -91,33 +55,37 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var data: DataCollection
 	var dataIDKeyPath: KeyPath<Data, DataID>
 	var container: (Content) -> Container
-	var content: (DataCollection.Element, CellContext) -> Content
+	var content: (DataCollection.Element, ASCellContext) -> Content
 
 	var selectedItems: Binding<Set<Int>>?
 	var shouldAllowSelection: ((_ index: Int) -> Bool)?
 	var shouldAllowDeselection: ((_ index: Int) -> Bool)?
 
 	var onCellEvent: OnCellEvent<DataCollection.Element>?
-	var onDragDrop: OnDragDrop<DataCollection.Element>?
-	var itemProvider: ItemProvider<DataCollection.Element>?
+	var dragDropConfig: ASDragDropConfig<DataCollection.Element>
+	var shouldAllowSwipeToDelete: ShouldAllowSwipeToDelete?
 	var onSwipeToDelete: OnSwipeToDelete<DataCollection.Element>?
 	var contextMenuProvider: ContextMenuProvider<DataCollection.Element>?
 	var selfSizingConfig: (SelfSizingConfig)?
 
 	var supplementaryViews: [String: AnyView] = [:]
 
-	var dragEnabled: Bool { onDragDrop != nil }
-	var dropEnabled: Bool { onDragDrop != nil }
+	var dragEnabled: Bool { dragDropConfig.dragEnabled }
+	var dropEnabled: Bool { dragDropConfig.dropEnabled }
+	var reorderingEnabled: Bool { dragDropConfig.reorderingEnabled }
+
+	var endIndex: Int { data.endIndex }
 
 	func getIndex(of itemID: ASCollectionViewItemUniqueID) -> Int?
 	{
 		data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash })
 	}
 
-	func cellContext(for index: Int) -> CellContext
+	func cellContext(for index: Int) -> ASCellContext
 	{
-		CellContext(
+		ASCellContext(
 			isSelected: isSelected(index: index),
+			index: index,
 			isFirstInSection: index == data.startIndex,
 			isLastInSection: index == data.endIndex - 1)
 	}
@@ -125,22 +93,48 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
 	{
 		guard let content = getContent(forItemID: itemID) else { return nil }
-
-		if let hc = (existingHC as? ASHostingController<Container>)
-		{
-			hc.setView(content)
-			return hc
-		}
-		else
-		{
-			return ASHostingController(content)
-		}
+		return updateOrCreateHostController(content: content, existingHC: existingHC)
 	}
 
 	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
 	{
-		guard let hc = hc as? ASHostingController<Container> else { return }
 		guard let content = getContent(forItemID: itemID) else { return }
+		update(hc, withContent: content)
+	}
+
+	func updateOrCreateHostController(forSupplementaryKind supplementaryKind: String, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
+	{
+		guard let content = supplementaryViews[supplementaryKind] else { return nil }
+		return updateOrCreateHostController(content: content, existingHC: existingHC)
+	}
+
+	func update(_ hc: ASHostingControllerProtocol, forSupplementaryKind supplementaryKind: String)
+	{
+		guard let content = supplementaryViews[supplementaryKind] else { return }
+		update(hc, withContent: content)
+	}
+
+	private func updateOrCreateHostController<Wrapped: View>(content: Wrapped, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol
+	{
+		if let hc = (existingHC as? ASHostingController<Wrapped>)
+		{
+			hc.setView(content)
+			hc.disableSwiftUIDropInteraction = dropEnabled
+			hc.disableSwiftUIDragInteraction = dragEnabled
+			return hc
+		}
+		else
+		{
+			let newHC = ASHostingController(content)
+			newHC.disableSwiftUIDropInteraction = dropEnabled
+			newHC.disableSwiftUIDragInteraction = dragEnabled
+			return newHC
+		}
+	}
+
+	private func update<Wrapped: View>(_ hc: ASHostingControllerProtocol, withContent content: Wrapped)
+	{
+		guard let hc = hc as? ASHostingController<Wrapped> else { return }
 		hc.setView(content)
 	}
 
@@ -164,7 +158,12 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	{
-		data[safe: index].map { ASCollectionViewItemUniqueID(sectionID: sectionID, itemID: $0[keyPath: dataIDKeyPath]) }
+		data[safe: index].map { getItemID(for: $0, withSectionID: sectionID) }
+	}
+
+	func getItemID<SectionID: Hashable>(for item: Data, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID
+	{
+		ASCollectionViewItemUniqueID(sectionID: sectionID, itemID: item[keyPath: dataIDKeyPath])
 	}
 
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
@@ -207,13 +206,14 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	{
-		onSwipeToDelete != nil
+		guard onSwipeToDelete != nil else { return false }
+		return shouldAllowSwipeToDelete?(indexPath.item) ?? true
 	}
 
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 	{
 		guard let item = data[safe: indexPath.item] else { return }
-		onSwipeToDelete?(item, completionHandler)
+		onSwipeToDelete?(indexPath.item, item, completionHandler)
 	}
 
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
@@ -221,29 +221,46 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		guard dragEnabled else { return nil }
 		guard let item = data[safe: indexPath.item] else { return nil }
 
-		let itemProvider: NSItemProvider = self.itemProvider?(item) ?? NSItemProvider()
+		let itemProvider: NSItemProvider = dragDropConfig.dragItemProvider?(item) ?? NSItemProvider()
 		let dragItem = UIDragItem(itemProvider: itemProvider)
 		dragItem.localObject = item
 		return dragItem
 	}
 
-	func removeItem(from indexPath: IndexPath)
+	func willAcceptDropItem(from dragItem: UIDragItem) -> Bool
 	{
-		guard data.containsIndex(indexPath.item) else { return }
-		onDragDrop?(.onRemoveItem(indexPath: indexPath))
+		getDropItem(from: dragItem) != nil
 	}
 
-	func insertDragItems(_ items: [UIDragItem], at indexPath: IndexPath)
+	func getDropItem(from dragItem: UIDragItem) -> Data?
 	{
-		guard dropEnabled else { return }
-		let index = max(data.startIndex, min(indexPath.item, data.endIndex))
-		let indexPath = IndexPath(item: index, section: indexPath.section)
-		let dataItems = items.compactMap
-		{ (dragItem) -> Data? in
-			guard let item = dragItem.localObject as? Data else { return nil }
-			return item
-		}
-		onDragDrop?(.onAddItems(items: dataItems, atIndexPath: indexPath))
+		guard dropEnabled else { return nil }
+
+		let sourceItem = dragItem.localObject as? Data
+		return dragDropConfig.dropItemProvider?(sourceItem, dragItem) ?? sourceItem
+	}
+
+	func getItemID<SectionID: Hashable>(for dragItem: UIDragItem, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
+	{
+		guard let item = getDropItem(from: dragItem) else { return nil }
+		return getItemID(for: item, withSectionID: sectionID)
+	}
+
+	func applyRemove(atOffsets offsets: IndexSet)
+	{
+		dragDropConfig.dataBinding?.wrappedValue.remove(atOffsets: offsets)
+	}
+
+	func applyInsert(items: [UIDragItem], at index: Int)
+	{
+		let actualItems = items.compactMap(getDropItem(from:))
+		let allDataIDs = Set(dragDropConfig.dataBinding?.wrappedValue.map { $0[keyPath: dataIDKeyPath] } ?? [])
+		let noDuplicates = actualItems.filter { !allDataIDs.contains($0[keyPath: dataIDKeyPath]) }
+#if DEBUG
+		// Notify during debug build if IDs are not unique (programmer error)
+		if noDuplicates.count != actualItems.count { print("ASCOLLECTIONVIEW/ASTABLEVIEW: Attempted to insert an item with the same ID as one already in the section. This may cause unexpected behaviour.") }
+#endif
+		dragDropConfig.dataBinding?.wrappedValue.insert(contentsOf: noDuplicates, at: index)
 	}
 
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
@@ -253,7 +270,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			let item = data[safe: indexPath.item]
 		else { return nil }
 
-		return menuProvider(item)
+		return menuProvider(indexPath.item, item)
 	}
 
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?

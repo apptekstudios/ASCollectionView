@@ -80,6 +80,7 @@ struct AdjustableGridScreen: View
 			ASCollectionView(
 				section: section)
 				.layout(self.layout)
+				.shouldInvalidateLayoutOnStateChange(true)
 				.navigationBarTitle("Adjustable Layout", displayMode: .inline)
 		}
 		.navigationBarItems(

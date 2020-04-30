@@ -3,7 +3,7 @@
 [![Stargazers][stars-shield]][stars-url]
 [![Issues][issues-shield]][issues-url]
 [![MIT License][license-shield]][license-url]
-[![Build Status](https://travis-ci.com/apptekstudios/ASCollectionView.svg?branch=master)](https://travis-ci.com/apptekstudios/ASCollectionView)
+![Build status](https://github.com/apptekstudios/ASCollectionView/workflows/Build/badge.svg?branch=master)
 
 # ASCollectionView
 A SwiftUI implementation of UICollectionView & UITableView. Here's some of its useful features:

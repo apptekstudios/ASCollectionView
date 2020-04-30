@@ -9,15 +9,6 @@
           "revision": "14c66681e12a38b81045f44c6c29724a0d4b0e72",
           "version": "1.1.5"
         }
-      },
-      {
-        "package": "MagazineLayout",
-        "repositoryURL": "https://github.com/airbnb/MagazineLayout",
-        "state": {
-          "branch": "master",
-          "revision": "fefddd198aab0950006b61e6df0fc6a7e54a1fe2",
-          "version": null
-        }
       }
     ]
   },
