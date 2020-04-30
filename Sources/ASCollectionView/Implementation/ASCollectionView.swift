@@ -490,7 +490,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						usingSpringWithDamping: 1.0,
 						initialSpringVelocity: 0.0,
 						options: UIView.AnimationOptions(),
-						animations: changes,
+						animations: {
+							changes()
+							collectionViewController.collectionView.layoutIfNeeded()
+						},
 						completion: nil)
 				}
 				else
