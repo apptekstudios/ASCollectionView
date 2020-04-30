@@ -11,11 +11,15 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	{
 		didSet
 		{
-			setNeedsLayout()
+			if hostingController !== oldValue, hostingController != nil
+			{
+				attachView()
+			}
 		}
 	}
 
 	var sectionIDHash: Int?
+	var supplementaryKind: String?
 
 	override init(reuseIdentifier: String?)
 	{
@@ -40,12 +44,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		{
 			hostingController?.viewController.removeFromParent()
 			hostingController.map { vc.addChild($0.viewController) }
-			attachView()
 			hostingController?.viewController.didMove(toParent: vc)
-		}
-		else
-		{
-			attachView()
 		}
 	}
 
@@ -54,8 +53,14 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		hostingController?.viewController.removeFromParent()
 	}
 
+	override func didMoveToSuperview()
+	{
+		attachView()
+	}
+
 	private func attachView()
 	{
+		guard superview != nil else { return }
 		guard let hcView = hostingController?.viewController.view else
 		{
 			contentView.subviews.forEach { $0.removeFromSuperview() }
@@ -69,10 +74,12 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		}
 	}
 
+	var shouldSkipNextRefresh: Bool = true
 	override func prepareForReuse()
 	{
 		hostingController = nil
 		sectionIDHash = nil
+		shouldSkipNextRefresh = true
 	}
 
 	override func layoutSubviews()

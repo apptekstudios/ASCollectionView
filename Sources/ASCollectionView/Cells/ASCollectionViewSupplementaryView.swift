@@ -8,6 +8,15 @@ import UIKit
 class ASCollectionViewSupplementaryView: UICollectionReusableView
 {
 	var hostingController: ASHostingControllerProtocol?
+	{
+		didSet
+		{
+			if hostingController !== oldValue, hostingController != nil
+			{
+				attachView()
+			}
+		}
+	}
 
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: true, selfSizeVertically: true)
 	var maxSizeForSelfSizing: ASOptionalSize = .none
@@ -24,12 +33,7 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 		{
 			hostingController?.viewController.removeFromParent()
 			hostingController.map { vc?.addChild($0.viewController) }
-			attachView()
 			hostingController?.viewController.didMove(toParent: vc)
-		}
-		else
-		{
-			attachView()
 		}
 	}
 
@@ -38,8 +42,14 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 		hostingController?.viewController.removeFromParent()
 	}
 
+	override func didMoveToSuperview()
+	{
+		attachView()
+	}
+
 	private func attachView()
 	{
+		guard superview != nil else { return }
 		guard let hcView = hostingController?.viewController.view else
 		{
 			subviews.forEach { $0.removeFromSuperview() }
@@ -53,9 +63,11 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 		}
 	}
 
+	var shouldSkipNextRefresh: Bool = true
 	override func prepareForReuse()
 	{
 		hostingController = nil
+		shouldSkipNextRefresh = true
 	}
 
 	override func layoutSubviews()

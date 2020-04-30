@@ -15,6 +15,10 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		{
 			hostingController?.invalidateCellLayoutCallback = invalidateLayoutCallback
 			hostingController?.tableViewScrollToCellCallback = scrollToCellCallback
+			if hostingController !== oldValue, hostingController != nil
+			{
+				attachView()
+			}
 		}
 	}
 
@@ -39,12 +43,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		{
 			hostingController?.viewController.removeFromParent()
 			hostingController.map { vc.addChild($0.viewController) }
-			attachView()
 			hostingController?.viewController.didMove(toParent: vc)
-		}
-		else
-		{
-			attachView()
 		}
 	}
 
@@ -53,8 +52,14 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		hostingController?.viewController.removeFromParent()
 	}
 
+	override func didMoveToSuperview()
+	{
+		attachView()
+	}
+
 	private func attachView()
 	{
+		guard superview != nil else { return }
 		guard let hcView = hostingController?.viewController.view else
 		{
 			contentView.subviews.forEach { $0.removeFromSuperview() }
@@ -68,6 +73,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		}
 	}
 
+	var shouldSkipNextRefresh: Bool = true // This is used to avoid double-up in reloaded cells and our update from swiftUI
 	override func prepareForReuse()
 	{
 		backgroundColor = nil
@@ -75,6 +81,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		itemID = nil
 		hostingController = nil
 		isSelected = false
+		shouldSkipNextRefresh = true
 	}
 
 	func recalculateSize()

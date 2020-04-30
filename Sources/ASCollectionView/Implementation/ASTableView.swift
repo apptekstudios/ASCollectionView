@@ -63,7 +63,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 	{
 		context.coordinator.parent = self
 		context.coordinator.updateTableViewSettings(tableViewController.tableView)
-		context.coordinator.updateContent(tableViewController.tableView, transaction: context.transaction, refreshExistingCells: true)
+		context.coordinator.updateContent(tableViewController.tableView, transaction: context.transaction)
 		context.coordinator.configureRefreshControl(for: tableViewController.tableView)
 #if DEBUG
 		debugOnly_checkHasUniqueSections()
@@ -107,8 +107,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		// MARK: Private tracking variables
 
 		private var hasMovedToParent = false
-
-		private var visibleSupplementaries: [ASSupplementaryCellID<SectionID>: ASTableViewSupplementaryView] = [:]
 
 		// MARK: Caching
 
@@ -211,7 +209,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 		}
 
-		func populateDataSource(animated: Bool = true)
+		func populateDataSource(animated: Bool = true, transaction: Transaction? = nil)
 		{
 			guard hasMovedToParent else { return }
 			let snapshot = ASDiffableDataSourceSnapshot(sections:
@@ -220,22 +218,21 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				}
 			)
 			dataSource?.applySnapshot(snapshot, animated: animated)
+			withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
+				refreshVisibleCells()
+			}
+			tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
 		}
 
-		func updateContent(_ tv: UITableView, transaction: Transaction?, refreshExistingCells: Bool)
+		func updateContent(_ tv: UITableView, transaction: Transaction?)
 		{
 			guard hasMovedToParent else { return }
 
 			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
-			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled)
+			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled, transaction: transaction)
 
-			if refreshExistingCells
-			{
-				withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
-					refreshVisibleCells()
-				}
-				dataSource?.updateCellSizes(animated: transactionAnimationEnabled)
-			}
+			dataSource?.updateCellSizes(animated: transactionAnimationEnabled)
+
 			updateSelectionBindings(tv)
 		}
 
@@ -244,16 +241,22 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			guard let tv = tableViewController?.tableView else { return }
 			for case let cell as Cell in tv.visibleCells
 			{
+				guard !cell.shouldSkipNextRefresh else { cell.shouldSkipNextRefresh = false; continue }
 				guard
 					let itemID = cell.itemID,
 					let hc = cell.hostingController
-				else { return }
+				else { continue }
 				self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
 			}
 
-			visibleSupplementaries.forEach { key, view in
-				guard let section = self.parent.sections.first(where: { $0.id.hashValue == key.sectionID.hashValue }) else { return }
-				view.hostingController = section.dataSource.updateOrCreateHostController(forSupplementaryKind: key.supplementaryKind, existingHC: view.hostingController)
+			for case let supplementaryView as ASTableViewSupplementaryView in tv.subviews
+			{
+				guard !supplementaryView.shouldSkipNextRefresh else { supplementaryView.shouldSkipNextRefresh = false; continue }
+				guard
+					let supplementaryKind = supplementaryView.supplementaryKind,
+					let section = parent.sections.first(where: { $0.id.hashValue == supplementaryView.sectionIDHash })
+				else { continue }
+				supplementaryView.hostingController = section.dataSource.updateOrCreateHostController(forSupplementaryKind: supplementaryKind, existingHC: supplementaryView.hostingController)
 			}
 		}
 
@@ -336,44 +339,24 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
 		{
 			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			if let section = parent.sections[safe: section]
-			{
-				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: UICollectionView.elementKindSectionHeader)
-				visibleSupplementaries[supplementaryID] = view
-			}
 			tableViewController.map { view.willAppear(in: $0) }
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplayingHeaderView view: UIView, forSection section: Int)
 		{
 			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			if let section = parent.sections[safe: section]
-			{
-				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: UICollectionView.elementKindSectionHeader)
-				visibleSupplementaries.removeValue(forKey: supplementaryID)
-			}
 			view.didDisappear()
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int)
 		{
 			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			if let section = parent.sections[safe: section]
-			{
-				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: UICollectionView.elementKindSectionFooter)
-				visibleSupplementaries[supplementaryID] = view
-			}
 			tableViewController.map { view.willAppear(in: $0) }
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplayingFooterView view: UIView, forSection section: Int)
 		{
 			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			if let section = parent.sections[safe: section]
-			{
-				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: UICollectionView.elementKindSectionFooter)
-				visibleSupplementaries.removeValue(forKey: supplementaryID)
-			}
 			view.didDisappear()
 		}
 
@@ -420,12 +403,12 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
 		{
-			updateContent(tableView, transaction: nil, refreshExistingCells: true)
+			updateContent(tableView, transaction: nil)
 		}
 
 		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath)
 		{
-			updateContent(tableView, transaction: nil, refreshExistingCells: true)
+			updateContent(tableView, transaction: nil)
 		}
 
 		func updateSelectionBindings(_ tableView: UITableView)
@@ -623,6 +606,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 			guard let section = parent.sections[safe: sectionIndex] else { ifEmpty(); return }
 			reusableView.sectionIDHash = section.id.hashValue
+			reusableView.supplementaryKind = supplementaryKind
 			let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: supplementaryKind)
 
 			// Update hostingController
