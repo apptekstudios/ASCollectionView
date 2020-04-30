@@ -22,5 +22,5 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '11.0'
   s.swift_versions = '5.2'
   s.source_files = 'Sources/ASCollectionView/**/*'
-
+  s.dependency 'DifferenceKit', '~> 1.1'
 end

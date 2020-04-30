@@ -1,7 +1,0 @@
-language: swift
-osx_image: xcode11.3
-install: (swift package update)
-script:
-- set -o pipefail
-- xcodebuild -project Demo/ASCollectionViewDemo.xcodeproj -scheme ASCollectionView -destination platform\=iOS\ Simulator,OS\=13.3,name\=iPhone\ 11 build | xcpretty
-- pod lib lint

@@ -479,7 +479,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			{
 				let changes = {
 					collectionViewController.collectionViewLayout.invalidateLayout()
-					collectionViewController.collectionView.layoutIfNeeded()
 				}
 				if parent.shouldAnimateInvalidatedLayoutOnStateChange, hasMovedToParent
 				{
