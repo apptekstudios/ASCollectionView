@@ -85,6 +85,7 @@ public class AS_CollectionViewController: UIViewController
 	public override func viewDidLayoutSubviews()
 	{
 		super.viewDidLayoutSubviews()
+		coordinator?.didLayoutSubviews()
 		coordinator?.didUpdateContentSize(collectionView.contentSize)
 	}
 }

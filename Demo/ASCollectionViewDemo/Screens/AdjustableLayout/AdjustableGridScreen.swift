@@ -27,7 +27,7 @@ struct AdjustableGridScreen: View
 			id: 0,
 			data: data,
 			onCellEvent: onCellEvent)
-		{ item, state in
+		{ item, _ in
 			ZStack(alignment: .bottomTrailing)
 			{
 				GeometryReader
@@ -36,24 +36,15 @@ struct AdjustableGridScreen: View
 						.aspectRatio(1, contentMode: .fill)
 						.frame(width: geom.size.width, height: geom.size.height)
 						.clipped()
-						.opacity(state.isSelected ? 0.7 : 1.0)
 				}
 
-				if state.isSelected
-				{
-					ZStack
-					{
-						Circle()
-							.fill(Color.blue)
-						Circle()
-							.strokeBorder(Color.white, lineWidth: 2)
-						Image(systemName: "checkmark")
-							.font(.system(size: 10, weight: .bold))
-							.foregroundColor(.white)
-					}
-					.frame(width: 20, height: 20)
+				Text("\(item.offset)")
+					.font(.headline)
+					.bold()
+					.padding(2)
+					.background(Color(.systemBackground).opacity(0.5))
+					.cornerRadius(4)
 					.padding(10)
-				}
 			}
 		}
 	}
