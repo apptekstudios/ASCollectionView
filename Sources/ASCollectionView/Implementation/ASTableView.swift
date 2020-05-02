@@ -601,7 +601,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			else { return }
 
 			let ifEmpty = {
-				reusableView.setupForEmpty()
+				reusableView.hostingController = nil
 			}
 
 			guard let section = parent.sections[safe: sectionIndex] else { ifEmpty(); return }
