@@ -15,10 +15,6 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		{
 			hostingController?.invalidateCellLayoutCallback = invalidateLayoutCallback
 			hostingController?.tableViewScrollToCellCallback = scrollToCellCallback
-			if hostingController !== oldValue, hostingController != nil
-			{
-				attachView()
-			}
 		}
 	}
 
@@ -52,25 +48,25 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		hostingController?.viewController.removeFromParent()
 	}
 
-	override func didMoveToSuperview()
-	{
-		attachView()
-	}
-
 	private func attachView()
 	{
-		guard superview != nil else { return }
 		guard let hcView = hostingController?.viewController.view else
 		{
-			contentView.subviews.forEach { $0.removeFromSuperview() }
+			detachViews()
 			return
 		}
+		guard !isHidden else { return }
 		if hcView.superview != contentView
 		{
 			contentView.subviews.forEach { $0.removeFromSuperview() }
 			contentView.addSubview(hcView)
 			setNeedsLayout()
 		}
+	}
+
+	private func detachViews()
+	{
+		contentView.subviews.forEach { $0.removeFromSuperview() }
 	}
 
 	var shouldSkipNextRefresh: Bool = true // This is used to avoid double-up in reloaded cells and our update from swiftUI
@@ -93,6 +89,8 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
+
+		attachView()
 
 		if hostingController?.viewController.view.frame != contentView.bounds
 		{

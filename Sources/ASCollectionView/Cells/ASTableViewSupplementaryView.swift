@@ -8,15 +8,6 @@ import UIKit
 class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 {
 	var hostingController: ASHostingControllerProtocol?
-	{
-		didSet
-		{
-			if hostingController !== oldValue, hostingController != nil
-			{
-				attachView()
-			}
-		}
-	}
 
 	var sectionIDHash: Int?
 	var supplementaryKind: String?
@@ -30,12 +21,6 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	required init?(coder: NSCoder)
 	{
 		fatalError("init(coder:) has not been implemented")
-	}
-
-	func setupForEmpty()
-	{
-		hostingController = nil
-		attachView()
 	}
 
 	func willAppear(in vc: UIViewController)
@@ -53,25 +38,25 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 		hostingController?.viewController.removeFromParent()
 	}
 
-	override func didMoveToSuperview()
-	{
-		attachView()
-	}
-
 	private func attachView()
 	{
-		guard superview != nil else { return }
 		guard let hcView = hostingController?.viewController.view else
 		{
-			contentView.subviews.forEach { $0.removeFromSuperview() }
+			detachViews()
 			return
 		}
+		guard !isHidden else { return }
 		if hcView.superview != contentView
 		{
 			contentView.subviews.forEach { $0.removeFromSuperview() }
 			contentView.addSubview(hcView)
 			setNeedsLayout()
 		}
+	}
+
+	private func detachViews()
+	{
+		contentView.subviews.forEach { $0.removeFromSuperview() }
 	}
 
 	var shouldSkipNextRefresh: Bool = true
@@ -85,6 +70,8 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
+
+		attachView()
 
 		if hostingController?.viewController.view.frame != contentView.bounds
 		{

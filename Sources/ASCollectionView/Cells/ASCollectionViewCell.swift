@@ -31,12 +31,7 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		{
 			hostingController?.viewController.removeFromParent()
 			hostingController.map { vc.addChild($0.viewController) }
-			attachView()
 			hostingController?.viewController.didMove(toParent: vc)
-		}
-		else
-		{
-			attachView()
 		}
 	}
 
@@ -49,15 +44,21 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	{
 		guard let hcView = hostingController?.viewController.view else
 		{
-			contentView.subviews.forEach { $0.removeFromSuperview() }
+			detachViews()
 			return
 		}
+		guard !isHidden else { return }
 		if hcView.superview != contentView
 		{
 			contentView.subviews.forEach { $0.removeFromSuperview() }
 			contentView.addSubview(hcView)
 			setNeedsLayout()
 		}
+	}
+
+	private func detachViews()
+	{
+		contentView.subviews.forEach { $0.removeFromSuperview() }
 	}
 
 	var shouldSkipNextRefresh: Bool = true
@@ -74,6 +75,8 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
+
+		attachView()
 
 		if hostingController?.viewController.view.frame != contentView.bounds
 		{

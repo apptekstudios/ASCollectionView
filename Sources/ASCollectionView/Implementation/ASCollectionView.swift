@@ -252,7 +252,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				else { return nil }
 
 				let ifEmpty = {
-					reusableView.setupForEmpty()
+					reusableView.hostingController = nil
 				}
 
 				guard let section = self.parent.sections[safe: indexPath.section] else { ifEmpty(); return reusableView }

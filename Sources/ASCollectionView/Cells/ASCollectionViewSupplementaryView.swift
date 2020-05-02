@@ -12,24 +12,13 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: true, selfSizeVertically: true)
 	var maxSizeForSelfSizing: ASOptionalSize = .none
 
-	func setupForEmpty()
-	{
-		hostingController = nil
-		attachView()
-	}
-
 	func willAppear(in vc: UIViewController?)
 	{
 		if hostingController?.viewController.parent != vc
 		{
 			hostingController?.viewController.removeFromParent()
 			hostingController.map { vc?.addChild($0.viewController) }
-			attachView()
 			hostingController?.viewController.didMove(toParent: vc)
-		}
-		else
-		{
-			attachView()
 		}
 	}
 
@@ -42,15 +31,21 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 	{
 		guard let hcView = hostingController?.viewController.view else
 		{
-			subviews.forEach { $0.removeFromSuperview() }
+			detachViews()
 			return
 		}
+		guard !isHidden else { return }
 		if hcView.superview != self
 		{
 			subviews.forEach { $0.removeFromSuperview() }
 			addSubview(hcView)
 			setNeedsLayout()
 		}
+	}
+
+	private func detachViews()
+	{
+		subviews.forEach { $0.removeFromSuperview() }
 	}
 
 	var shouldSkipNextRefresh: Bool = true
@@ -63,6 +58,8 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
+
+		attachView()
 
 		if hostingController?.viewController.view.frame != bounds
 		{
