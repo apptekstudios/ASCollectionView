@@ -18,6 +18,7 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 		{
 			hostingController?.viewController.removeFromParent()
 			hostingController.map { vc?.addChild($0.viewController) }
+			attachView()
 			hostingController?.viewController.didMove(toParent: vc)
 		}
 	}
@@ -34,7 +35,6 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView
 			detachViews()
 			return
 		}
-		guard !isHidden else { return }
 		if hcView.superview != self
 		{
 			subviews.forEach { $0.removeFromSuperview() }

@@ -106,7 +106,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		// MARK: Private tracking variables
 
-		private var hasMovedToParent = false
+		private var hasDoneInitialSetup = false
 
 		// MARK: Caching
 
@@ -211,7 +211,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		func populateDataSource(animated: Bool = true, transaction: Transaction? = nil)
 		{
-			guard hasMovedToParent else { return }
+			guard hasDoneInitialSetup else { return }
 			let snapshot = ASDiffableDataSourceSnapshot(sections:
 				parent.sections.map {
 					ASDiffableDataSourceSnapshot.Section(id: $0.id, elements: $0.itemIDs)
@@ -226,7 +226,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		func updateContent(_ tv: UITableView, transaction: Transaction?)
 		{
-			guard hasMovedToParent else { return }
+			guard hasDoneInitialSetup else { return }
 
 			let transactionAnimationEnabled = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
 			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled, transaction: transaction)
@@ -273,9 +273,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		func onMoveToParent()
 		{
-			guard !hasMovedToParent else { return }
+			guard !hasDoneInitialSetup else { return }
 
-			hasMovedToParent = true
+			hasDoneInitialSetup = true
 			populateDataSource(animated: false)
 			tableViewController.map { checkIfReachedBottom($0.tableView) }
 		}

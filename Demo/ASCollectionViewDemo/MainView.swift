@@ -60,11 +60,6 @@ struct MainView: View
 				}
 				Section(header: Text("Modified examples"))
 				{
-					NavigationLink(destination: PhotoGridScreen(startingAtBottom: true))
-					{
-						Image(systemName: "hammer")
-						Text("Photo grid (Starting at bottom)")
-					}
 					NavigationLink(destination: TagsScreen(shrinkToSize: true))
 					{
 						Image(systemName: "hammer")

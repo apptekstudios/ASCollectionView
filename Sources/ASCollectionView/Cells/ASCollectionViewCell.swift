@@ -31,6 +31,7 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		{
 			hostingController?.viewController.removeFromParent()
 			hostingController.map { vc.addChild($0.viewController) }
+			attachView()
 			hostingController?.viewController.didMove(toParent: vc)
 		}
 	}
@@ -47,7 +48,6 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 			detachViews()
 			return
 		}
-		guard !isHidden else { return }
 		if hcView.superview != contentView
 		{
 			contentView.subviews.forEach { $0.removeFromSuperview() }
