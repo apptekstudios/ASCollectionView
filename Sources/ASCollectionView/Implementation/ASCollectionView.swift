@@ -328,17 +328,15 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 		}
 
-		func onMoveToParent() {}
-
-		func onMoveFromParent() {}
-
-		func didLayoutSubviews()
+		func onMoveToParent()
 		{
 			guard !hasDoneInitialSetup else { return }
 
 			hasDoneInitialSetup = true
 			populateDataSource(animated: false)
 		}
+
+		func onMoveFromParent() {}
 
 		func invalidateLayout(animated: Bool)
 		{
@@ -815,7 +813,6 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func scrollViewDidScroll(_ scrollView: UIScrollView)
 	func onMoveToParent()
 	func onMoveFromParent()
-	func didLayoutSubviews()
 }
 
 // MARK: Custom Prefetching Implementation

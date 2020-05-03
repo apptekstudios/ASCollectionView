@@ -271,11 +271,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			tableViewController?.tableView.scrollToRow(at: indexPath, at: position, animated: true)
 		}
 
-		func onMoveToParent() {}
-
-		func onMoveFromParent() {}
-
-		func didLayoutSubviews()
+		func onMoveToParent()
 		{
 			guard !hasDoneInitialSetup else { return }
 
@@ -283,6 +279,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			populateDataSource(animated: false)
 			tableViewController.map { checkIfReachedBottom($0.tableView) }
 		}
+
+		func onMoveFromParent() {}
 
 		// MARK: Function for updating contentSize binding
 
@@ -656,6 +654,5 @@ protocol ASTableViewCoordinator: AnyObject
 {
 	func onMoveToParent()
 	func onMoveFromParent()
-	func didLayoutSubviews()
 	func didUpdateContentSize(_ size: CGSize)
 }

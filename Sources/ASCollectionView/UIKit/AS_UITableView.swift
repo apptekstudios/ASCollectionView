@@ -41,7 +41,6 @@ public class AS_TableViewController: UIViewController
 	public override func viewDidLayoutSubviews()
 	{
 		super.viewDidLayoutSubviews()
-		coordinator?.didLayoutSubviews()
 		coordinator?.didUpdateContentSize(tableView.contentSize)
 	}
 
