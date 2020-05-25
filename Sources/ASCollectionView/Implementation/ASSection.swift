@@ -43,9 +43,9 @@ public struct ASSection<SectionID: Hashable>
 
 	// Only relevant for ASTableView
 	var disableDefaultTheming: Bool = false
-	var tableViewSeparatorInsets: UIEdgeInsets?
-	var estimatedHeaderHeight: CGFloat?
-	var estimatedFooterHeight: CGFloat?
+	var tableViewSeparatorInsets: UIEdgeInsets? = nil
+	var estimatedHeaderHeight: CGFloat? = nil
+	var estimatedFooterHeight: CGFloat? = nil
 }
 
 // MARK: SUPPLEMENTARY VIEWS - INTERNAL

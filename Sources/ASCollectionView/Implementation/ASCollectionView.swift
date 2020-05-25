@@ -23,21 +23,21 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	internal var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
 
-	internal var contentSizeTracker: ContentSizeTracker?
+	internal var contentSizeTracker: ContentSizeTracker? = nil
 
-	internal var onScrollCallback: OnScrollCallback?
-	internal var onReachedBoundaryCallback: OnReachedBoundaryCallback?
+	internal var onScrollCallback: OnScrollCallback? = nil
+	internal var onReachedBoundaryCallback: OnReachedBoundaryCallback? = nil
 
 	internal var horizontalScrollIndicatorEnabled: Bool = true
 	internal var verticalScrollIndicatorEnabled: Bool = true
 	internal var contentInsets: UIEdgeInsets = .zero
 
-	internal var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
+	internal var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)? = nil
 
 	internal var alwaysBounceVertical: Bool = false
 	internal var alwaysBounceHorizontal: Bool = false
 
-	internal var initialScrollPosition: ASCollectionViewScrollPosition?
+	internal var initialScrollPosition: ASCollectionViewScrollPosition? = nil
 
 	internal var animateOnDataRefresh: Bool = true
 

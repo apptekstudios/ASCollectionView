@@ -23,15 +23,15 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 	// MARK: Private vars set by public modifiers
 
-	internal var onScrollCallback: OnScrollCallback?
-	internal var onReachedBottomCallback: OnReachedBottomCallback?
+	internal var onScrollCallback: OnScrollCallback? = nil
+	internal var onReachedBottomCallback: OnReachedBottomCallback? = nil
 
 	internal var scrollIndicatorEnabled: Bool = true
 	internal var contentInsets: UIEdgeInsets = .zero
 
 	internal var separatorsEnabled: Bool = true
 
-	internal var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
+	internal var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)? = nil
 
 	internal var alwaysBounce: Bool = false
 	internal var animateOnDataRefresh: Bool = true
@@ -43,7 +43,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 	@Environment(\.invalidateCellLayout) var invalidateParentCellLayout // Call this if using content size binding (nested inside another ASCollectionView)
 
 	// Other
-	var contentSizeTracker: ContentSizeTracker?
+	var contentSizeTracker: ContentSizeTracker? = nil
 
 	public func makeUIViewController(context: Context) -> AS_TableViewController
 	{
