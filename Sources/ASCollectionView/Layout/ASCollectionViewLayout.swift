@@ -168,7 +168,10 @@ public extension ASCollectionLayoutSection
 	static func list(
 		itemSize: NSCollectionLayoutDimension = .estimated(200),
 		spacing: CGFloat = 5,
-		sectionInsets: NSDirectionalEdgeInsets = .zero) -> ASCollectionLayoutSection
+		sectionInsets: NSDirectionalEdgeInsets = .zero,
+		insetSupplementaries: Bool = true,
+		stickyHeader: Bool = false,
+		stickyFooter: Bool = false) -> ASCollectionLayoutSection
 	{
 		self.init
 		{ (_, primaryScrollDirection) -> NSCollectionLayoutSection in
@@ -179,31 +182,37 @@ public extension ASCollectionLayoutSection
 			switch primaryScrollDirection
 			{
 			case .horizontal:
-				itemLayoutSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+				itemLayoutSize = NSCollectionLayoutSize(widthDimension: itemSize, heightDimension: .fractionalHeight(1.0))
 				groupSize = NSCollectionLayoutSize(widthDimension: itemSize, heightDimension: .fractionalHeight(1.0))
 				supplementarySize = NSCollectionLayoutSize(widthDimension: .estimated(50), heightDimension: .fractionalHeight(1.0))
 			case .vertical: fallthrough
 			@unknown default:
-				itemLayoutSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .fractionalHeight(1.0))
+				itemLayoutSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: itemSize)
 				groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: itemSize)
 				supplementarySize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1.0), heightDimension: .estimated(50))
 			}
-
 			let item = NSCollectionLayoutItem(layoutSize: itemLayoutSize)
 			let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, subitem: item, count: 1)
 
 			let section = NSCollectionLayoutSection(group: group)
+
 			section.contentInsets = sectionInsets
 			section.interGroupSpacing = spacing
+			section.visibleItemsInvalidationHandler = { visibleItems, contentOffset, layoutEnvironment in
+			} // If this isn't defined, there is a bug in UICVCompositional Layout that will fail to update sizes of cells
 
 			let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
 				layoutSize: supplementarySize,
 				elementKind: UICollectionView.elementKindSectionHeader,
 				alignment: (primaryScrollDirection == .vertical) ? .top : .leading)
+			headerSupplementary.pinToVisibleBounds = stickyHeader
 			let footerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
 				layoutSize: supplementarySize,
 				elementKind: UICollectionView.elementKindSectionFooter,
 				alignment: (primaryScrollDirection == .vertical) ? .bottom : .trailing)
+			footerSupplementary.pinToVisibleBounds = stickyFooter
+
+			section.supplementariesFollowContentInsets = insetSupplementaries
 			section.boundarySupplementaryItems = [headerSupplementary, footerSupplementary]
 			return section
 		}
@@ -270,6 +279,7 @@ public extension ASCollectionLayoutSection
 			let section = NSCollectionLayoutSection(group: group)
 			section.interGroupSpacing = lineSpacing
 			section.contentInsets = .init(top: 0, leading: 20, bottom: 0, trailing: 20)
+			section.visibleItemsInvalidationHandler = { _, _, _ in } // If this isn't defined, there is a bug in UICVCompositional Layout that will fail to update sizes of cells
 
 			let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
 				layoutSize: supplementarySize,
@@ -340,6 +350,7 @@ public extension ASCollectionLayoutSection
 			let section = NSCollectionLayoutSection(group: group)
 			section.orthogonalScrollingBehavior = orthogonalScrollingBehavior
 			section.contentInsets = sectionInsets
+			section.visibleItemsInvalidationHandler = { _, _, _ in } // If this isn't defined, there is a bug in UICVCompositional Layout that will fail to update sizes of cells
 
 			let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(
 				layoutSize: supplementarySize,

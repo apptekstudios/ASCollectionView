@@ -2,8 +2,8 @@
 
 import Foundation
 
-struct ASSupplementaryCellID<SectionID: Hashable>: Hashable
+struct ASSupplementaryCellID: Hashable
 {
-	let sectionID: SectionID
+	let sectionIDHash: Int
 	let supplementaryKind: String
 }

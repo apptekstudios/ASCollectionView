@@ -6,7 +6,7 @@ extension RandomAccessCollection
 {
 	public func containsIndex(_ index: Index) -> Bool
 	{
-		index >= startIndex && index < endIndex
+		indices.contains(index)
 	}
 
 	subscript(safe index: Index) -> Element?

@@ -37,7 +37,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	internal var alwaysBounceVertical: Bool = false
 	internal var alwaysBounceHorizontal: Bool = false
 
-	internal var initialScrollPosition: ASCollectionViewScrollPosition?
+	internal var scrollPositionSetter: Binding<ASCollectionViewScrollPosition?>?
 
 	internal var animateOnDataRefresh: Bool = true
 
@@ -48,6 +48,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	internal var shouldRecreateLayoutOnStateChange: Bool = false
 	internal var shouldAnimateRecreatedLayoutOnStateChange: Bool = false
+
+	internal var dodgeKeyboard: Bool = true
 
 	// MARK: Environment variables
 
@@ -84,6 +86,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		context.coordinator.updateContent(collectionViewController.collectionView, transaction: context.transaction)
 		context.coordinator.updateLayout()
 		context.coordinator.configureRefreshControl(for: collectionViewController.collectionView)
+		context.coordinator.setupKeyboardObservers()
 #if DEBUG
 		debugOnly_checkHasUniqueSections()
 #endif
@@ -129,8 +132,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		// MARK: Private tracking variables
 
-		private var hasDoneInitialSetup = true
-		private var hasSetInitialScrollPosition = false
+		private var hasDoneInitialSetup = false
 
 		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
 		private var haveRegisteredForSupplementaryOfKind: Set<String> = []
@@ -139,13 +141,18 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		private var autoCachingHostingControllers = ASPriorityCache<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 		private var explicitlyCachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
-		private var autoCachingSupplementaryHostControllers = ASPriorityCache<ASSupplementaryCellID<SectionID>, ASHostingControllerProtocol>()
+		private var autoCachingSupplementaryHostControllers = ASPriorityCache<ASSupplementaryCellID, ASHostingControllerProtocol>()
 
 		typealias Cell = ASCollectionViewCell
 
 		init(_ parent: ASCollectionView)
 		{
 			self.parent = parent
+		}
+
+		deinit
+		{
+			NotificationCenter.default.removeObserver(self)
 		}
 
 		func sectionID(fromSectionIndex sectionIndex: Int) -> SectionID?
@@ -178,16 +185,22 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func updateCollectionViewSettings(_ collectionView: UICollectionView)
 		{
 			assignIfChanged(collectionView, \.dragInteractionEnabled, newValue: true)
-			assignIfChanged(collectionView, \.contentInsetAdjustmentBehavior, newValue: delegate?.collectionViewContentInsetAdjustmentBehavior ?? .automatic)
-			assignIfChanged(collectionView, \.contentInset, newValue: parent.contentInsets)
 			assignIfChanged(collectionView, \.alwaysBounceVertical, newValue: parent.alwaysBounceVertical)
 			assignIfChanged(collectionView, \.alwaysBounceHorizontal, newValue: parent.alwaysBounceHorizontal)
 			assignIfChanged(collectionView, \.showsVerticalScrollIndicator, newValue: parent.verticalScrollIndicatorEnabled)
 			assignIfChanged(collectionView, \.showsHorizontalScrollIndicator, newValue: parent.horizontalScrollIndicatorEnabled)
+			assignIfChanged(collectionView, \.keyboardDismissMode, newValue: .onDrag)
+			updateCollectionViewContentInsets(collectionView)
 
 			let isEditing = parent.editMode?.wrappedValue.isEditing ?? false
 			assignIfChanged(collectionView, \.allowsSelection, newValue: isEditing)
 			assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: isEditing)
+		}
+
+		func updateCollectionViewContentInsets(_ collectionView: UICollectionView)
+		{
+			assignIfChanged(collectionView, \.contentInsetAdjustmentBehavior, newValue: delegate?.collectionViewContentInsetAdjustmentBehavior ?? .automatic)
+			assignIfChanged(collectionView, \.contentInset, newValue: adaptiveContentInsets)
 		}
 
 		func setupDataSource(forCollectionView cv: UICollectionView)
@@ -207,14 +220,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 				guard let section = self.parent.sections[safe: indexPath.section] else { return cell }
 
-				cell.collectionView = collectionView
-
-				cell.invalidateLayoutCallback = { [weak self] animated in
-					self?.invalidateLayout(animated: animated)
-				}
-				cell.scrollToCellCallback = { [weak self] position in
-					self?.scrollToItem(indexPath: indexPath, position: position)
-				}
+				cell.collectionViewController = self.collectionViewController
 
 				// Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .content, indexPath: indexPath)
@@ -222,21 +228,30 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					section.dataSource.getSelfSizingSettings(context: selfSizingContext)
 						?? self.delegate?.collectionViewSelfSizingSettings(forContext: selfSizingContext)
 						?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizingConfig
-						?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
+						?? ASSelfSizingConfig()
 
 				// Set itemID
 				cell.itemID = itemID
-				cell.indexPath = indexPath
 
-				// Update hostingController
+				// Get cachedHC
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
-				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: cachedHC)
-
-				// Cache the HC
-				self.autoCachingHostingControllers[itemID] = cell.hostingController
+				// Update hostingController
+				cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, animate: false)
 				if section.shouldCacheCells
 				{
 					self.explicitlyCachedHostingControllers[itemID] = cell.hostingController
+				}
+				else
+				{
+					self.autoCachingHostingControllers[itemID] = cell.hostingController
+				}
+
+				cell.hostingController?.invalidateCellLayoutCallback = { [weak self] animated in
+					self?.invalidateLayoutOnNextUpdate = true // Queue for after updated data passed to ASCollectionView
+					self?.invalidateLayout(animated: animated) // Do immediately in-case the change is in state within the cell
+				}
+				cell.hostingController?.collectionViewScrollToCellCallback = { [weak self] position in
+					self?.scrollToItem(indexPath: indexPath, position: position)
 				}
 
 				return cell
@@ -256,18 +271,19 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 
 				guard let section = self.parent.sections[safe: indexPath.section] else { ifEmpty(); return reusableView }
-				let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: kind)
+				let supplementaryID = ASSupplementaryCellID(sectionIDHash: section.id.hashValue, supplementaryKind: kind)
+				reusableView.supplementaryID = supplementaryID
 
 				// Self Sizing Settings
 				let selfSizingContext = ASSelfSizingContext(cellType: .supplementary(kind), indexPath: indexPath)
 				reusableView.selfSizingConfig =
 					section.dataSource.getSelfSizingSettings(context: selfSizingContext)
-						?? ASSelfSizingConfig(selfSizeHorizontally: true, selfSizeVertically: true)
+						?? ASSelfSizingConfig()
 
-				// Update hostingController
+				// Get cachedHC
 				let cachedHC = self.autoCachingSupplementaryHostControllers[supplementaryID]
-				reusableView.hostingController = section.dataSource.updateOrCreateHostController(forSupplementaryKind: kind, existingHC: cachedHC)
-				// Cache the HC
+				// Update hostingController
+				reusableView.hostingController = section.dataSource.getUpdatedHC(forSupplementaryKind: kind, cachedHC: cachedHC, animate: false)
 				self.autoCachingSupplementaryHostControllers[supplementaryID] = reusableView.hostingController
 
 				return reusableView
@@ -284,10 +300,22 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					ASDiffableDataSourceSnapshot.Section(id: $0.id, elements: $0.itemIDs)
 				}
 			)
-			dataSource?.applySnapshot(snapshot, animated: animated)
-			withAnimation(animated ? transaction?.animation : nil) {
-				refreshVisibleCells()
+			if invalidateLayoutOnNextUpdate
+			{
+				collectionViewController?.collectionViewLayout.invalidateLayout()
+				invalidateLayoutOnNextUpdate = false
 			}
+			dataSource?.applySnapshot(snapshot, animated: animated) {
+				if let scrollPositionToSet = self.parent.scrollPositionSetter?.wrappedValue
+				{
+					self.scrollToPosition(scrollPositionToSet, animated: animated)
+					DispatchQueue.main.async {
+						self.parent.scrollPositionSetter?.wrappedValue = nil
+					}
+				}
+			}
+			refreshVisibleCells()
+
 			collectionViewController.map { self.didUpdateContentSize($0.collectionView.contentSize) }
 		}
 
@@ -308,22 +336,38 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			guard let cv = collectionViewController?.collectionView else { return }
 			for case let cell as Cell in cv.visibleCells
 			{
-				guard !cell.shouldSkipNextRefresh else { cell.shouldSkipNextRefresh = false; continue }
 				guard
 					let itemID = cell.itemID,
-					let hc = cell.hostingController
+					let section = section(forItemID: itemID)
 				else { continue }
-				self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
+
+				// Get cachedHC
+				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
+				// Update hostingController
+				cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, animate: true)
+				if section.shouldCacheCells
+				{
+					explicitlyCachedHostingControllers[itemID] = cell.hostingController
+				}
+				else
+				{
+					autoCachingHostingControllers[itemID] = cell.hostingController
+				}
 			}
 
 			supplementaryKinds().forEach
 			{ kind in
 				for indexPath in cv.indexPathsForVisibleSupplementaryElements(ofKind: kind)
 				{
-					guard let view = (cv.supplementaryView(forElementKind: kind, at: indexPath) as? ASCollectionViewSupplementaryView) else { continue }
-					guard !view.shouldSkipNextRefresh else { view.shouldSkipNextRefresh = false; continue }
+					guard let supplementaryView = (cv.supplementaryView(forElementKind: kind, at: indexPath) as? ASCollectionViewSupplementaryView) else { continue }
+					guard let section = parent.sections[safe: indexPath.section] else { continue }
 
-					view.hostingController = parent.sections[safe: indexPath.section]?.dataSource.updateOrCreateHostController(forSupplementaryKind: kind, existingHC: view.hostingController)
+					// Get cachedHC
+					let supplementaryID = ASSupplementaryCellID(sectionIDHash: section.id.hashValue, supplementaryKind: kind)
+					let cachedHC = self.autoCachingSupplementaryHostControllers[supplementaryID]
+					// Update hostingController
+					supplementaryView.hostingController = section.dataSource.getUpdatedHC(forSupplementaryKind: kind, cachedHC: cachedHC, animate: true)
+					autoCachingSupplementaryHostControllers[supplementaryID] = supplementaryView.hostingController
 				}
 			}
 		}
@@ -338,6 +382,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func onMoveFromParent() {}
 
+		var invalidateLayoutOnNextUpdate: Bool = false
 		func invalidateLayout(animated: Bool)
 		{
 			CATransaction.begin()
@@ -347,6 +392,90 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 			collectionViewController?.collectionViewLayout.invalidateLayout()
 			CATransaction.commit()
+		}
+
+		var areKeyboardObserversSetUp: Bool = false
+		func setupKeyboardObservers()
+		{
+			if parent.dodgeKeyboard
+			{
+				guard !areKeyboardObserversSetUp else { return }
+				areKeyboardObserversSetUp = true
+				NotificationCenter.default.addObserver(self, selector: #selector(keyBoardWillShow(notification:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+				NotificationCenter.default.addObserver(self, selector: #selector(keyBoardWillHide(notification:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+			}
+			else if areKeyboardObserversSetUp
+			{
+				NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+				NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+			}
+		}
+
+		var keyboardFrame: CGRect?
+		{
+			didSet
+			{
+				collectionViewController.map {
+					updateCollectionViewContentInsets($0.collectionView)
+				}
+			}
+		}
+
+		var keyboardOverlap: CGFloat
+		{
+			guard
+				let cv = collectionViewController?.collectionView,
+				let cvFrameInWindow = cv.superview?.convert(cv.frame, to: nil),
+				let intersection = keyboardFrame?.intersection(cvFrameInWindow)
+			else { return .zero }
+			return intersection.height
+		}
+
+		var extraKeyboardSpacing: CGFloat = 25
+
+		var adaptiveContentInsets: UIEdgeInsets
+		{
+			UIEdgeInsets(
+				top: parent.contentInsets.top,
+				left: parent.contentInsets.left,
+				bottom: parent.contentInsets.bottom + (parent.dodgeKeyboard ? keyboardOverlap : 0),
+				right: parent.contentInsets.right)
+		}
+
+		func containsFirstResponder() -> Bool
+		{
+			collectionViewController?.collectionView.findFirstResponder != nil
+		}
+
+		@objc func keyBoardWillShow(notification: Notification)
+		{
+			guard containsFirstResponder() else
+			{
+				keyboardFrame = nil
+				return
+			}
+
+			keyboardFrame = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue
+
+			// Do our own adjustment of contentOffset
+			if let cv = collectionViewController?.collectionView,
+				let firstResponder = cv.findFirstResponder()
+			{
+				let firstResponderFrame = firstResponder.convert(firstResponder.bounds, to: cv)
+				let newContentOffset = CGPoint(
+					x: cv.contentOffset.x,
+					y: cv.adjustedContentInset.top + firstResponderFrame.maxY + keyboardOverlap + extraKeyboardSpacing - cv.frame.height)
+				if newContentOffset.y > cv.contentOffset.y
+				{
+					cv.contentOffset = newContentOffset
+				}
+			}
+		}
+
+		@objc func keyBoardWillHide(notification _: Notification)
+		{
+			keyboardFrame = nil
+			collectionViewController?.collectionView.layoutIfNeeded()
 		}
 
 		func configureRefreshControl(for cv: UICollectionView)
@@ -398,9 +527,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			case .right:
 				guard let maxOffset = collectionViewController?.collectionView.maxContentOffset else { return }
 				collectionViewController?.collectionView.setContentOffset(.init(x: maxOffset.x, y: 0), animated: animated)
-			case let .centerOnIndexPath(indexPath):
-				guard let offset = getContentOffsetToCenterCell(at: indexPath) else { return }
-				collectionViewController?.collectionView.setContentOffset(offset, animated: animated)
+			case let .indexPath(indexPath, positionOnScreen, extraOffset):
+				collectionViewController?.collectionView.scrollToItem(at: indexPath, at: positionOnScreen, animated: animated)
+				collectionViewController?.collectionView.contentOffset.x += extraOffset.x
+				collectionViewController?.collectionView.contentOffset.y += extraOffset.y
 			}
 		}
 
@@ -484,21 +614,14 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 				if parent.shouldAnimateInvalidatedLayoutOnStateChange, hasDoneInitialSetup
 				{
-					UIView.animate(
-						withDuration: 0.4,
-						delay: 0.0,
-						usingSpringWithDamping: 1.0,
-						initialSpringVelocity: 0.0,
-						options: UIView.AnimationOptions(),
-						animations: {
-							changes()
-							collectionViewController.collectionView.layoutIfNeeded()
-						},
-						completion: nil)
+					changes()
 				}
 				else
 				{
+					CATransaction.begin()
+					CATransaction.setDisableActions(true)
 					changes()
+					CATransaction.commit()
 				}
 			}
 		}
@@ -509,9 +632,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 		{
-			collectionViewController.map { (cell as? Cell)?.willAppear(in: $0) }
+			(cell as? Cell)?.willAppear()
 			currentlyPrefetching.remove(indexPath)
-			guard !indexPath.isEmpty else { return }
 			parent.sections[safe: indexPath.section]?.dataSource.onAppear(indexPath)
 			queuePrefetch.send()
 		}
@@ -525,7 +647,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
 		{
-			(view as? ASCollectionViewSupplementaryView)?.willAppear(in: collectionViewController)
+			(view as? ASCollectionViewSupplementaryView)?.willAppear()
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
@@ -682,9 +804,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			default: break
 			}
 
-			dataSource?.applySnapshot(dragSnapshot)
-			refreshVisibleCells()
-
 			if let dragItem = coordinator.items.first, let destination = coordinator.destinationIndexPath
 			{
 				if dragItem.sourceIndexPath != nil
@@ -692,6 +811,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					coordinator.drop(dragItem.dragItem, toItemAt: destination)
 				}
 			}
+			dataSource?.applySnapshot(dragSnapshot, animated: true)
+			refreshVisibleCells()
 		}
 
 		func typeErasedDataForItem(at indexPath: IndexPath) -> Any?
@@ -709,11 +830,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			let firstSize = lastContentSize == .zero
 			lastContentSize = cv.contentSize
 			parent.contentSizeTracker?.contentSize = size
-			if !hasSetInitialScrollPosition
-			{
-				hasSetInitialScrollPosition = true
-				parent.initialScrollPosition.map { scrollToPosition($0, animated: false) }
-			}
 
 			DispatchQueue.main.async {
 				self.parent.invalidateParentCellLayout?(!firstSize)
@@ -733,7 +849,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 @available(iOS 13.0, *)
 extension ASCollectionView.Coordinator
 {
-	public func scrollViewDidScroll(_ scrollView: UIScrollView)
+	func scrollViewDidScroll(_ scrollView: UIScrollView)
 	{
 		parent.onScrollCallback?(scrollView.contentOffset, scrollView.contentSizePlusInsets)
 		checkIfReachedBoundary(scrollView)
@@ -901,5 +1017,5 @@ public enum ASCollectionViewScrollPosition
 	case bottom
 	case left
 	case right
-	case centerOnIndexPath(_: IndexPath)
+	case indexPath(_: IndexPath, positionOnScreen: UICollectionView.ScrollPosition = .centeredVertically, extraOffset: CGPoint = .zero)
 }

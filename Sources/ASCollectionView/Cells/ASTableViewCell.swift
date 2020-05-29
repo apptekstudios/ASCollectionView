@@ -7,19 +7,14 @@ import UIKit
 @available(iOS 13.0, *)
 class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 {
-	var indexPath: IndexPath?
 	var itemID: ASCollectionViewItemUniqueID?
 	var hostingController: ASHostingControllerProtocol?
 	{
-		didSet
-		{
-			hostingController?.invalidateCellLayoutCallback = invalidateLayoutCallback
-			hostingController?.tableViewScrollToCellCallback = scrollToCellCallback
-		}
+		get { _hostingController }
+		set { _hostingController = newValue; attachView() }
 	}
 
-	var invalidateLayoutCallback: ((_ animated: Bool) -> Void)?
-	var scrollToCellCallback: ((UITableView.ScrollPosition) -> Void)?
+	private var _hostingController: ASHostingControllerProtocol?
 
 	override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?)
 	{
@@ -33,24 +28,24 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		fatalError("init(coder:) has not been implemented")
 	}
 
-	func willAppear(in vc: UIViewController)
+	weak var tableViewController: AS_TableViewController?
+
+	private var hasAppeared: Bool = false // Needed due to the `self-sizing` cell used by UICV
+	func willAppear()
 	{
-		if hostingController?.viewController.parent != vc
-		{
-			hostingController?.viewController.removeFromParent()
-			hostingController.map { vc.addChild($0.viewController) }
-			attachView()
-			hostingController?.viewController.didMove(toParent: vc)
-		}
+		hasAppeared = true
+		attachView()
 	}
 
 	func didDisappear()
 	{
-		hostingController?.viewController.removeFromParent()
+		hasAppeared = false
+		detachViews()
 	}
 
 	private func attachView()
 	{
+		guard hasAppeared else { return }
 		guard let hcView = hostingController?.viewController.view else
 		{
 			detachViews()
@@ -58,76 +53,52 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		}
 		if hcView.superview != contentView
 		{
+			hostingController.map { tableViewController?.addChild($0.viewController) }
 			contentView.subviews.forEach { $0.removeFromSuperview() }
 			contentView.addSubview(hcView)
-			setNeedsLayout()
+			hcView.frame = contentView.bounds
+			hostingController?.viewController.didMove(toParent: tableViewController)
 		}
 	}
 
 	private func detachViews()
 	{
+		hostingController?.viewController.willMove(toParent: nil)
 		contentView.subviews.forEach { $0.removeFromSuperview() }
+		hostingController?.viewController.removeFromParent()
 	}
 
-	var shouldSkipNextRefresh: Bool = true // This is used to avoid double-up in reloaded cells and our update from swiftUI
 	override func prepareForReuse()
 	{
-		backgroundColor = nil
-		indexPath = nil
 		itemID = nil
-		hostingController = nil
 		isSelected = false
-		shouldSkipNextRefresh = true
-	}
-
-	func recalculateSize()
-	{
-		hostingController?.viewController.view.setNeedsLayout()
-		hostingController?.viewController.view.layoutIfNeeded()
+		backgroundColor = nil
+		alpha = 1.0
+		_hostingController = nil
 	}
 
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
 
-		attachView()
-
 		if hostingController?.viewController.view.frame != contentView.bounds
 		{
-			UIView.performWithoutAnimation {
-				hostingController?.viewController.view.frame = contentView.bounds
-				hostingController?.viewController.view.setNeedsLayout()
-				hostingController?.viewController.view.layoutIfNeeded()
-			}
+			hostingController?.viewController.view.frame = contentView.bounds
+			hostingController?.viewController.view.setNeedsLayout()
 		}
-	}
-
-	var fittedSize: CGSize = .zero
-	{
-		didSet
-		{
-			if fittedSize != oldValue
-			{
-				setNeedsLayout()
-				layoutIfNeeded()
-			}
-		}
-	}
-
-	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
-	{
-		guard let hc = hostingController else { return .zero }
-		let size = hc.sizeThatFits(
-			in: targetSize,
-			maxSize: ASOptionalSize(),
-			selfSizeHorizontal: false,
-			selfSizeVertical: true)
-		fittedSize = size
-		return size
+		hostingController?.viewController.view.layoutIfNeeded()
 	}
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
 	{
-		systemLayoutSizeFitting(targetSize)
+		guard let hostingController = hostingController else { return CGSize(width: 1, height: 1) }
+		hostingController.viewController.view.setNeedsLayout()
+		hostingController.viewController.view.layoutIfNeeded()
+		let size = hostingController.sizeThatFits(
+			in: targetSize,
+			maxSize: ASOptionalSize(),
+			selfSizeHorizontal: false,
+			selfSizeVertical: true)
+		return size
 	}
 }

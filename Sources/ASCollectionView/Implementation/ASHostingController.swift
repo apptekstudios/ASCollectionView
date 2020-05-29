@@ -118,9 +118,14 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 
 	func sizeThatFits(in size: CGSize, maxSize: ASOptionalSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize
 	{
+		guard selfSizeHorizontal || selfSizeVertical else
+		{
+			return size.applyMaxSize(maxSize)
+		}
+		viewController.view.layoutIfNeeded()
 		let fittingSize = CGSize(
-			width: selfSizeHorizontal ? .infinity : size.width,
-			height: selfSizeVertical ? .infinity : size.height).applyMaxSize(maxSize)
+			width: selfSizeHorizontal ? maxSize.width ?? .greatestFiniteMagnitude : size.width.applyOptionalMaxBound(maxSize.width),
+			height: selfSizeVertical ? maxSize.height ?? .greatestFiniteMagnitude : size.height.applyOptionalMaxBound(maxSize.height))
 
 		// Find the desired size
 		var desiredSize = uiHostingController.sizeThatFits(in: fittingSize)
@@ -128,12 +133,16 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 		// Accounting for 'greedy' swiftUI views that take up as much space as they can
 		switch (desiredSize.width, desiredSize.height)
 		{
-		case (.infinity, .infinity):
-			desiredSize = uiHostingController.sizeThatFits(in: size)
-		case (.infinity, _):
-			desiredSize = uiHostingController.sizeThatFits(in: CGSize(width: size.width, height: fittingSize.height))
-		case (_, .infinity):
-			desiredSize = uiHostingController.sizeThatFits(in: CGSize(width: fittingSize.width, height: size.height))
+		case (.greatestFiniteMagnitude, .greatestFiniteMagnitude):
+			desiredSize = uiHostingController.sizeThatFits(in: size.applyMaxSize(maxSize))
+		case (.greatestFiniteMagnitude, _):
+			desiredSize = uiHostingController.sizeThatFits(in: CGSize(
+				width: size.width.applyOptionalMaxBound(maxSize.width),
+				height: fittingSize.height))
+		case (_, .greatestFiniteMagnitude):
+			desiredSize = uiHostingController.sizeThatFits(in: CGSize(
+				width: fittingSize.width,
+				height: size.height.applyOptionalMaxBound(maxSize.height)))
 		default: break
 		}
 
@@ -152,7 +161,10 @@ private class AS_UIHostingController<Content: View>: UIHostingController<Content
 	{
 		didSet
 		{
-			disableInteractionsIfNeeded()
+			if shouldDisableDrop != oldValue
+			{
+				disableInteractionsIfNeeded()
+			}
 		}
 	}
 
@@ -160,11 +172,14 @@ private class AS_UIHostingController<Content: View>: UIHostingController<Content
 	{
 		didSet
 		{
-			disableInteractionsIfNeeded()
+			if shouldDisableDrag != oldValue
+			{
+				disableInteractionsIfNeeded()
+			}
 		}
 	}
 
-	private func disableInteractionsIfNeeded()
+	func disableInteractionsIfNeeded()
 	{
 		guard let view = viewIfLoaded else { return }
 		if shouldDisableDrop

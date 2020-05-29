@@ -25,32 +25,37 @@ public class AS_CollectionViewController: UIViewController
 		fatalError("init(coder:) has not been implemented")
 	}
 
-	public override func viewWillAppear(_ animated: Bool)
+	override public func viewWillAppear(_ animated: Bool)
 	{
 		super.viewWillAppear(animated)
 		// NOTE: Due to some SwiftUI bugs currently, we've chosen to call this here instead of actual parent call
 		coordinator?.onMoveToParent()
 	}
 
-	public override func viewDidDisappear(_ animated: Bool)
+	override public func viewDidDisappear(_ animated: Bool)
 	{
 		super.viewDidDisappear(animated)
 		// NOTE: Due to some SwiftUI bugs currently, we've chosen to call this here instead of actual parent call
 		coordinator?.onMoveFromParent()
 	}
 
-	public override func loadView()
+	override public func viewWillDisappear(_ animated: Bool)
+	{
+		super.viewWillDisappear(animated)
+	}
+
+	override public func loadView()
 	{
 		view = collectionView
 	}
 
-	public override func viewDidLoad()
+	override public func viewDidLoad()
 	{
 		super.viewDidLoad()
 		view.backgroundColor = .clear
 	}
 
-	public override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
+	override public func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)
 	{
 		// Get current central cell
 		self.coordinator?.prepareForOrientationChange()
@@ -75,14 +80,14 @@ public class AS_CollectionViewController: UIViewController
 		}
 	}
 
-	public override func viewSafeAreaInsetsDidChange()
+	override public func viewSafeAreaInsetsDidChange()
 	{
 		super.viewSafeAreaInsetsDidChange()
 		// The following is a workaround to fix the interface rotation animation under SwiftUI
 		collectionViewLayout.invalidateLayout()
 	}
 
-	public override func viewDidLayoutSubviews()
+	override public func viewDidLayoutSubviews()
 	{
 		super.viewDidLayoutSubviews()
 		coordinator?.didUpdateContentSize(collectionView.contentSize)

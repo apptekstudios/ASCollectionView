@@ -16,7 +16,7 @@ public struct ASSelfSizingContext
 
 public struct ASSelfSizingConfig
 {
-	public init(selfSizeHorizontally: Bool = true, selfSizeVertically: Bool = true, canExceedCollectionWidth: Bool = true, canExceedCollectionHeight: Bool = true)
+	public init(selfSizeHorizontally: Bool? = nil, selfSizeVertically: Bool? = nil, canExceedCollectionWidth: Bool = true, canExceedCollectionHeight: Bool = true)
 	{
 		self.selfSizeHorizontally = selfSizeHorizontally
 		self.selfSizeVertically = selfSizeVertically
@@ -24,8 +24,8 @@ public struct ASSelfSizingConfig
 		self.canExceedCollectionHeight = canExceedCollectionHeight
 	}
 
-	var selfSizeHorizontally: Bool
-	var selfSizeVertically: Bool
+	var selfSizeHorizontally: Bool?
+	var selfSizeVertically: Bool?
 	var canExceedCollectionWidth: Bool
 	var canExceedCollectionHeight: Bool
 }

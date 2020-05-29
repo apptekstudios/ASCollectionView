@@ -20,6 +20,7 @@
 --fractiongrouping disabled
 --ifdef outdent
 --importgrouping testable-top
---stripunusedargs closure-only
 --wraparguments before-first
 --wrapcollections after-first
+
+--disable unusedArguments

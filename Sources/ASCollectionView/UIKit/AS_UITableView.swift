@@ -28,30 +28,30 @@ public class AS_TableViewController: UIViewController
 		fatalError("init(coder:) has not been implemented")
 	}
 
-	public override func loadView()
+	override public func loadView()
 	{
 		view = tableView
 	}
 
-	public override func viewDidLoad()
+	override public func viewDidLoad()
 	{
 		super.viewDidLoad()
 	}
 
-	public override func viewDidLayoutSubviews()
+	override public func viewDidLayoutSubviews()
 	{
 		super.viewDidLayoutSubviews()
 		coordinator?.didUpdateContentSize(tableView.contentSize)
 	}
 
-	public override func viewWillAppear(_ animated: Bool)
+	override public func viewWillAppear(_ animated: Bool)
 	{
 		super.viewWillAppear(animated)
 		// NOTE: Due to some SwiftUI bugs currently, we've chosen to call this here instead of actual parent call
 		coordinator?.onMoveToParent()
 	}
 
-	public override func viewDidDisappear(_ animated: Bool)
+	override public func viewDidDisappear(_ animated: Bool)
 	{
 		super.viewDidDisappear(animated)
 		// NOTE: Due to some SwiftUI bugs currently, we've chosen to call this here instead of actual parent call

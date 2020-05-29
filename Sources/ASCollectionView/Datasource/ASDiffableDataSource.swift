@@ -7,7 +7,7 @@ import UIKit
 @available(iOS 13.0, *)
 class ASDiffableDataSource<SectionID: Hashable>: NSObject
 {
-	var currentSnapshot = ASDiffableDataSourceSnapshot<SectionID>()
+	public internal(set) var currentSnapshot = ASDiffableDataSourceSnapshot<SectionID>()
 
 	func identifier(at indexPath: IndexPath) -> ASCollectionViewItemUniqueID
 	{
