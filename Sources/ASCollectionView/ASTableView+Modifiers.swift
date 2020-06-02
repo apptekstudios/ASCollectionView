@@ -81,15 +81,22 @@ public extension ASTableViewSection
 {
 	func sectionHeaderInsetGrouped<Content: View>(content: () -> Content?) -> Self
 	{
-		var section = self
-		let insetGroupedContent =
-			content()
-				.font(.headline)
-				.frame(maxWidth: .infinity, alignment: .leading)
-				.padding(EdgeInsets(top: 12, leading: 0, bottom: 6, trailing: 0))
+		if let content = content()
+		{
+			var section = self
+			let insetGroupedContent =
+				content
+					.font(.headline)
+					.frame(maxWidth: .infinity, alignment: .leading)
+					.padding(EdgeInsets(top: 12, leading: 0, bottom: 6, trailing: 0))
 
-		section.setHeaderView(insetGroupedContent)
-		return section
+			section.setHeaderView(insetGroupedContent)
+			return section
+		}
+		else
+		{
+			return self
+		}
 	}
 }
 

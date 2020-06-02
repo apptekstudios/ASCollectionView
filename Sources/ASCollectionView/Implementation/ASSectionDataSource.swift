@@ -10,9 +10,8 @@ internal protocol ASSectionDataSourceProtocol
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
-	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
-	func updateOrCreateHostController(forSupplementaryKind supplementaryKind: String, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
+	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
+	func getUpdatedHC(forSupplementaryKind supplementaryKind: String, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
 	var supplementaryViews: [String: AnyView] { get set }
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	func onAppear(_ indexPath: IndexPath)
@@ -89,53 +88,64 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			isLastInSection: index == data.endIndex - 1)
 	}
 
-	func updateOrCreateHostController(forItemID itemID: ASCollectionViewItemUniqueID, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
+	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
 	{
 		guard let content = getContent(forItemID: itemID) else { return nil }
-		return updateOrCreateHostController(content: content, existingHC: existingHC)
-	}
-
-	func update(_ hc: ASHostingControllerProtocol, forItemID itemID: ASCollectionViewItemUniqueID)
-	{
-		guard let content = getContent(forItemID: itemID) else { return }
-		update(hc, withContent: content)
-	}
-
-	func updateOrCreateHostController(forSupplementaryKind supplementaryKind: String, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol?
-	{
-		guard let content = supplementaryViews[supplementaryKind] else { return nil }
-		return updateOrCreateHostController(content: content, existingHC: existingHC)
-	}
-
-	private func updateOrCreateHostController<Wrapped: View>(content: Wrapped, existingHC: ASHostingControllerProtocol?) -> ASHostingControllerProtocol
-	{
-		if let hc = (existingHC as? ASHostingController<Wrapped>)
+		let hc: ASHostingController<Container>
+		if let cachedHC = cachedHC as? ASHostingController<Container>
 		{
-			hc.setView(content)
-			hc.disableSwiftUIDropInteraction = dropEnabled
-			hc.disableSwiftUIDragInteraction = dragEnabled
-			return hc
+			hc = cachedHC
+			if animate
+			{
+				hc.setView(content)
+			}
+			else
+			{
+				withAnimation(nil) {
+					hc.setView(content)
+				}
+			}
 		}
 		else
 		{
-			let newHC = ASHostingController(content)
-			newHC.disableSwiftUIDropInteraction = dropEnabled
-			newHC.disableSwiftUIDragInteraction = dragEnabled
-			return newHC
+			hc = ASHostingController(content)
 		}
+		hc.disableSwiftUIDropInteraction = dropEnabled
+		hc.disableSwiftUIDragInteraction = dragEnabled
+		return hc
 	}
 
-	private func update<Wrapped: View>(_ hc: ASHostingControllerProtocol, withContent content: Wrapped)
+	func getUpdatedHC(forSupplementaryKind supplementaryKind: String, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
 	{
-		guard let hc = hc as? ASHostingController<Wrapped> else { return }
-		hc.setView(content)
+		guard let content = supplementaryViews[supplementaryKind] else { return nil }
+		let hc: ASHostingController<AnyView>
+		if let cachedHC = cachedHC as? ASHostingController<AnyView>
+		{
+			hc = cachedHC
+			if animate
+			{
+				hc.setView(content)
+			}
+			else
+			{
+				withAnimation(nil) {
+					hc.setView(content)
+				}
+			}
+		}
+		else
+		{
+			hc = ASHostingController(content)
+		}
+		return hc
 	}
 
 	func getContent(forItemID itemID: ASCollectionViewItemUniqueID) -> Container?
 	{
 		guard let itemIndex = getIndex(of: itemID) else { return nil }
 		let item = data[itemIndex]
-		let view = content(item, cellContext(for: itemIndex))
+		let context = cellContext(for: itemIndex)
+		let view = content(item, context)
 		return container(view)
 	}
 

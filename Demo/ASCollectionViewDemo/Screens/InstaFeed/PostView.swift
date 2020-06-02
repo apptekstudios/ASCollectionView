@@ -100,7 +100,7 @@ struct PostView: View
 				)
 			buttonBar
 			textContent
-			Spacer()
+			Spacer().layoutPriority(2)
 		}
 		.padding([.top, .bottom])
 	}

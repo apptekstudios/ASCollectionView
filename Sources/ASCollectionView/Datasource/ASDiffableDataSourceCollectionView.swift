@@ -33,17 +33,24 @@ class ASDiffableDataSourceCollectionView<SectionID: Hashable>: ASDiffableDataSou
 
 		guard let collectionView = collectionView else { return }
 
+		let apply = {
+			collectionView.reload(using: changeset, interrupt: { $0.changeCount > 100 }) { newSections in
+				self.currentSnapshot = .init(sections: newSections)
+			}
+		}
 		CATransaction.begin()
+		CATransaction.setCompletionBlock(completion)
 		if firstLoad || !animated
 		{
-			firstLoad = false
 			CATransaction.setDisableActions(true)
+			apply()
 		}
-		CATransaction.setCompletionBlock(completion)
-		collectionView.reload(using: changeset, interrupt: { $0.changeCount > 100 }) { newSections in
-			self.currentSnapshot = .init(sections: newSections)
+		else
+		{
+			apply()
 		}
 		CATransaction.commit()
+		firstLoad = false
 	}
 
 	func numberOfSections(in collectionView: UICollectionView) -> Int

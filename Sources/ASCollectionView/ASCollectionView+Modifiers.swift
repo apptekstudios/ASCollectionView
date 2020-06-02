@@ -108,11 +108,12 @@ public extension ASCollectionView
 		return this
 	}
 
-	/// Set an initial scroll position for the ASCollectionView
-	func initialScrollPosition(_ position: ASCollectionViewScrollPosition?) -> Self
+	/// Set a binding that will scroll the ASCollectionView when set. It will always return nil once the scroll is applied (use onScroll to read scroll position)
+	func scrollPositionSetter(_ binding: Binding<ASCollectionViewScrollPosition?>) -> Self
 	{
 		var this = self
-		this.initialScrollPosition = position
+		_ = binding.wrappedValue // Touch the binding so that SwiftUI will notify us of future updates
+		this.scrollPositionSetter = binding
 		return this
 	}
 

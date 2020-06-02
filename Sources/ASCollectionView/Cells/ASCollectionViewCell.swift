@@ -7,42 +7,34 @@ import UIKit
 @available(iOS 13.0, *)
 class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 {
-	var indexPath: IndexPath?
 	var itemID: ASCollectionViewItemUniqueID?
 	var hostingController: ASHostingControllerProtocol?
 	{
-		didSet
-		{
-			hostingController?.invalidateCellLayoutCallback = invalidateLayoutCallback
-			hostingController?.collectionViewScrollToCellCallback = scrollToCellCallback
-		}
+		get { _hostingController }
+		set { _hostingController = newValue; attachView() }
 	}
 
-	weak var collectionView: UICollectionView?
+	private var _hostingController: ASHostingControllerProtocol?
 
+	weak var collectionViewController: AS_CollectionViewController?
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: true, selfSizeVertically: true)
 
-	var invalidateLayoutCallback: ((_ animated: Bool) -> Void)?
-	var scrollToCellCallback: ((UICollectionView.ScrollPosition) -> Void)?
-
-	func willAppear(in vc: UIViewController)
+	private var hasAppeared: Bool = false // Needed due to the `self-sizing` cell used by UICV
+	func willAppear()
 	{
-		if hostingController?.viewController.parent != vc
-		{
-			hostingController?.viewController.removeFromParent()
-			hostingController.map { vc.addChild($0.viewController) }
-			attachView()
-			hostingController?.viewController.didMove(toParent: vc)
-		}
+		hasAppeared = true
+		attachView()
 	}
 
 	func didDisappear()
 	{
-		hostingController?.viewController.removeFromParent()
+		hasAppeared = false
+		detachViews()
 	}
 
 	private func attachView()
 	{
+		guard hasAppeared else { return }
 		guard let hcView = hostingController?.viewController.view else
 		{
 			detachViews()
@@ -50,74 +42,68 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		}
 		if hcView.superview != contentView
 		{
+			hostingController.map { collectionViewController?.addChild($0.viewController) }
 			contentView.subviews.forEach { $0.removeFromSuperview() }
 			contentView.addSubview(hcView)
-			setNeedsLayout()
+			hcView.frame = contentView.bounds
+			hostingController?.viewController.didMove(toParent: collectionViewController)
 		}
 	}
 
 	private func detachViews()
 	{
+		hostingController?.viewController.willMove(toParent: nil)
 		contentView.subviews.forEach { $0.removeFromSuperview() }
+		hostingController?.viewController.removeFromParent()
 	}
-
-	var shouldSkipNextRefresh: Bool = true
 
 	override func prepareForReuse()
 	{
-		indexPath = nil
 		itemID = nil
 		isSelected = false
-		hostingController = nil
-		shouldSkipNextRefresh = true
+		alpha = 1.0
+		_hostingController = nil
 	}
 
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
 
-		attachView()
-
 		if hostingController?.viewController.view.frame != contentView.bounds
 		{
-			UIView.performWithoutAnimation {
-				hostingController?.viewController.view.frame = contentView.bounds
-				hostingController?.viewController.view.setNeedsLayout()
-				hostingController?.viewController.view.layoutIfNeeded()
-			}
+			hostingController?.viewController.view.frame = contentView.bounds
+			hostingController?.viewController.view.setNeedsLayout()
 		}
-	}
-
-	override func systemLayoutSizeFitting(_ targetSize: CGSize) -> CGSize
-	{
-		guard let hc = hostingController else
-		{
-			return CGSize(width: 1, height: 1)
-		} // Can't return .zero as UICollectionViewLayout will crash
-
-		let size = hc.sizeThatFits(
-			in: targetSize,
-			maxSize: maxSizeForSelfSizing,
-			selfSizeHorizontal: selfSizingConfig.selfSizeHorizontally,
-			selfSizeVertical: selfSizingConfig.selfSizeVertically)
-		return size
+		hostingController?.viewController.view.layoutIfNeeded()
 	}
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
 	{
-		systemLayoutSizeFitting(targetSize)
-	}
+		guard let hostingController = hostingController else { return CGSize(width: 1, height: 1) }
 
-	override func preferredLayoutAttributesFitting(_ layoutAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutAttributes
-	{
-		layoutAttributes.size = systemLayoutSizeFitting(layoutAttributes.size)
-		return layoutAttributes
+		let selfSizeHorizontal = selfSizingConfig.selfSizeHorizontally ?? (horizontalFittingPriority != .required)
+		let selfSizeVertical = selfSizingConfig.selfSizeVertically ?? (verticalFittingPriority != .required)
+
+		guard selfSizeVertical || selfSizeHorizontal else
+		{
+			return targetSize
+		}
+
+		// We need to calculate a size for self-sizing. Layout the view to get swiftUI to update its state
+		hostingController.viewController.view.setNeedsLayout()
+		hostingController.viewController.view.layoutIfNeeded()
+		let size = hostingController.sizeThatFits(
+			in: targetSize,
+			maxSize: maxSizeForSelfSizing,
+			selfSizeHorizontal: selfSizeHorizontal,
+			selfSizeVertical: selfSizeVertical)
+		return size
 	}
 
 	var maxSizeForSelfSizing: ASOptionalSize
 	{
 		ASOptionalSize(
-			width: selfSizingConfig.canExceedCollectionWidth ? nil : collectionView.map { $0.contentSize.width - 0.001 },
-			height: selfSizingConfig.canExceedCollectionHeight ? nil : collectionView.map { $0.contentSize.height - 0.001 })
+			width: selfSizingConfig.canExceedCollectionWidth ? nil : collectionViewController.map { $0.collectionView.contentSize.width - 0.001 },
+			height: selfSizingConfig.canExceedCollectionHeight ? nil : collectionViewController.map { $0.collectionView.contentSize.height - 0.001 })
 	}
 }

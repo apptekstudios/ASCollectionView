@@ -104,15 +104,15 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		let cellReuseID = UUID().uuidString
 		let supplementaryReuseID = UUID().uuidString
 
-		// MARK: Private tracking variables
-
-		private var hasDoneInitialSetup = false
-
 		// MARK: Caching
 
 		private var autoCachingHostingControllers = ASPriorityCache<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
 		private var explicitlyCachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
-		private var autoCachingSupplementaryHostControllers = ASPriorityCache<ASSupplementaryCellID<SectionID>, ASHostingControllerProtocol>()
+		private var autoCachingSupplementaryHostControllers = ASPriorityCache<ASSupplementaryCellID, ASHostingControllerProtocol>()
+
+		// MARK: Private tracking variables
+
+		private var hasDoneInitialSetup = false
 
 		typealias Cell = ASTableViewCell
 
@@ -176,6 +176,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				guard
 					let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseID, for: indexPath) as? Cell
 				else { return nil }
+				cell.tableViewController = self.tableViewController
 
 				guard let section = self.parent.sections[safe: indexPath.section] else { return cell }
 
@@ -183,26 +184,26 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 				cell.separatorInset = section.tableViewSeparatorInsets ?? UIEdgeInsets(top: 0, left: UITableView.automaticDimension, bottom: 0, right: UITableView.automaticDimension)
 
-				// Cell layout invalidation callback
-				cell.invalidateLayoutCallback = { [weak self, weak cell] animated in
-					cell.map { self?.invalidateLayout(animated: animated, cell: $0) }
-				}
-				cell.scrollToCellCallback = { [weak self] position in
-					self?.scrollToRow(indexPath: indexPath, position: position)
-				}
-
 				// Set itemID
-				cell.indexPath = indexPath
 				cell.itemID = itemID
 
-				// Update hostingController
+				// Get cachedHC
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
-				cell.hostingController = section.dataSource.updateOrCreateHostController(forItemID: itemID, existingHC: cachedHC)
-				// Cache the HC
-				self.autoCachingHostingControllers[itemID] = cell.hostingController
+				// Update hostingController
+				cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, animate: false)
 				if section.shouldCacheCells
 				{
 					self.explicitlyCachedHostingControllers[itemID] = cell.hostingController
+				}
+				else
+				{
+					self.autoCachingHostingControllers[itemID] = cell.hostingController
+				}
+				cell.hostingController?.invalidateCellLayoutCallback = { [weak self, weak cell] animated in
+					self?.invalidateLayout(animated: animated, cell: cell)
+				}
+				cell.hostingController?.tableViewScrollToCellCallback = { [weak self] position in
+					self?.scrollToRow(indexPath: indexPath, position: position)
 				}
 
 				return cell
@@ -241,28 +242,41 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			guard let tv = tableViewController?.tableView else { return }
 			for case let cell as Cell in tv.visibleCells
 			{
-				guard !cell.shouldSkipNextRefresh else { cell.shouldSkipNextRefresh = false; continue }
 				guard
 					let itemID = cell.itemID,
-					let hc = cell.hostingController
+					let section = self.section(forItemID: itemID)
 				else { continue }
-				self.section(forItemID: itemID)?.dataSource.update(hc, forItemID: itemID)
+				// Get cachedHC
+				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
+				// Update hostingController
+				cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, animate: true)
+				if section.shouldCacheCells
+				{
+					explicitlyCachedHostingControllers[itemID] = cell.hostingController
+				}
+				else
+				{
+					autoCachingHostingControllers[itemID] = cell.hostingController
+				}
 			}
 
 			for case let supplementaryView as ASTableViewSupplementaryView in tv.subviews
 			{
-				guard !supplementaryView.shouldSkipNextRefresh else { supplementaryView.shouldSkipNextRefresh = false; continue }
 				guard
-					let supplementaryKind = supplementaryView.supplementaryKind,
-					let section = parent.sections.first(where: { $0.id.hashValue == supplementaryView.sectionIDHash })
+					let supplementaryID = supplementaryView.supplementaryID,
+					let section = parent.sections.first(where: { $0.id.hashValue == supplementaryID.sectionIDHash })
 				else { continue }
-				supplementaryView.hostingController = section.dataSource.updateOrCreateHostController(forSupplementaryKind: supplementaryKind, existingHC: supplementaryView.hostingController)
+
+				// Get cachedHC
+				let cachedHC = self.autoCachingSupplementaryHostControllers[supplementaryID]
+				// Update hostingController
+				supplementaryView.hostingController = section.dataSource.getUpdatedHC(forSupplementaryKind: supplementaryID.supplementaryKind, cachedHC: cachedHC, animate: true)
+				autoCachingSupplementaryHostControllers[supplementaryID] = supplementaryView.hostingController
 			}
 		}
 
-		func invalidateLayout(animated: Bool, cell: ASTableViewCell)
+		func invalidateLayout(animated: Bool, cell: ASTableViewCell?)
 		{
-			cell.recalculateSize()
 			dataSource?.updateCellSizes(animated: animated)
 		}
 
@@ -326,7 +340,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
-			tableViewController.map { (cell as? Cell)?.willAppear(in: $0) }
+			(cell as? Cell)?.willAppear()
 			parent.sections[safe: indexPath.section]?.dataSource.onAppear(indexPath)
 		}
 
@@ -339,7 +353,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
 		{
 			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			tableViewController.map { view.willAppear(in: $0) }
+			view.willAppear()
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplayingHeaderView view: UIView, forSection section: Int)
@@ -351,7 +365,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		public func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int)
 		{
 			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			tableViewController.map { view.willAppear(in: $0) }
+			view.willAppear()
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplayingFooterView view: UIView, forSection section: Int)
@@ -551,9 +565,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			default: break
 			}
 
-			dataSource?.applySnapshot(dragSnapshot)
-			refreshVisibleCells()
-
 			if let dragItem = coordinator.items.first, let destination = coordinator.destinationIndexPath
 			{
 				if dragItem.sourceIndexPath != nil
@@ -561,6 +572,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					coordinator.drop(dragItem.dragItem, toRowAt: destination)
 				}
 			}
+			dataSource?.applySnapshot(dragSnapshot, animated: false)
+			refreshVisibleCells()
 		}
 
 		public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat
@@ -600,19 +613,14 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			guard let reusableView = cell as? ASTableViewSupplementaryView
 			else { return }
 
-			let ifEmpty = {
-				reusableView.hostingController = nil
-			}
+			guard let section = parent.sections[safe: sectionIndex] else { reusableView.hostingController = nil; return }
+			let supplementaryID = ASSupplementaryCellID(sectionIDHash: section.id.hashValue, supplementaryKind: supplementaryKind)
+			reusableView.supplementaryID = supplementaryID
 
-			guard let section = parent.sections[safe: sectionIndex] else { ifEmpty(); return }
-			reusableView.sectionIDHash = section.id.hashValue
-			reusableView.supplementaryKind = supplementaryKind
-			let supplementaryID = ASSupplementaryCellID(sectionID: section.id, supplementaryKind: supplementaryKind)
-
+			// Get cachedHC
+			let cachedHC = self.autoCachingSupplementaryHostControllers[supplementaryID]
 			// Update hostingController
-			let cachedHC = autoCachingSupplementaryHostControllers[supplementaryID]
-			reusableView.hostingController = section.dataSource.updateOrCreateHostController(forSupplementaryKind: supplementaryKind, existingHC: cachedHC)
-			// Cache the HC
+			reusableView.hostingController = section.dataSource.getUpdatedHC(forSupplementaryKind: supplementaryID.supplementaryKind, cachedHC: cachedHC, animate: false)
 			autoCachingSupplementaryHostControllers[supplementaryID] = reusableView.hostingController
 		}
 

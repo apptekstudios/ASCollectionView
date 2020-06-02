@@ -61,8 +61,9 @@ struct AppStoreScreen: View
 	{
 		ASCollectionView(sections: self.sections)
 			.layout(self.layout)
+			.contentInsets(.init(top: 10, left: 0, bottom: 10, right: 0))
 			.shouldAttemptToMaintainScrollPositionOnOrientationChange(maintainPosition: false)
-			.navigationBarTitle("Apps", displayMode: .large)
+			.navigationBarTitle("Apps", displayMode: .inline)
 			.edgesIgnoringSafeArea(.all)
 	}
 
@@ -138,6 +139,8 @@ extension AppStoreScreen
 					section.interGroupSpacing = 20
 					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
 					section.orthogonalScrollingBehavior = .groupPaging
+					section.visibleItemsInvalidationHandler = { _, _, _ in } // If this isn't defined, there is a bug in UICVCompositional Layout that will fail to update sizes of cells
+
 					return section
 				}
 			case 1:
@@ -175,6 +178,8 @@ extension AppStoreScreen
 					section.boundarySupplementaryItems = [header]
 					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
 					section.orthogonalScrollingBehavior = .groupPaging
+					section.visibleItemsInvalidationHandler = { _, _, _ in } // If this isn't defined, there is a bug in UICVCompositional Layout that will fail to update sizes of cells
+
 					return section
 				}
 			default:
@@ -212,6 +217,8 @@ extension AppStoreScreen
 					section.boundarySupplementaryItems = [header]
 					section.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 20, bottom: 0, trailing: 20)
 					section.orthogonalScrollingBehavior = .groupPaging
+					section.visibleItemsInvalidationHandler = { _, _, _ in } // If this isn't defined, there is a bug in UICVCompositional Layout that will fail to update sizes of cells
+
 					return section
 				}
 			}

@@ -72,7 +72,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		return collectionView.bounds.width - (insets.left + insets.right) - 0.0001
 	}
 
-	public override var collectionViewContentSize: CGSize
+	override public var collectionViewContentSize: CGSize
 	{
 		CGSize(width: contentWidth, height: contentHeight)
 	}
@@ -123,7 +123,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		return cachedHeaderHeight[sectionIndex] ?? estimatedHeaderHeight
 	}
 
-	public override func prepare()
+	override public func prepare()
 	{
 		guard let collectionView = collectionView else { return }
 
@@ -179,7 +179,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		contentHeight = cachedSectionHeight.reduce(into: collectionView.adjustedContentInset.top) { $0 += $1.value }
 	}
 
-	public override func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]?
+	override public func layoutAttributesForElements(in rect: CGRect) -> [UICollectionViewLayoutAttributes]?
 	{
 		var attributesArray: [UICollectionViewLayoutAttributes] = []
 
@@ -217,12 +217,12 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		return attributesArray
 	}
 
-	public override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes?
+	override public func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes?
 	{
 		cachedAttributes[indexPath]
 	}
 
-	public override func layoutAttributesForSupplementaryView(ofKind elementKind: String, at indexPath: IndexPath) -> UICollectionViewLayoutAttributes?
+	override public func layoutAttributesForSupplementaryView(ofKind elementKind: String, at indexPath: IndexPath) -> UICollectionViewLayoutAttributes?
 	{
 		switch elementKind
 		{
@@ -233,7 +233,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		}
 	}
 
-	public override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool
+	override public func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool
 	{
 		if newBounds.width != collectionView?.bounds.width
 		{
@@ -242,7 +242,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		return false
 	}
 
-	public override func shouldInvalidateLayout(forPreferredLayoutAttributes preferredAttributes: UICollectionViewLayoutAttributes, withOriginalAttributes originalAttributes: UICollectionViewLayoutAttributes) -> Bool
+	override public func shouldInvalidateLayout(forPreferredLayoutAttributes preferredAttributes: UICollectionViewLayoutAttributes, withOriginalAttributes originalAttributes: UICollectionViewLayoutAttributes) -> Bool
 	{
 		guard !hasDelegate else { return false }
 		if originalAttributes.indexPath.item == -1
@@ -263,7 +263,7 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		return false
 	}
 
-	public override func invalidationContext(forPreferredLayoutAttributes preferredAttributes: UICollectionViewLayoutAttributes, withOriginalAttributes originalAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutInvalidationContext
+	override public func invalidationContext(forPreferredLayoutAttributes preferredAttributes: UICollectionViewLayoutAttributes, withOriginalAttributes originalAttributes: UICollectionViewLayoutAttributes) -> UICollectionViewLayoutInvalidationContext
 	{
 		let context = super.invalidationContext(forPreferredLayoutAttributes: preferredAttributes, withOriginalAttributes: originalAttributes)
 		guard let collectionView = collectionView else { return context }

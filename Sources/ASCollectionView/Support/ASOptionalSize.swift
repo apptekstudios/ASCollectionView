@@ -22,19 +22,32 @@ struct ASOptionalSize
 	static let none = ASOptionalSize()
 }
 
+extension CGFloat
+{
+	func applyOptionalMinBound(_ optionalMinBound: CGFloat?) -> CGFloat
+	{
+		optionalMinBound.map { Swift.max($0, self) } ?? self
+	}
+
+	func applyOptionalMaxBound(_ optionalMaxBound: CGFloat?) -> CGFloat
+	{
+		optionalMaxBound.map { Swift.min($0, self) } ?? self
+	}
+}
+
 extension CGSize
 {
 	func applyMinSize(_ minSize: ASOptionalSize) -> CGSize
 	{
 		CGSize(
-			width: minSize.width.map { max($0, width) } ?? width,
-			height: minSize.height.map { max($0, height) } ?? height)
+			width: width.applyOptionalMinBound(minSize.width),
+			height: height.applyOptionalMinBound(minSize.height))
 	}
 
 	func applyMaxSize(_ maxSize: ASOptionalSize) -> CGSize
 	{
 		CGSize(
-			width: maxSize.width.map { min($0, width) } ?? width,
-			height: maxSize.height.map { min($0, height) } ?? height)
+			width: width.applyOptionalMaxBound(maxSize.width),
+			height: height.applyOptionalMaxBound(maxSize.height))
 	}
 }
