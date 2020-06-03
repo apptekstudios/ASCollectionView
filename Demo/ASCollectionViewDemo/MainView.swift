@@ -58,14 +58,6 @@ struct MainView: View
 						Text("Multiple TableView drag&drop")
 					}
 				}
-				Section(header: Text("Modified examples"))
-				{
-					NavigationLink(destination: TagsScreen(shrinkToSize: true))
-					{
-						Image(systemName: "hammer")
-						Text("Tags in self-sizing collection")
-					}
-				}
 			}
 			.navigationBarTitle("Demo App")
 		}

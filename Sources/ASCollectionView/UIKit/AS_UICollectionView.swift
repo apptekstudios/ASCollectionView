@@ -7,10 +7,17 @@ import SwiftUI
 public class AS_CollectionViewController: UIViewController
 {
 	weak var coordinator: ASCollectionViewCoordinator?
+	{
+		didSet
+		{
+			collectionView.coordinator = coordinator
+		}
+	}
 
 	var collectionViewLayout: UICollectionViewLayout
 	lazy var collectionView: AS_UICollectionView = {
 		let cv = AS_UICollectionView(frame: .zero, collectionViewLayout: collectionViewLayout)
+		cv.coordinator = coordinator
 		return cv
 	}()
 
@@ -95,4 +102,11 @@ public class AS_CollectionViewController: UIViewController
 }
 
 @available(iOS 13.0, *)
-class AS_UICollectionView: UICollectionView {}
+class AS_UICollectionView: UICollectionView
+{
+	weak var coordinator: ASCollectionViewCoordinator?
+	override func didMoveToSuperview()
+	{
+		if superview != nil { coordinator?.onMoveToParent() }
+	}
+}
