@@ -468,6 +468,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 			return indexPath
 		}
+        
+        public func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+            guard !isEditing else { return false }
+            return parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection ?? false
+        }
 
 		public func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
 		{
