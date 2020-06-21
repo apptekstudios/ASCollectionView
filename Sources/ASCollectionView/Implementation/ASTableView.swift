@@ -296,7 +296,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			tableViewController.map { checkIfReachedBottom($0.tableView) }
 		}
 
-		func onMoveFromParent() {}
+		func onMoveFromParent() {
+            hasDoneInitialSetup = false
+            dataSource?.didDisappear()
+        }
 
 		// MARK: Function for updating contentSize binding
 

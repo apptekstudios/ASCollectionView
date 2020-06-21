@@ -181,6 +181,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				self.haveRegisteredForSupplementaryOfKind.insert(kind) // We don't need to register this kind again now.
 			}
 		}
+        
+        var isEditing: Bool {
+            parent.editMode?.wrappedValue.isEditing ?? false
+        }
 
 		func updateCollectionViewSettings(_ collectionView: UICollectionView)
 		{
@@ -192,8 +196,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			assignIfChanged(collectionView, \.keyboardDismissMode, newValue: .onDrag)
 			updateCollectionViewContentInsets(collectionView)
 
-			let isEditing = parent.editMode?.wrappedValue.isEditing ?? false
-			assignIfChanged(collectionView, \.allowsSelection, newValue: isEditing)
+			assignIfChanged(collectionView, \.allowsSelection, newValue: true)
 			assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: isEditing)
 		}
 
@@ -657,11 +660,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, willSelectItemAt indexPath: IndexPath) -> IndexPath?
 		{
-			guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? true else
-			{
-				return nil
-			}
-			return indexPath
+            if isEditing {
+                guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false else
+                {
+                    return nil
+                }
+                return indexPath
+            } else if parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection == true {
+                return indexPath
+            }
+            return nil
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDeselectItemAt indexPath: IndexPath) -> IndexPath?
@@ -675,7 +683,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 		{
-			updateSelectionBindings(collectionView)
+            if isEditing {
+                updateSelectionBindings(collectionView)
+            } else {
+                parent.sections[safe: indexPath.section]?.dataSource.didSingleSelect(index: indexPath.item)
+            }
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)

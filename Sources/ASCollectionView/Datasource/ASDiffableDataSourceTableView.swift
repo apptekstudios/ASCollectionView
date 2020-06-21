@@ -37,6 +37,7 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 		let changeset = StagedChangeset(source: currentSnapshot.sections, target: newSnapshot.sections)
 		let shouldDisableAnimation = firstLoad || !animated
 
+        self.canRefreshSizes = false
 		CATransaction.begin()
 		if shouldDisableAnimation
 		{
@@ -64,6 +65,10 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 
 		CATransaction.commit()
 	}
+    
+    func didDisappear() {
+        canRefreshSizes = false
+    }
 
 	func numberOfSections(in tableView: UITableView) -> Int
 	{
