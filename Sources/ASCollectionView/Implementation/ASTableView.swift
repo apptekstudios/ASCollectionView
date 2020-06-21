@@ -25,6 +25,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 	internal var onScrollCallback: OnScrollCallback?
 	internal var onReachedBottomCallback: OnReachedBottomCallback?
+    
+    internal var scrollPositionSetter: Binding<ASTableViewScrollPosition?>?
 
 	internal var scrollIndicatorEnabled: Bool = true
 	internal var contentInsets: UIEdgeInsets = .zero
@@ -220,7 +222,24 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					ASDiffableDataSourceSnapshot.Section(id: $0.id, elements: $0.itemIDs)
 				}
 			)
-			dataSource?.applySnapshot(snapshot, animated: animated)
+            dataSource?.applySnapshot(snapshot, animated: animated) {
+                if let scrollPositionToSet = self.parent.scrollPositionSetter?.wrappedValue
+                {
+                    switch scrollPositionToSet {
+                    case .indexPath(let indexPath):
+                        self.tableViewController?.tableView.scrollToRow(at: indexPath, at: .none, animated: animated)
+                    case .top:
+                        let contentInsets = self.tableViewController?.tableView.contentInset ?? .zero
+                        self.tableViewController?.tableView.setContentOffset(CGPoint(x: 0, y: contentInsets.top), animated: animated)
+                    case .bottom:
+                        let contentSize = self.tableViewController?.tableView.contentSizePlusInsets ?? .zero
+                        self.tableViewController?.tableView.scrollRectToVisible(CGRect(origin: .init(x: 0, y: contentSize.height), size: .zero), animated: animated)
+                    }
+                    DispatchQueue.main.async {
+                        self.parent.scrollPositionSetter?.wrappedValue = nil
+                    }
+                }
+            }
 			withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
 				refreshVisibleCells()
 			}
@@ -684,4 +703,12 @@ protocol ASTableViewCoordinator: AnyObject
 	func onMoveToParent()
 	func onMoveFromParent()
 	func didUpdateContentSize(_ size: CGSize)
+}
+
+@available(iOS 13.0, *)
+public enum ASTableViewScrollPosition
+{
+    case top
+    case bottom
+    case indexPath(_: IndexPath)
 }
