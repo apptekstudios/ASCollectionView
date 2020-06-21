@@ -20,7 +20,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 	{
 		super.init(style: .default, reuseIdentifier: reuseIdentifier)
 		backgroundColor = nil
-		selectionStyle = .none
+        selectionStyle = .default
 	}
 
 	required init?(coder: NSCoder)

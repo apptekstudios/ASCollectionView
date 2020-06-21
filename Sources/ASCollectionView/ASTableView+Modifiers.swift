@@ -98,6 +98,12 @@ public extension ASTableViewSection
 			return self
 		}
 	}
+    
+    func onSelectSingle(_ callback: @escaping ((Int) -> Void)) -> Self {
+        var section = self
+        section.dataSource.onSelectSingle = callback
+        return section
+    }
 }
 
 @available(iOS 13.0, *)

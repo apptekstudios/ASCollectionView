@@ -139,6 +139,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			parent.sections
 				.first(where: { $0.id.hashValue == itemID.sectionIDHash })
 		}
+        
+        var isEditing: Bool {
+            parent.editMode?.wrappedValue.isEditing ?? false
+        }
 
 		func updateTableViewSettings(_ tableView: UITableView)
 		{
@@ -150,12 +154,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			assignIfChanged(tableView, \.showsHorizontalScrollIndicator, newValue: parent.scrollIndicatorEnabled)
 			assignIfChanged(tableView, \.keyboardDismissMode, newValue: .onDrag)
 
-			let isEditing = parent.editMode?.wrappedValue.isEditing ?? false
-			assignIfChanged(tableView, \.allowsMultipleSelection, newValue: isEditing)
-			if assignIfChanged(tableView, \.allowsSelection, newValue: isEditing)
-			{
-				updateSelectionBindings(tableView)
-			}
+            assignIfChanged(tableView, \.allowsSelection, newValue: true)
+            if assignIfChanged(tableView, \.allowsMultipleSelection, newValue: isEditing) {
+                updateSelectionBindings(tableView)
+            }
 		}
 
 		func setupDataSource(forTableView tv: UITableView)
@@ -414,10 +416,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		}
 
 		// MARK: Cell Selection
+        
+        
 
 		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
 		{
-			updateContent(tableView, transaction: nil)
+            if isEditing {
+                updateContent(tableView, transaction: nil)
+            } else {
+                parent.sections[safe: indexPath.section]?.dataSource.didSingleSelect(index: indexPath.item)
+            }
 		}
 
 		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath)
@@ -440,11 +448,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath?
 		{
-			guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false else
-			{
-				return nil
-			}
-			return indexPath
+            if isEditing {
+                guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false else
+                {
+                    return nil
+                }
+                return indexPath
+            } else if parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection == true {
+                return indexPath
+            }
+            return nil
 		}
 
 		public func tableView(_ tableView: UITableView, willDeselectRowAt indexPath: IndexPath) -> IndexPath?

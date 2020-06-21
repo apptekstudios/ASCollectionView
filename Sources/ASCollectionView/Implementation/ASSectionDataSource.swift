@@ -33,11 +33,15 @@ internal protocol ASSectionDataSourceProtocol
 	func shouldSelect(_ indexPath: IndexPath) -> Bool
 	func shouldDeselect(_ indexPath: IndexPath) -> Bool
 
+    var allowSingleSelection: Bool { get }
+    func didSingleSelect(index: Int)
+
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 	var reorderingEnabled: Bool { get }
 
 	mutating func setSelfSizingConfig(config: @escaping SelfSizingConfig)
+    var onSelectSingle: ((Int) -> Void)? { get set }
 }
 
 @available(iOS 13.0, *)
@@ -58,6 +62,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var selectedItems: Binding<Set<Int>>?
 	var shouldAllowSelection: ((_ index: Int) -> Bool)?
 	var shouldAllowDeselection: ((_ index: Int) -> Bool)?
+    var onSelectSingle: ((Int) -> Void)?
 
 	var onCellEvent: OnCellEvent<DataCollection.Element>?
 	var dragDropConfig: ASDragDropConfig<DataCollection.Element>
@@ -280,6 +285,15 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		selfSizingConfig?(context)
 	}
+    
+    var allowSingleSelection: Bool {
+        onSelectSingle != nil
+    }
+    
+    func didSingleSelect(index: Int)
+    {
+        onSelectSingle?(index)
+    }
 
 	func isSelected(index: Int) -> Bool
 	{
