@@ -697,7 +697,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func updateSelectionBindings(_ collectionView: UICollectionView)
 		{
-			let selected = collectionView.indexPathsForSelectedItems ?? []
+            let selected = isEditing ? (collectionView.indexPathsForSelectedItems ?? []) : []
 			let selectionBySection = Dictionary(grouping: selected) { $0.section }
 				.mapValues
 			{
