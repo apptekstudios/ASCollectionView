@@ -21,12 +21,17 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		super.init(style: .default, reuseIdentifier: reuseIdentifier)
 		backgroundColor = nil
         selectionStyle = .default
+        
+        let selectedBack = UIView()
+        selectedBack.backgroundColor = UIColor.systemGray.withAlphaComponent(0.2)
+        selectedBackgroundView = selectedBack
 	}
 
 	required init?(coder: NSCoder)
 	{
 		fatalError("init(coder:) has not been implemented")
 	}
+
 
 	weak var tableViewController: AS_TableViewController?
 

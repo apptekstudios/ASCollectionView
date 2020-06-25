@@ -10,7 +10,7 @@ internal protocol ASSectionDataSourceProtocol
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
+	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, isSelected: Bool, animate: Bool) -> ASHostingControllerProtocol?
 	func getUpdatedHC(forSupplementaryKind supplementaryKind: String, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
 	var supplementaryViews: [String: AnyView] { get set }
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
@@ -28,7 +28,6 @@ internal protocol ASSectionDataSourceProtocol
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
 
-	func isSelected(index: Int) -> Bool
 	func updateSelection(_ indices: Set<Int>)
 	func shouldSelect(_ indexPath: IndexPath) -> Bool
 	func shouldDeselect(_ indexPath: IndexPath) -> Bool
@@ -84,18 +83,18 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash })
 	}
 
-	func cellContext(for index: Int) -> ASCellContext
+    func cellContext(for index: Int, isSelected: Bool) -> ASCellContext
 	{
 		ASCellContext(
-			isSelected: isSelected(index: index),
+			isSelected: isSelected,
 			index: index,
 			isFirstInSection: index == data.startIndex,
 			isLastInSection: index == data.endIndex - 1)
 	}
 
-	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
+	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, isSelected: Bool, animate: Bool) -> ASHostingControllerProtocol?
 	{
-		guard let content = getContent(forItemID: itemID) else { return nil }
+		guard let content = getContent(forItemID: itemID, isSelected: isSelected) else { return nil }
 		let hc: ASHostingController<Container>
 		if let cachedHC = cachedHC as? ASHostingController<Container>
 		{
@@ -145,11 +144,11 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		return hc
 	}
 
-	func getContent(forItemID itemID: ASCollectionViewItemUniqueID) -> Container?
+    func getContent(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> Container?
 	{
 		guard let itemIndex = getIndex(of: itemID) else { return nil }
 		let item = data[itemIndex]
-		let context = cellContext(for: itemIndex)
+		let context = cellContext(for: itemIndex, isSelected: isSelected)
 		let view = content(item, context)
 		return container(view)
 	}
@@ -294,11 +293,6 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
     {
         onSelectSingle?(index)
     }
-
-	func isSelected(index: Int) -> Bool
-	{
-		selectedItems?.wrappedValue.contains(index) ?? false
-	}
 
 	func updateSelection(_ indices: Set<Int>)
 	{

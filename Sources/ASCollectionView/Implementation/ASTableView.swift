@@ -20,6 +20,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 	public var sections: [Section]
 	public var style: UITableView.Style
+    public var editMode: Bool = false
 
 	// MARK: Private vars set by public modifiers
 
@@ -39,8 +40,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 	internal var animateOnDataRefresh: Bool = true
 
 	// MARK: Environment variables
-
-	@Environment(\.editMode) private var editMode
 
 	@Environment(\.invalidateCellLayout) var invalidateParentCellLayout // Call this if using content size binding (nested inside another ASCollectionView)
 
@@ -143,7 +142,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		}
         
         var isEditing: Bool {
-            parent.editMode?.wrappedValue.isEditing ?? false
+            parent.editMode
         }
 
 		func updateTableViewSettings(_ tableView: UITableView)
@@ -157,10 +156,19 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			assignIfChanged(tableView, \.keyboardDismissMode, newValue: .onDrag)
 
             assignIfChanged(tableView, \.allowsSelection, newValue: true)
+            assignIfChanged(tableView, \.allowsMultipleSelectionDuringEditing, newValue: true)
+            assignIfChanged(tableView, \.allowsSelectionDuringEditing, newValue: true)
+            assignIfChanged(tableView, \.isEditing, newValue: isEditing)
+            
+            
             if assignIfChanged(tableView, \.allowsMultipleSelection, newValue: isEditing) {
                 updateSelectionBindings(tableView)
             }
 		}
+        
+        func isIndexPathSelected(_ indexPath: IndexPath) -> Bool {
+            tableViewController?.tableView.indexPathsForSelectedRows?.contains(indexPath) ?? false
+        }
 
 		func setupDataSource(forTableView tv: UITableView)
 		{
@@ -190,11 +198,12 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 				// Set itemID
 				cell.itemID = itemID
-
+                cell.isSelected = self.isIndexPathSelected(indexPath)
+                
 				// Get cachedHC
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
 				// Update hostingController
-				cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, animate: false)
+                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, animate: false)
 				if section.shouldCacheCells
 				{
 					self.explicitlyCachedHostingControllers[itemID] = cell.hostingController
@@ -270,7 +279,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				// Get cachedHC
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
 				// Update hostingController
-				cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, animate: true)
+                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, animate: true)
 				if section.shouldCacheCells
 				{
 					explicitlyCachedHostingControllers[itemID] = cell.hostingController
@@ -431,6 +440,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		{
 			.none
 		}
+        
 
 		private func onDeleteAction(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 		{
@@ -447,6 +457,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
                 updateContent(tableView, transaction: nil)
             } else {
                 parent.sections[safe: indexPath.section]?.dataSource.didSingleSelect(index: indexPath.item)
+                tableView.deselectRow(at: indexPath, animated: true)
             }
 		}
 
@@ -471,6 +482,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		public func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath?
 		{
             if isEditing {
+                if let selectedRows = tableView.indexPathsForSelectedRows, selectedRows.contains(indexPath) {
+                    tableView.deselectRow(at: indexPath, animated: false)
+                    return nil
+                }
                 guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false else
                 {
                     return nil
@@ -490,11 +505,12 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 			return indexPath
 		}
+
         
         public func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
-            guard !isEditing else { return false }
             return parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection ?? false
         }
+        
 
 		public func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
 		{

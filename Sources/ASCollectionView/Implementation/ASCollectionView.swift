@@ -205,6 +205,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			assignIfChanged(collectionView, \.contentInsetAdjustmentBehavior, newValue: delegate?.collectionViewContentInsetAdjustmentBehavior ?? .automatic)
 			assignIfChanged(collectionView, \.contentInset, newValue: adaptiveContentInsets)
 		}
+        
+        func isIndexPathSelected(_ indexPath: IndexPath) -> Bool {
+            collectionViewController?.collectionView.indexPathsForSelectedItems?.contains(indexPath) ?? false
+        }
 
 		func setupDataSource(forCollectionView cv: UICollectionView)
 		{
@@ -235,11 +239,12 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 				// Set itemID
 				cell.itemID = itemID
+                cell.isSelected = self.isIndexPathSelected(indexPath)
 
 				// Get cachedHC
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
 				// Update hostingController
-				cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, animate: false)
+                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, animate: false)
 				if section.shouldCacheCells
 				{
 					self.explicitlyCachedHostingControllers[itemID] = cell.hostingController
@@ -347,7 +352,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				// Get cachedHC
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
 				// Update hostingController
-				cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, animate: true)
+                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, animate: true)
 				if section.shouldCacheCells
 				{
 					explicitlyCachedHostingControllers[itemID] = cell.hostingController
@@ -687,6 +692,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
                 updateSelectionBindings(collectionView)
             } else {
                 parent.sections[safe: indexPath.section]?.dataSource.didSingleSelect(index: indexPath.item)
+                collectionView.deselectItem(at: indexPath, animated: true)
             }
 		}
 
@@ -706,6 +712,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			parent.sections.enumerated().forEach { offset, section in
 				section.dataSource.updateSelection(selectionBySection[offset] ?? [])
 			}
+            refreshVisibleCells()
 		}
 
 		func canDrop(at indexPath: IndexPath) -> Bool
