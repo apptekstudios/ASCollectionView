@@ -250,7 +250,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
                 }
             }
 			withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
-				refreshVisibleCells()
+				//refreshVisibleCells() //NOTE: MEMRI: Disabled due to an issue where the cell is refreshed during the wrong context -> wrong size
 			}
 			tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
 		}
@@ -456,8 +456,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
             if isEditing {
                 updateContent(tableView, transaction: nil)
             } else {
-                parent.sections[safe: indexPath.section]?.dataSource.didSingleSelect(index: indexPath.item)
                 tableView.deselectRow(at: indexPath, animated: true)
+                parent.sections[safe: indexPath.section]?.dataSource.didSingleSelect(index: indexPath.item)
             }
 		}
 
@@ -499,7 +499,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, willDeselectRowAt indexPath: IndexPath) -> IndexPath?
 		{
-			guard parent.sections[safe: indexPath.section]?.dataSource.shouldDeselect(indexPath) ?? false else
+			guard parent.sections[safe: indexPath.section]?.dataSource.shouldDeselect(indexPath) ?? true else
 			{
 				return nil
 			}
