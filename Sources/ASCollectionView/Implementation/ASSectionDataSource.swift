@@ -10,7 +10,7 @@ internal protocol ASSectionDataSourceProtocol
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, isSelected: Bool, animate: Bool) -> ASHostingControllerProtocol?
+	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, isSelected: Bool, transaction: Transaction?) -> ASHostingControllerProtocol?
 	func getUpdatedHC(forSupplementaryKind supplementaryKind: String, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
 	var supplementaryViews: [String: AnyView] { get set }
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
@@ -92,16 +92,18 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			isLastInSection: index == data.endIndex - 1)
 	}
 
-	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, isSelected: Bool, animate: Bool) -> ASHostingControllerProtocol?
+	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, isSelected: Bool, transaction: Transaction?) -> ASHostingControllerProtocol?
 	{
 		guard let content = getContent(forItemID: itemID, isSelected: isSelected) else { return nil }
 		let hc: ASHostingController<Container>
 		if let cachedHC = cachedHC as? ASHostingController<Container>
 		{
 			hc = cachedHC
-			if animate
+			if let transaction = transaction
 			{
-				hc.setView(content)
+                withTransaction(transaction) {
+                    hc.setView(content)
+                }
 			}
 			else
 			{

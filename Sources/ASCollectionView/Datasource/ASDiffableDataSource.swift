@@ -81,22 +81,17 @@ struct ASDiffableDataSourceSnapshot<SectionID: Hashable>
 	struct Item: Differentiable
 	{
 		var differenceIdentifier: ASCollectionViewItemUniqueID
-		var isReloaded: Bool
+		var shouldReload: Bool
 
-		init(id: ASCollectionViewItemUniqueID, isReloaded: Bool)
+		init(id: ASCollectionViewItemUniqueID, shouldReload: Bool = false)
 		{
 			differenceIdentifier = id
-			self.isReloaded = isReloaded
-		}
-
-		init(id: ASCollectionViewItemUniqueID)
-		{
-			self.init(id: id, isReloaded: false)
+			self.shouldReload = shouldReload
 		}
 
 		func isContentEqual(to source: Item) -> Bool
 		{
-			!isReloaded && differenceIdentifier == source.differenceIdentifier
+			!shouldReload && differenceIdentifier == source.differenceIdentifier
 		}
 	}
 }
@@ -104,10 +99,10 @@ struct ASDiffableDataSourceSnapshot<SectionID: Hashable>
 @available(iOS 13.0, *)
 extension ASDiffableDataSourceSnapshot.Section
 {
-	init(id: SectionID, elements: [ASCollectionViewItemUniqueID])
+    init(id: SectionID, elements: [ASCollectionViewItemUniqueID], shouldReloadElements: Bool = false)
 	{
 		self.id = id
-		self.elements = elements.map { ASDiffableDataSourceSnapshot.Item(id: $0) }
+		self.elements = elements.map { ASDiffableDataSourceSnapshot.Item(id: $0, shouldReload: shouldReloadElements) }
 	}
 }
 

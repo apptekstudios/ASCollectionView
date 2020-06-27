@@ -84,6 +84,7 @@ extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionVi
 		coordinator?.collectionView(collectionView, dropSessionDidUpdate: session, withDestinationIndexPath: destinationIndexPath) ?? UICollectionViewDropProposal(operation: .cancel)
 	}
 
+    // UICollectionView doesn't support dropping multiple items :( http://www.openradar.me/42068699
 	open func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator)
 	{
 		self.coordinator?.collectionView(collectionView, performDropWith: coordinator)

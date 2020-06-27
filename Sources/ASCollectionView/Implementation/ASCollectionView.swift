@@ -18,6 +18,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	public var layout: Layout = .default
 	public var sections: [Section]
+    public var editMode: Bool = false
 
 	// MARK: Internal variables modified by modifier functions
 
@@ -54,8 +55,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	// MARK: Environment variables
 
 	// SwiftUI environment
-	@Environment(\.editMode) private var editMode
-
 	@Environment(\.invalidateCellLayout) var invalidateParentCellLayout // Call this if using content size binding (nested inside another ASCollectionView)
 
 	public func makeUIViewController(context: Context) -> AS_CollectionViewController
@@ -181,10 +180,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				self.haveRegisteredForSupplementaryOfKind.insert(kind) // We don't need to register this kind again now.
 			}
 		}
-        
-        var isEditing: Bool {
-            parent.editMode?.wrappedValue.isEditing ?? false
-        }
 
 		func updateCollectionViewSettings(_ collectionView: UICollectionView)
 		{
@@ -197,7 +192,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			updateCollectionViewContentInsets(collectionView)
 
 			assignIfChanged(collectionView, \.allowsSelection, newValue: true)
-			assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: isEditing)
+            if !parent.editMode && collectionView.allowsMultipleSelection {
+                collectionView.allowsSelection = false; collectionView.allowsSelection = true //Remove the old selection
+            }
+            assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: parent.editMode)
 		}
 
 		func updateCollectionViewContentInsets(_ collectionView: UICollectionView)
@@ -244,7 +242,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				// Get cachedHC
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
 				// Update hostingController
-                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, animate: false)
+                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, transaction: nil)
 				if section.shouldCacheCells
 				{
 					self.explicitlyCachedHostingControllers[itemID] = cell.hostingController
@@ -322,7 +320,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					}
 				}
 			}
-			refreshVisibleCells()
+            refreshVisibleCells(transaction: transaction)
 
 			collectionViewController.map { self.didUpdateContentSize($0.collectionView.contentSize) }
 		}
@@ -339,7 +337,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			updateSelectionBindings(cv)
 		}
 
-		func refreshVisibleCells()
+		func refreshVisibleCells(transaction: Transaction? = nil)
 		{
 			guard let cv = collectionViewController?.collectionView else { return }
 			for case let cell as Cell in cv.visibleCells
@@ -352,7 +350,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				// Get cachedHC
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
 				// Update hostingController
-                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, animate: true)
+                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, transaction: transaction)
 				if section.shouldCacheCells
 				{
 					explicitlyCachedHostingControllers[itemID] = cell.hostingController
@@ -665,7 +663,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, willSelectItemAt indexPath: IndexPath) -> IndexPath?
 		{
-            if isEditing {
+            if parent.editMode {
                 guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false else
                 {
                     return nil
@@ -688,7 +686,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 		{
-            if isEditing {
+            if parent.editMode {
                 updateSelectionBindings(collectionView)
             } else {
                 parent.sections[safe: indexPath.section]?.dataSource.didSingleSelect(index: indexPath.item)
@@ -703,7 +701,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func updateSelectionBindings(_ collectionView: UICollectionView)
 		{
-            let selected = isEditing ? (collectionView.indexPathsForSelectedItems ?? []) : []
+            let selected = parent.editMode ? (collectionView.indexPathsForSelectedItems ?? []) : []
 			let selectionBySection = Dictionary(grouping: selected) { $0.section }
 				.mapValues
 			{

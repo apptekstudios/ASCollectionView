@@ -35,26 +35,26 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	private func attachView()
 	{
 		guard hasAppeared else { return }
-		guard let hcView = hostingController?.viewController.view else
+		guard let hcView = _hostingController?.viewController.view else
 		{
 			detachViews()
 			return
 		}
 		if hcView.superview != contentView
 		{
-			hostingController.map { collectionViewController?.addChild($0.viewController) }
+            _hostingController.map { collectionViewController?.addChild($0.viewController) }
 			contentView.subviews.forEach { $0.removeFromSuperview() }
 			contentView.addSubview(hcView)
 			hcView.frame = contentView.bounds
-			hostingController?.viewController.didMove(toParent: collectionViewController)
+            _hostingController?.viewController.didMove(toParent: collectionViewController)
 		}
 	}
 
 	private func detachViews()
 	{
-		hostingController?.viewController.willMove(toParent: nil)
+        _hostingController?.viewController.willMove(toParent: nil)
 		contentView.subviews.forEach { $0.removeFromSuperview() }
-		hostingController?.viewController.removeFromParent()
+        _hostingController?.viewController.removeFromParent()
 	}
 
 	override func prepareForReuse()
@@ -69,17 +69,17 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 	{
 		super.layoutSubviews()
 
-		if hostingController?.viewController.view.frame != contentView.bounds
+		if _hostingController?.viewController.view.frame != contentView.bounds
 		{
-			hostingController?.viewController.view.frame = contentView.bounds
-			hostingController?.viewController.view.setNeedsLayout()
+            _hostingController?.viewController.view.frame = contentView.bounds
+            _hostingController?.viewController.view.setNeedsLayout()
 		}
-		hostingController?.viewController.view.layoutIfNeeded()
+        _hostingController?.viewController.view.layoutIfNeeded()
 	}
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
 	{
-		guard let hostingController = hostingController else { return CGSize(width: 1, height: 1) }
+		guard let hostingController = _hostingController else { return CGSize(width: 1, height: 1) }
 
 		let selfSizeHorizontal = selfSizingConfig.selfSizeHorizontally ?? (horizontalFittingPriority != .required)
 		let selfSizeVertical = selfSizingConfig.selfSizeVertically ?? (verticalFittingPriority != .required)

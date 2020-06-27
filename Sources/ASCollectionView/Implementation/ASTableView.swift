@@ -40,7 +40,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 	internal var animateOnDataRefresh: Bool = true
 
 	// MARK: Environment variables
-
 	@Environment(\.invalidateCellLayout) var invalidateParentCellLayout // Call this if using content size binding (nested inside another ASCollectionView)
 
 	// Other
@@ -203,7 +202,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				// Get cachedHC
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
 				// Update hostingController
-                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, animate: false)
+                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, transaction: nil)
 				if section.shouldCacheCells
 				{
 					self.explicitlyCachedHostingControllers[itemID] = cell.hostingController
@@ -249,9 +248,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
                     }
                 }
             }
-			withAnimation(parent.animateOnDataRefresh ? transaction?.animation : nil) {
-				//refreshVisibleCells() //NOTE: MEMRI: Disabled due to an issue where the cell is refreshed during the wrong context -> wrong size
-			}
+            refreshVisibleCells(transaction: transaction)
 			tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
 		}
 
@@ -267,7 +264,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			updateSelectionBindings(tv)
 		}
 
-		func refreshVisibleCells()
+		func refreshVisibleCells(transaction: Transaction?)
 		{
 			guard let tv = tableViewController?.tableView else { return }
 			for case let cell as Cell in tv.visibleCells
@@ -279,7 +276,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				// Get cachedHC
 				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
 				// Update hostingController
-                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, animate: true)
+                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, transaction: transaction)
 				if section.shouldCacheCells
 				{
 					explicitlyCachedHostingControllers[itemID] = cell.hostingController
@@ -629,7 +626,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				}
 			}
 			dataSource?.applySnapshot(dragSnapshot, animated: false)
-			refreshVisibleCells()
+			refreshVisibleCells(transaction: nil)
 		}
 
 		public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat
