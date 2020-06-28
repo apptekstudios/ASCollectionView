@@ -71,7 +71,7 @@ public struct ASCollectionLayout<SectionID: Hashable>
 		{
 		case let .custom(layout):
 			registerDecorationViews(layout)
-            configureLayout?(layout)
+			configureLayout?(layout)
 			return layout
 		case let .compositional(layoutClosure, interSectionSpacing, scrollDirection):
 			let config = UICollectionViewCompositionalLayoutConfiguration()

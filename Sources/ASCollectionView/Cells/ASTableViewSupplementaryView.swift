@@ -8,14 +8,15 @@ import UIKit
 class ASTableViewSupplementaryView: UITableViewHeaderFooterView, ASDataSourceConfigurableSupplementary
 {
 	var supplementaryID: ASSupplementaryCellID?
-    let hostingController = ASHostingController<AnyView>(AnyView(EmptyView()))
+	let hostingController = ASHostingController<AnyView>(AnyView(EmptyView()))
+	var isEmpty: Bool = true
 
 	override init(reuseIdentifier: String?)
 	{
 		super.init(reuseIdentifier: reuseIdentifier)
 		backgroundView = UIView()
-        contentView.addSubview(hostingController.viewController.view)
-        hostingController.viewController.view.frame = contentView.bounds
+		contentView.addSubview(hostingController.viewController.view)
+		hostingController.viewController.view.frame = contentView.bounds
 	}
 
 	required init?(coder: NSCoder)
@@ -23,43 +24,47 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView, ASDataSourceCon
 		fatalError("init(coder:) has not been implemented")
 	}
 
-	
-    weak var tableViewController: AS_TableViewController? {
-        didSet {
-            if tableViewController != oldValue {
-                hostingController.viewController.didMove(toParent: tableViewController)
-                tableViewController?.addChild(hostingController.viewController)
-            }
-        }
-    }
-	
+	weak var tableViewController: AS_TableViewController?
+	{
+		didSet
+		{
+			if tableViewController != oldValue
+			{
+				hostingController.viewController.didMove(toParent: tableViewController)
+				tableViewController?.addChild(hostingController.viewController)
+			}
+		}
+	}
 
 	override func prepareForReuse()
 	{
 		supplementaryID = nil
 	}
 
-    func setContent<Content: View>(supplementaryID: ASSupplementaryCellID, content: Content) {
-        self.supplementaryID = supplementaryID
-        hostingController.setView(AnyView(content.id(supplementaryID)))
-    }
-    
-    
-    func setAsEmpty(supplementaryID: ASSupplementaryCellID?) {
-        self.supplementaryID = supplementaryID
-        hostingController.setView(AnyView(EmptyView().id(supplementaryID)))
-    }
-    
-    override func layoutSubviews()
-    {
-        super.layoutSubviews()
-        
-        
-        hostingController.viewController.view.frame = contentView.bounds
-    }
+	func setContent<Content: View>(supplementaryID: ASSupplementaryCellID, content: Content?) {
+		guard let content = content else { setAsEmpty(supplementaryID: supplementaryID); return }
+		self.supplementaryID = supplementaryID
+		isEmpty = false
+		hostingController.setView(AnyView(content.id(supplementaryID)))
+	}
+
+	func setAsEmpty(supplementaryID: ASSupplementaryCellID?)
+	{
+		self.supplementaryID = supplementaryID
+		isEmpty = true
+		hostingController.setView(AnyView(EmptyView().id(supplementaryID)))
+	}
+
+	override func layoutSubviews()
+	{
+		super.layoutSubviews()
+
+		hostingController.viewController.view.frame = contentView.bounds
+	}
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
 	{
+		guard !isEmpty else { return CGSize(width: 1, height: 1) }
 		hostingController.viewController.view.setNeedsLayout()
 		hostingController.viewController.view.layoutIfNeeded()
 		let size = hostingController.sizeThatFits(

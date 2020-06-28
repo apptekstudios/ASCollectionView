@@ -16,7 +16,7 @@ public extension ASCollectionView
 	 */
 	init(editMode: Bool = false, sections: [Section])
 	{
-        self.editMode = editMode
+		self.editMode = editMode
 		self.sections = sections
 	}
 
@@ -45,7 +45,7 @@ public extension ASCollectionView where SectionID == Int
 	 */
 	init(editMode: Bool = false, section: Section)
 	{
-        self.editMode = editMode
+		self.editMode = editMode
 		sections = [section]
 	}
 
@@ -54,20 +54,20 @@ public extension ASCollectionView where SectionID == Int
 	 */
 	init(editMode: Bool = false, @ViewArrayBuilder staticContent: () -> ViewArrayBuilder.Wrapper)
 	{
-        self.init(editMode: editMode, sections: [ASCollectionViewSection(id: 0, content: staticContent)])
+		self.init(editMode: editMode, sections: [ASCollectionViewSection(id: 0, content: staticContent)])
 	}
 
 	/**
 	 Initializes a  collection view with a single section.
 	 */
 	init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
-        editMode: Bool = false,
-        data: DataCollection,
+		editMode: Bool = false,
+		data: DataCollection,
 		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, ASCellContext) -> Content))
 		where DataCollection.Index == Int
 	{
-        self.editMode = editMode
+		self.editMode = editMode
 		let section = ASCollectionViewSection(
 			id: 0,
 			data: data,
@@ -80,11 +80,11 @@ public extension ASCollectionView where SectionID == Int
 	 Initializes a  collection view with a single section with identifiable data
 	 */
 	init<DataCollection: RandomAccessCollection, Content: View>(
-        editMode: Bool = false,
-        data: DataCollection,
+		editMode: Bool = false,
+		data: DataCollection,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, ASCellContext) -> Content))
 		where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
-        self.init(editMode: editMode, data: data, dataID: \.id, contentBuilder: contentBuilder)
+		self.init(editMode: editMode, data: data, dataID: \.id, contentBuilder: contentBuilder)
 	}
 }

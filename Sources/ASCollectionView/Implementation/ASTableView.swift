@@ -20,14 +20,14 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 	public var sections: [Section]
 	public var style: UITableView.Style
-    public var editMode: Bool = false
+	public var editMode: Bool = false
 
 	// MARK: Private vars set by public modifiers
 
 	internal var onScrollCallback: OnScrollCallback?
 	internal var onReachedBottomCallback: OnReachedBottomCallback?
-    
-    internal var scrollPositionSetter: Binding<ASTableViewScrollPosition?>?
+
+	internal var scrollPositionSetter: Binding<ASTableViewScrollPosition?>?
 
 	internal var scrollIndicatorEnabled: Bool = true
 	internal var contentInsets: UIEdgeInsets = .zero
@@ -40,6 +40,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 	internal var animateOnDataRefresh: Bool = true
 
 	// MARK: Environment variables
+
 	@Environment(\.invalidateCellLayout) var invalidateParentCellLayout // Call this if using content size binding (nested inside another ASCollectionView)
 
 	// Other
@@ -144,23 +145,25 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			assignIfChanged(tableView, \.showsHorizontalScrollIndicator, newValue: parent.scrollIndicatorEnabled)
 			assignIfChanged(tableView, \.keyboardDismissMode, newValue: .onDrag)
 
-            assignIfChanged(tableView, \.allowsSelection, newValue: true)
-            assignIfChanged(tableView, \.allowsMultipleSelectionDuringEditing, newValue: true)
-            assignIfChanged(tableView, \.allowsSelectionDuringEditing, newValue: true)
-            assignIfChanged(tableView, \.isEditing, newValue: parent.editMode)
-            
-            
-            if assignIfChanged(tableView, \.allowsMultipleSelection, newValue: parent.editMode) {
-                if !parent.editMode {
-                    tableView.allowsSelection = false; tableView.allowsSelection = true //Remove the old selection
-                }
-                updateSelectionBindings(tableView)
-            }
+			assignIfChanged(tableView, \.allowsSelection, newValue: true)
+			assignIfChanged(tableView, \.allowsMultipleSelectionDuringEditing, newValue: true)
+			assignIfChanged(tableView, \.allowsSelectionDuringEditing, newValue: true)
+			assignIfChanged(tableView, \.isEditing, newValue: parent.editMode)
+
+			if assignIfChanged(tableView, \.allowsMultipleSelection, newValue: parent.editMode)
+			{
+				if !parent.editMode
+				{
+					tableView.allowsSelection = false; tableView.allowsSelection = true // Remove the old selection
+				}
+				updateSelectionBindings(tableView)
+			}
 		}
-        
-        func isIndexPathSelected(_ indexPath: IndexPath) -> Bool {
-            tableViewController?.tableView.indexPathsForSelectedRows?.contains(indexPath) ?? false
-        }
+
+		func isIndexPathSelected(_ indexPath: IndexPath) -> Bool
+		{
+			tableViewController?.tableView.indexPathsForSelectedRows?.contains(indexPath) ?? false
+		}
 
 		func setupDataSource(forTableView tv: UITableView)
 		{
@@ -188,14 +191,14 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 				cell.separatorInset = section.tableViewSeparatorInsets ?? UIEdgeInsets(top: 0, left: UITableView.automaticDimension, bottom: 0, right: UITableView.automaticDimension)
 
-                cell.isSelected = self.isIndexPathSelected(indexPath)
-                
-                cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
-                cell.skipNextRefresh = true // Avoid setting this again when we refresh old cells in a moment
-                
-                cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
-                cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
-                
+				cell.isSelected = self.isIndexPathSelected(indexPath)
+
+				cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
+				cell.skipNextRefresh = true // Avoid setting this again when we refresh old cells in a moment
+
+				cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
+				cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
+
 				cell.hostingController.invalidateCellLayoutCallback = { [weak self, weak cell] animated in
 					self?.invalidateLayout(animated: animated, cell: cell)
 				}
@@ -205,13 +208,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 				return cell
 			}
-            
-            dataSource?.onDelete = { [weak self] indexPath in
-                self?.onDeleteAction(indexPath: indexPath, completionHandler: {_ in })
-            }
-            dataSource?.onMove = { [weak self] from, to in
-                self?.onMoveAction(from: from, to: to)
-            }
+
+			dataSource?.onDelete = { [weak self] indexPath in
+				self?.onDeleteAction(indexPath: indexPath, completionHandler: { _ in })
+			}
+			dataSource?.onMove = { [weak self] from, to in
+				self?.onMoveAction(from: from, to: to)
+			}
 		}
 
 		func populateDataSource(animated: Bool = true, transaction: Transaction? = nil)
@@ -222,26 +225,27 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					ASDiffableDataSourceSnapshot.Section(id: $0.id, elements: $0.itemIDs)
 				}
 			)
-            dataSource?.applySnapshot(snapshot, animated: animated) {
-                if let scrollPositionToSet = self.parent.scrollPositionSetter?.wrappedValue
-                {
-                    switch scrollPositionToSet {
-                    case .indexPath(let indexPath):
-                        self.tableViewController?.tableView.scrollToRow(at: indexPath, at: .none, animated: animated)
-                    case .top:
-                        let contentInsets = self.tableViewController?.tableView.contentInset ?? .zero
-                        self.tableViewController?.tableView.setContentOffset(CGPoint(x: 0, y: contentInsets.top), animated: animated)
-                    case .bottom:
-                        let contentSize = self.tableViewController?.tableView.contentSizePlusInsets ?? .zero
-                        self.tableViewController?.tableView.scrollRectToVisible(CGRect(origin: .init(x: 0, y: contentSize.height), size: .zero), animated: animated)
-                    }
-                    DispatchQueue.main.async {
-                        self.parent.scrollPositionSetter?.wrappedValue = nil
-                    }
-                }
-            }
-            tableViewController.map { updateSelectionBindings($0.tableView) }
-            refreshVisibleCells(transaction: transaction, updateAll: false)
+			dataSource?.applySnapshot(snapshot, animated: animated) {
+				if let scrollPositionToSet = self.parent.scrollPositionSetter?.wrappedValue
+				{
+					switch scrollPositionToSet
+					{
+					case let .indexPath(indexPath):
+						self.tableViewController?.tableView.scrollToRow(at: indexPath, at: .none, animated: animated)
+					case .top:
+						let contentInsets = self.tableViewController?.tableView.contentInset ?? .zero
+						self.tableViewController?.tableView.setContentOffset(CGPoint(x: 0, y: contentInsets.top), animated: animated)
+					case .bottom:
+						let contentSize = self.tableViewController?.tableView.contentSizePlusInsets ?? .zero
+						self.tableViewController?.tableView.scrollRectToVisible(CGRect(origin: .init(x: 0, y: contentSize.height), size: .zero), animated: animated)
+					}
+					DispatchQueue.main.async {
+						self.parent.scrollPositionSetter?.wrappedValue = nil
+					}
+				}
+			}
+			tableViewController.map { updateSelectionBindings($0.tableView) }
+			refreshVisibleCells(transaction: transaction, updateAll: false)
 			tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
 		}
 
@@ -255,7 +259,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			dataSource?.updateCellSizes(animated: transactionAnimationEnabled)
 		}
 
-        func refreshVisibleCells(transaction: Transaction?, updateAll: Bool = true)
+		func refreshVisibleCells(transaction: Transaction?, updateAll: Bool = true)
 		{
 			guard let tv = tableViewController?.tableView else { return }
 			for case let cell as Cell in tv.visibleCells
@@ -264,13 +268,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					let itemID = cell.itemID,
 					let section = self.section(forItemID: itemID)
 				else { continue }
-                if cell.skipNextRefresh && !updateAll {
-                    cell.skipNextRefresh = false
-                } else {
-                    cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
-                    cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
-                    cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
-                }
+				if cell.skipNextRefresh, !updateAll
+				{
+					cell.skipNextRefresh = false
+				}
+				else
+				{
+					cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
+					cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
+					cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
+				}
 			}
 
 			for case let supplementaryView as ASTableViewSupplementaryView in tv.subviews
@@ -279,8 +286,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					let supplementaryID = supplementaryView.supplementaryID,
 					let section = parent.sections.first(where: { $0.id.hashValue == supplementaryID.sectionIDHash })
 				else { continue }
-                supplementaryView.setContent(supplementaryID: supplementaryID, content: section.dataSource.content(supplementaryID: supplementaryID))
-
+				supplementaryView.setContent(supplementaryID: supplementaryID, content: section.dataSource.content(supplementaryID: supplementaryID))
 			}
 		}
 
@@ -303,10 +309,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			tableViewController.map { checkIfReachedBottom($0.tableView) }
 		}
 
-		func onMoveFromParent() {
-            hasDoneInitialSetup = false
-            dataSource?.didDisappear()
-        }
+		func onMoveFromParent()
+		{
+			hasDoneInitialSetup = false
+			dataSource?.didDisappear()
+		}
 
 		// MARK: Function for updating contentSize binding
 
@@ -408,48 +415,53 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 			return UISwipeActionsConfiguration(actions: [deleteAction])
 		}
-        
 
 		public func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle
 		{
-            if parent.sections[safe: indexPath.section]?.dataSource.supportsDelete(at: indexPath) ?? false {
-                return .delete
-            }
-            return .none
+			if parent.sections[safe: indexPath.section]?.dataSource.supportsDelete(at: indexPath) ?? false
+			{
+				return .delete
+			}
+			return .none
 		}
 
 		private func onDeleteAction(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 		{
 			parent.sections[safe: indexPath.section]?.dataSource.onDelete(indexPath: indexPath, completionHandler: completionHandler)
 		}
-        
-        
-        private func onMoveAction(from: IndexPath, to: IndexPath) {
-            guard let sourceSection = parent.sections[safe: from.section],
-                  let destinationSection = parent.sections[safe: to.section]
-            else { return }
-            if from.section == to.section {
-                sourceSection.dataSource.applyMove(from: from.item, to: to.item)
-            } else {
-                if let item = sourceSection.dataSource.getDragItem(for: from) {
-                    sourceSection.dataSource.applyRemove(atOffsets: [from.item])
-                    destinationSection.dataSource.applyInsert(items: [item], at: to.item)
-                }
-            }
-        }
+
+		private func onMoveAction(from: IndexPath, to: IndexPath)
+		{
+			guard let sourceSection = parent.sections[safe: from.section],
+				let destinationSection = parent.sections[safe: to.section]
+			else { return }
+			if from.section == to.section
+			{
+				sourceSection.dataSource.applyMove(from: from.item, to: to.item)
+			}
+			else
+			{
+				if let item = sourceSection.dataSource.getDragItem(for: from)
+				{
+					sourceSection.dataSource.applyRemove(atOffsets: [from.item])
+					destinationSection.dataSource.applyInsert(items: [item], at: to.item)
+				}
+			}
+		}
 
 		// MARK: Cell Selection
-        
-        
 
 		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
 		{
-            if parent.editMode {
-                updateContent(tableView, transaction: nil)
-            } else {
-                tableView.deselectRow(at: indexPath, animated: true)
-                parent.sections[safe: indexPath.section]?.dataSource.didSingleSelect(index: indexPath.item)
-            }
+			if parent.editMode
+			{
+				updateContent(tableView, transaction: nil)
+			}
+			else
+			{
+				tableView.deselectRow(at: indexPath, animated: true)
+				parent.sections[safe: indexPath.section]?.dataSource.didSingleSelect(index: indexPath.item)
+			}
 		}
 
 		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath)
@@ -472,20 +484,24 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath?
 		{
-            if parent.editMode {
-                if let selectedRows = tableView.indexPathsForSelectedRows, selectedRows.contains(indexPath) {
-                    tableView.deselectRow(at: indexPath, animated: false)
-                    return nil
-                }
-                guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false else
-                {
-                    return nil
-                }
-                return indexPath
-            } else if parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection == true {
-                return indexPath
-            }
-            return nil
+			if parent.editMode
+			{
+				if let selectedRows = tableView.indexPathsForSelectedRows, selectedRows.contains(indexPath)
+				{
+					tableView.deselectRow(at: indexPath, animated: false)
+					return nil
+				}
+				guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false else
+				{
+					return nil
+				}
+				return indexPath
+			}
+			else if parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection == true
+			{
+				return indexPath
+			}
+			return nil
 		}
 
 		public func tableView(_ tableView: UITableView, willDeselectRowAt indexPath: IndexPath) -> IndexPath?
@@ -497,15 +513,17 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			return indexPath
 		}
 
-        
-        public func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
-            if parent.editMode {
-                return parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false
-            } else {
-                return parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection ?? false
-            }
-        }
-        
+		public func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool
+		{
+			if parent.editMode
+			{
+				return parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false
+			}
+			else
+			{
+				return parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection ?? false
+			}
+		}
 
 		public func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
 		{
@@ -618,15 +636,14 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 			dataSource?.applySnapshot(dragSnapshot, animated: false)
 			refreshVisibleCells(transaction: nil)
-            if let dragItem = coordinator.items.first, let destination = coordinator.destinationIndexPath
-            {
-                if dragItem.sourceIndexPath != nil
-                {
-                    coordinator.drop(dragItem.dragItem, toRowAt: destination)
-                }
-            }
+			if let dragItem = coordinator.items.first, let destination = coordinator.destinationIndexPath
+			{
+				if dragItem.sourceIndexPath != nil
+				{
+					coordinator.drop(dragItem.dragItem, toRowAt: destination)
+				}
+			}
 		}
-        
 
 		public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat
 		{
@@ -665,11 +682,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			guard let reusableView = cell as? ASTableViewSupplementaryView
 			else { return }
 
-            guard let section = parent.sections[safe: sectionIndex] else { reusableView.setAsEmpty(supplementaryID: nil); return }
+			guard let section = parent.sections[safe: sectionIndex] else { reusableView.setAsEmpty(supplementaryID: nil); return }
 			let supplementaryID = ASSupplementaryCellID(sectionIDHash: section.id.hashValue, supplementaryKind: supplementaryKind)
-			
-            reusableView.setContent(supplementaryID: supplementaryID, content: section.dataSource.content(supplementaryID: supplementaryID))
 
+			reusableView.setContent(supplementaryID: supplementaryID, content: section.dataSource.content(supplementaryID: supplementaryID))
 		}
 
 		// MARK: Context Menu Support
@@ -716,7 +732,7 @@ protocol ASTableViewCoordinator: AnyObject
 @available(iOS 13.0, *)
 public enum ASTableViewScrollPosition
 {
-    case top
-    case bottom
-    case indexPath(_: IndexPath)
+	case top
+	case bottom
+	case indexPath(_: IndexPath)
 }

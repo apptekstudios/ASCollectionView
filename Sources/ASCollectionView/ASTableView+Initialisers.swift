@@ -15,14 +15,14 @@ public extension ASTableView
 	@inlinable init(style: UITableView.Style = .plain, editMode: Bool = false, sections: [Section])
 	{
 		self.style = style
-        self.editMode = editMode
+		self.editMode = editMode
 		self.sections = sections
 	}
 
 	@inlinable init(style: UITableView.Style = .plain, editMode: Bool = false, @SectionArrayBuilder <SectionID> sectionBuilder: () -> [Section])
 	{
 		self.style = style
-        self.editMode = editMode
+		self.editMode = editMode
 		sections = sectionBuilder()
 	}
 }
@@ -36,10 +36,10 @@ public extension ASTableView where SectionID == Int
 	 - Parameters:
 	 - section: A single section (ASTableViewSection)
 	 */
-    init(style: UITableView.Style = .plain, editMode: Bool = false, section: Section)
+	init(style: UITableView.Style = .plain, editMode: Bool = false, section: Section)
 	{
 		self.style = style
-        self.editMode = editMode
+		self.editMode = editMode
 		sections = [section]
 	}
 
@@ -48,14 +48,14 @@ public extension ASTableView where SectionID == Int
 	 */
 	init<DataCollection: RandomAccessCollection, DataID: Hashable, Content: View>(
 		style: UITableView.Style = .plain,
-        editMode: Bool = false,
+		editMode: Bool = false,
 		data: DataCollection,
 		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, ASCellContext) -> Content))
 		where DataCollection.Index == Int
 	{
 		self.style = style
-        self.editMode = editMode
+		self.editMode = editMode
 		let section = ASSection(
 			id: 0,
 			data: data,
@@ -69,12 +69,12 @@ public extension ASTableView where SectionID == Int
 	 */
 	init<DataCollection: RandomAccessCollection, Content: View>(
 		style: UITableView.Style = .plain,
-        editMode: Bool = false,
+		editMode: Bool = false,
 		data: DataCollection,
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, ASCellContext) -> Content))
 		where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
-        self.init(style: style, editMode: editMode, data: data, dataID: \.id, contentBuilder: contentBuilder)
+		self.init(style: style, editMode: editMode, data: data, dataID: \.id, contentBuilder: contentBuilder)
 	}
 
 	/**
@@ -84,7 +84,7 @@ public extension ASTableView where SectionID == Int
 	{
 		ASTableView(
 			style: .plain,
-            editMode: editMode,
+			editMode: editMode,
 			sections: [ASTableViewSection(id: 0, content: staticContent)])
 	}
 }

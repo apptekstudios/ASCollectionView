@@ -7,41 +7,42 @@ import UIKit
 @available(iOS 13.0, *)
 class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 {
-    var itemID: ASCollectionViewItemUniqueID?
-    let hostingController = ASHostingController<AnyView>(AnyView(EmptyView()))
-    var skipNextRefresh: Bool = false
-    
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?)
-    {
-        super.init(style: .default, reuseIdentifier: reuseIdentifier)
-        backgroundColor = nil
-        selectionStyle = .default
-        
-        showsReorderControl = true
-        
-        let selectedBack = UIView()
-        selectedBack.backgroundColor = UIColor.systemGray.withAlphaComponent(0.2)
-        selectedBackgroundView = selectedBack
-        
-        contentView.addSubview(hostingController.viewController.view)
-        hostingController.viewController.view.frame = contentView.bounds
-    }
-    
-    required init?(coder: NSCoder)
-    {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    weak var tableViewController: AS_TableViewController? {
-        didSet {
-            if tableViewController != oldValue {
-                hostingController.viewController.didMove(toParent: tableViewController)
-                tableViewController?.addChild(hostingController.viewController)
-            }
-        }
-    }
+	var itemID: ASCollectionViewItemUniqueID?
+	let hostingController = ASHostingController<AnyView>(AnyView(EmptyView()))
+	var skipNextRefresh: Bool = false
 
+	override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?)
+	{
+		super.init(style: .default, reuseIdentifier: reuseIdentifier)
+		backgroundColor = nil
+		selectionStyle = .default
 
+		showsReorderControl = true
+
+		let selectedBack = UIView()
+		selectedBack.backgroundColor = UIColor.systemGray.withAlphaComponent(0.2)
+		selectedBackgroundView = selectedBack
+
+		contentView.addSubview(hostingController.viewController.view)
+		hostingController.viewController.view.frame = contentView.bounds
+	}
+
+	required init?(coder: NSCoder)
+	{
+		fatalError("init(coder:) has not been implemented")
+	}
+
+	weak var tableViewController: AS_TableViewController?
+	{
+		didSet
+		{
+			if tableViewController != oldValue
+			{
+				hostingController.viewController.didMove(toParent: tableViewController)
+				tableViewController?.addChild(hostingController.viewController)
+			}
+		}
+	}
 
 	override func prepareForReuse()
 	{
@@ -49,21 +50,20 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		isSelected = false
 		backgroundColor = nil
 		alpha = 1.0
-        skipNextRefresh = false
+		skipNextRefresh = false
 	}
-    
-    func setContent<Content: View>(itemID: ASCollectionViewItemUniqueID, content: Content) {
-        self.itemID = itemID
-        hostingController.setView(AnyView(content.id(itemID)))
-    }
-    
-    override func layoutSubviews()
-    {
-        super.layoutSubviews()
-        
-        
-        hostingController.viewController.view.frame = contentView.bounds
-    }
+
+	func setContent<Content: View>(itemID: ASCollectionViewItemUniqueID, content: Content) {
+		self.itemID = itemID
+		hostingController.setView(AnyView(content.id(itemID)))
+	}
+
+	override func layoutSubviews()
+	{
+		super.layoutSubviews()
+
+		hostingController.viewController.view.frame = contentView.bounds
+	}
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
 	{
@@ -76,13 +76,16 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 			selfSizeVertical: true)
 		return size
 	}
-    
-    var disableSwiftUIDropInteraction: Bool {
-        get { hostingController.disableSwiftUIDropInteraction }
-        set { hostingController.disableSwiftUIDropInteraction = newValue }
-    }
-    var disableSwiftUIDragInteraction: Bool {
-        get { hostingController.disableSwiftUIDragInteraction }
-        set { hostingController.disableSwiftUIDragInteraction = newValue }
-    }
+
+	var disableSwiftUIDropInteraction: Bool
+	{
+		get { hostingController.disableSwiftUIDropInteraction }
+		set { hostingController.disableSwiftUIDropInteraction = newValue }
+	}
+
+	var disableSwiftUIDragInteraction: Bool
+	{
+		get { hostingController.disableSwiftUIDragInteraction }
+		set { hostingController.disableSwiftUIDragInteraction = newValue }
+	}
 }

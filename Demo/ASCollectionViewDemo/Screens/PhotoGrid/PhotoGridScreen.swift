@@ -63,6 +63,7 @@ struct PhotoGridScreen: View
 	var body: some View
 	{
 		ASCollectionView(
+			editMode: isEditing,
 			section: section)
 			.layout(self.layout)
 			.edgesIgnoringSafeArea(.all)

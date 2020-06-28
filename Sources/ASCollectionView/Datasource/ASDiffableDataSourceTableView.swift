@@ -12,9 +12,9 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 
 	private weak var tableView: UITableView?
 	private let cellProvider: CellProvider
-    
-    var onDelete: ((_ indexPath: IndexPath) -> Void)?
-    var onMove: ((_ source: IndexPath, _ destination: IndexPath) -> Void)?
+
+	var onDelete: ((_ indexPath: IndexPath) -> Void)?
+	var onMove: ((_ source: IndexPath, _ destination: IndexPath) -> Void)?
 
 	public init(tableView: UITableView, cellProvider: @escaping CellProvider)
 	{
@@ -40,7 +40,7 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 		let changeset = StagedChangeset(source: currentSnapshot.sections, target: newSnapshot.sections)
 		let shouldDisableAnimation = firstLoad || !animated
 
-        self.canRefreshSizes = false
+		canRefreshSizes = false
 		CATransaction.begin()
 		if shouldDisableAnimation
 		{
@@ -68,10 +68,11 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 
 		CATransaction.commit()
 	}
-    
-    func didDisappear() {
-        canRefreshSizes = false
-    }
+
+	func didDisappear()
+	{
+		canRefreshSizes = false
+	}
 
 	func numberOfSections(in tableView: UITableView) -> Int
 	{
@@ -97,24 +98,27 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 	{
 		true
 	}
-    
-    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        guard let onDelete = onDelete else { return }
-        var deleteSnapshot = currentSnapshot
-        deleteSnapshot.removeItems(fromSectionIndex: indexPath.section, atOffsets: [indexPath.row])
-        applySnapshot(deleteSnapshot, animated: true, completion: nil)
-        onDelete(indexPath)
-    }
-    
-    func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool {
-        onMove != nil
-    }
-    
-    func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
-        guard let onMove = onMove else { return }
-        var moveSnapshot = currentSnapshot
-        moveSnapshot.moveItem(fromIndexPath: sourceIndexPath, toIndexPath: destinationIndexPath)
-        applySnapshot(moveSnapshot, animated: true, completion: nil)
-        onMove(sourceIndexPath, destinationIndexPath)
-    }
+
+	func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath)
+	{
+		guard let onDelete = onDelete else { return }
+		var deleteSnapshot = currentSnapshot
+		deleteSnapshot.removeItems(fromSectionIndex: indexPath.section, atOffsets: [indexPath.row])
+		applySnapshot(deleteSnapshot, animated: true, completion: nil)
+		onDelete(indexPath)
+	}
+
+	func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool
+	{
+		onMove != nil
+	}
+
+	func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath)
+	{
+		guard let onMove = onMove else { return }
+		var moveSnapshot = currentSnapshot
+		moveSnapshot.moveItem(fromIndexPath: sourceIndexPath, toIndexPath: destinationIndexPath)
+		applySnapshot(moveSnapshot, animated: true, completion: nil)
+		onMove(sourceIndexPath, destinationIndexPath)
+	}
 }

@@ -17,7 +17,7 @@ struct TableViewDragAndDropScreen: View
 				.padding()
 			HStack {
 				ASTableView {
-					ASSection(
+					ASSection<Int>(
 						id: 0,
 						data: groupA,
 						dataID: \.self,
@@ -36,7 +36,7 @@ struct TableViewDragAndDropScreen: View
 					.sectionHeader {
 						header("Section A")
 					}
-					ASSection(
+					ASSection<Int>(
 						id: 1,
 						data: groupB,
 						dataID: \.self,
@@ -57,7 +57,7 @@ struct TableViewDragAndDropScreen: View
 				}
 				Color.blue.frame(width: 10)
 				ASTableView {
-					ASSection(
+					ASSection<Int>(
 						id: 0,
 						data: groupC,
 						dataID: \.self,
@@ -75,7 +75,7 @@ struct TableViewDragAndDropScreen: View
 					.sectionHeader {
 						header("Section C")
 					}
-					ASSection(
+					ASSection<Int>(
 						id: 1,
 						data: groupD,
 						dataID: \.self,

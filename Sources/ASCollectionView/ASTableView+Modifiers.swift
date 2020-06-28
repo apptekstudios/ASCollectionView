@@ -72,15 +72,15 @@ public extension ASTableView
 		this.animateOnDataRefresh = animate
 		return this
 	}
-    
-    /// Set a binding that will scroll the ASCollectionView when set. It will always return nil once the scroll is applied (use onScroll to read scroll position)
-    func scrollPositionSetter(_ binding: Binding<ASTableViewScrollPosition?>) -> Self
-    {
-        var this = self
-        _ = binding.wrappedValue // Touch the binding so that SwiftUI will notify us of future updates
-        this.scrollPositionSetter = binding
-        return this
-    }
+
+	/// Set a binding that will scroll the ASCollectionView when set. It will always return nil once the scroll is applied (use onScroll to read scroll position)
+	func scrollPositionSetter(_ binding: Binding<ASTableViewScrollPosition?>) -> Self
+	{
+		var this = self
+		_ = binding.wrappedValue // Touch the binding so that SwiftUI will notify us of future updates
+		this.scrollPositionSetter = binding
+		return this
+	}
 }
 
 // MARK: ASTableView specific header modifiers
@@ -107,12 +107,13 @@ public extension ASTableViewSection
 			return self
 		}
 	}
-    
-    func onSelectSingle(_ callback: @escaping ((Int) -> Void)) -> Self {
-        var section = self
-        section.dataSource.onSelectSingle = callback
-        return section
-    }
+
+	func onSelectSingle(_ callback: @escaping ((Int) -> Void)) -> Self
+	{
+		var section = self
+		section.dataSource.onSelectSingle = callback
+		return section
+	}
 }
 
 @available(iOS 13.0, *)

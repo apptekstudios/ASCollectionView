@@ -40,7 +40,7 @@ struct READMEContent
 		{
 			ASCollectionView
 			{
-				ASCollectionViewSection(
+				ASCollectionViewSection<Int>(
 					id: 0,
 					data: dataExampleA,
 					dataID: \.self)
@@ -50,7 +50,7 @@ struct READMEContent
 							Text("\(item)")
 						)
 				}
-				ASCollectionViewSection(
+				ASCollectionViewSection<Int>(
 					id: 1,
 					data: dataExampleB,
 					dataID: \.self)

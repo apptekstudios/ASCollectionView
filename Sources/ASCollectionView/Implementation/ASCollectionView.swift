@@ -18,7 +18,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	public var layout: Layout = .default
 	public var sections: [Section]
-    public var editMode: Bool = false
+	public var editMode: Bool = false
 
 	// MARK: Internal variables modified by modifier functions
 
@@ -186,11 +186,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			updateCollectionViewContentInsets(collectionView)
 
 			assignIfChanged(collectionView, \.allowsSelection, newValue: true)
-            if assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: parent.editMode) {
-                if !parent.editMode {
-                    collectionView.allowsSelection = false; collectionView.allowsSelection = true //Remove the old selection
-                }
-            }
+			if assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: parent.editMode)
+			{
+				if !parent.editMode
+				{
+					collectionView.allowsSelection = false; collectionView.allowsSelection = true // Remove the old selection
+				}
+			}
 		}
 
 		func updateCollectionViewContentInsets(_ collectionView: UICollectionView)
@@ -198,10 +200,11 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			assignIfChanged(collectionView, \.contentInsetAdjustmentBehavior, newValue: delegate?.collectionViewContentInsetAdjustmentBehavior ?? .automatic)
 			assignIfChanged(collectionView, \.contentInset, newValue: adaptiveContentInsets)
 		}
-        
-        func isIndexPathSelected(_ indexPath: IndexPath) -> Bool {
-            collectionViewController?.collectionView.indexPathsForSelectedItems?.contains(indexPath) ?? false
-        }
+
+		func isIndexPathSelected(_ indexPath: IndexPath) -> Bool
+		{
+			collectionViewController?.collectionView.indexPathsForSelectedItems?.contains(indexPath) ?? false
+		}
 
 		func setupDataSource(forCollectionView cv: UICollectionView)
 		{
@@ -230,15 +233,14 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						?? (collectionView.collectionViewLayout as? ASCollectionViewLayoutProtocol)?.selfSizingConfig
 						?? ASSelfSizingConfig()
 
-			
-                cell.isSelected = self.isIndexPathSelected(indexPath)
+				cell.isSelected = self.isIndexPathSelected(indexPath)
 
-                cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
-                cell.skipNextRefresh = true // Avoid setting this again when we refresh old cells in a moment
-                
-                cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
-                cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
-                
+				cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
+				cell.skipNextRefresh = true // Avoid setting this again when we refresh old cells in a moment
+
+				cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
+				cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
+
 				cell.hostingController.invalidateCellLayoutCallback = { [weak self] animated in
 					self?.invalidateLayoutOnNextUpdate = true // Queue for after updated data passed to ASCollectionView
 					self?.invalidateLayout(animated: animated) // Do immediately in-case the change is in state within the cell
@@ -259,8 +261,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				guard let reusableView = cv.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: self.supplementaryReuseID, for: indexPath) as? ASCollectionViewSupplementaryView
 				else { return nil }
 
-
-                guard let section = self.parent.sections[safe: indexPath.section] else { reusableView.setAsEmpty(supplementaryID: nil); return reusableView }
+				guard let section = self.parent.sections[safe: indexPath.section] else { reusableView.setAsEmpty(supplementaryID: nil); return reusableView }
 				let supplementaryID = ASSupplementaryCellID(sectionIDHash: section.id.hashValue, supplementaryKind: kind)
 				reusableView.supplementaryID = supplementaryID
 
@@ -270,8 +271,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					section.dataSource.getSelfSizingSettings(context: selfSizingContext)
 						?? ASSelfSizingConfig()
 
-				
-                reusableView.setContent(supplementaryID: supplementaryID, content: section.dataSource.content(supplementaryID: supplementaryID))
+				reusableView.setContent(supplementaryID: supplementaryID, content: section.dataSource.content(supplementaryID: supplementaryID))
 
 				return reusableView
 			}
@@ -301,9 +301,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					}
 				}
 			}
-            
-            collectionViewController.map { updateSelectionBindings($0.collectionView, andRefresh: false) }
-            refreshVisibleCells(transaction: transaction, updateAll: false)
+
+			collectionViewController.map { updateSelectionBindings($0.collectionView, andRefresh: false) }
+			refreshVisibleCells(transaction: transaction, updateAll: false)
 
 			collectionViewController.map { self.didUpdateContentSize($0.collectionView.contentSize) }
 		}
@@ -318,7 +318,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				transaction: transaction)
 		}
 
-        func refreshVisibleCells(transaction: Transaction? = nil, updateAll: Bool = true)
+		func refreshVisibleCells(transaction: Transaction? = nil, updateAll: Bool = true)
 		{
 			guard let cv = collectionViewController?.collectionView else { return }
 			for case let cell as Cell in cv.visibleCells
@@ -327,13 +327,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					let itemID = cell.itemID,
 					let section = section(forItemID: itemID)
 				else { continue }
-                if cell.skipNextRefresh && !updateAll {
-                    cell.skipNextRefresh = false
-                } else {
-                    cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
-                    cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
-                    cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
-                }
+				if cell.skipNextRefresh, !updateAll
+				{
+					cell.skipNextRefresh = false
+				}
+				else
+				{
+					cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
+					cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
+					cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
+				}
 			}
 
 			supplementaryKinds().forEach
@@ -346,7 +349,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					// Get cachedHC
 					let supplementaryID = ASSupplementaryCellID(sectionIDHash: section.id.hashValue, supplementaryKind: kind)
 					// Update hostingController
-                    supplementaryView.setContent(supplementaryID: supplementaryID, content: section.dataSource.content(supplementaryID: supplementaryID))
+					supplementaryView.setContent(supplementaryID: supplementaryID, content: section.dataSource.content(supplementaryID: supplementaryID))
 				}
 			}
 		}
@@ -623,25 +626,26 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
-		{
-		}
+		{}
 
 		public func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
-		{
-		}
+		{}
 
 		public func collectionView(_ collectionView: UICollectionView, willSelectItemAt indexPath: IndexPath) -> IndexPath?
 		{
-            if parent.editMode {
-                guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false else
-                {
-                    return nil
-                }
-                return indexPath
-            } else if parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection == true {
-                return indexPath
-            }
-            return nil
+			if parent.editMode
+			{
+				guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false else
+				{
+					return nil
+				}
+				return indexPath
+			}
+			else if parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection == true
+			{
+				return indexPath
+			}
+			return nil
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDeselectItemAt indexPath: IndexPath) -> IndexPath?
@@ -655,12 +659,15 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 		{
-            if parent.editMode {
-                updateSelectionBindings(collectionView)
-            } else {
-                parent.sections[safe: indexPath.section]?.dataSource.didSingleSelect(index: indexPath.item)
-                collectionView.deselectItem(at: indexPath, animated: true)
-            }
+			if parent.editMode
+			{
+				updateSelectionBindings(collectionView)
+			}
+			else
+			{
+				parent.sections[safe: indexPath.section]?.dataSource.didSingleSelect(index: indexPath.item)
+				collectionView.deselectItem(at: indexPath, animated: true)
+			}
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
@@ -668,9 +675,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			updateSelectionBindings(collectionView)
 		}
 
-        func updateSelectionBindings(_ collectionView: UICollectionView, andRefresh: Bool = true)
+		func updateSelectionBindings(_ collectionView: UICollectionView, andRefresh: Bool = true)
 		{
-            let selected = parent.editMode ? (collectionView.indexPathsForSelectedItems ?? []) : []
+			let selected = parent.editMode ? (collectionView.indexPathsForSelectedItems ?? []) : []
 			let selectionBySection = Dictionary(grouping: selected) { $0.section }
 				.mapValues
 			{
@@ -679,9 +686,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			parent.sections.enumerated().forEach { offset, section in
 				section.dataSource.updateSelection(selectionBySection[offset] ?? [])
 			}
-            if andRefresh {
-                refreshVisibleCells()
-            }
+			if andRefresh
+			{
+				refreshVisibleCells()
+			}
 		}
 
 		func canDrop(at indexPath: IndexPath) -> Bool

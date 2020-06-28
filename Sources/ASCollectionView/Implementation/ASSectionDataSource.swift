@@ -10,9 +10,9 @@ internal protocol ASSectionDataSourceProtocol
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-    func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> AnyView
-    func content(supplementaryID: ASSupplementaryCellID) -> AnyView
-    var supplementaryViews: [String: AnyView] { get set }
+	func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> AnyView
+	func content(supplementaryID: ASSupplementaryCellID) -> AnyView?
+	var supplementaryViews: [String: AnyView] { get set }
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
@@ -22,7 +22,7 @@ internal protocol ASSectionDataSourceProtocol
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	func getItemID<SectionID: Hashable>(for dragItem: UIDragItem, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func applyMove(from: Int, to: Int)
-    func applyRemove(atOffsets offsets: IndexSet)
+	func applyRemove(atOffsets offsets: IndexSet)
 	func applyInsert(items: [UIDragItem], at index: Int)
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
@@ -33,31 +33,31 @@ internal protocol ASSectionDataSourceProtocol
 	func shouldSelect(_ indexPath: IndexPath) -> Bool
 	func shouldDeselect(_ indexPath: IndexPath) -> Bool
 
-    var allowSingleSelection: Bool { get }
-    func didSingleSelect(index: Int)
+	var allowSingleSelection: Bool { get }
+	func didSingleSelect(index: Int)
 
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
 	var reorderingEnabled: Bool { get }
 
 	mutating func setSelfSizingConfig(config: @escaping SelfSizingConfig)
-    var onSelectSingle: ((Int) -> Void)? { get set }
+	var onSelectSingle: ((Int) -> Void)? { get set }
 }
 
 @available(iOS 13.0, *)
 protocol ASDataSourceConfigurableCell
 {
-    func setContent<Content: View>(itemID: ASCollectionViewItemUniqueID, content: Content)
-    var hostingController: ASHostingController<AnyView> { get }
-    var disableSwiftUIDropInteraction: Bool { get set }
-    var disableSwiftUIDragInteraction: Bool { get set }
+	func setContent<Content: View>(itemID: ASCollectionViewItemUniqueID, content: Content)
+	var hostingController: ASHostingController<AnyView> { get }
+	var disableSwiftUIDropInteraction: Bool { get set }
+	var disableSwiftUIDragInteraction: Bool { get set }
 }
 
 @available(iOS 13.0, *)
 protocol ASDataSourceConfigurableSupplementary
 {
-    func setContent<Content: View>(supplementaryID: ASSupplementaryCellID, content: Content)
-    func setAsEmpty(supplementaryID: ASSupplementaryCellID?)
+	func setContent<Content: View>(supplementaryID: ASSupplementaryCellID, content: Content?)
+	func setAsEmpty(supplementaryID: ASSupplementaryCellID?)
 }
 
 @available(iOS 13.0, *)
@@ -72,7 +72,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var selectedItems: Binding<Set<Int>>?
 	var shouldAllowSelection: ((_ index: Int) -> Bool)?
 	var shouldAllowDeselection: ((_ index: Int) -> Bool)?
-    var onSelectSingle: ((Int) -> Void)?
+	var onSelectSingle: ((Int) -> Void)?
 
 	var onCellEvent: OnCellEvent<DataCollection.Element>?
 	var dragDropConfig: ASDragDropConfig<DataCollection.Element>
@@ -94,7 +94,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash })
 	}
 
-    func cellContext(for index: Int, isSelected: Bool) -> ASCellContext
+	func cellContext(for index: Int, isSelected: Bool) -> ASCellContext
 	{
 		ASCellContext(
 			isSelected: isSelected,
@@ -102,20 +102,20 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			isFirstInSection: index == data.startIndex,
 			isLastInSection: index == data.endIndex - 1)
 	}
-    
-    func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> AnyView {
-        guard let content = getContent(forItemID: itemID, isSelected: isSelected) else { return AnyView(EmptyView().id(itemID)) }
-        return AnyView(content.id(itemID))
-    }
 
-
-    func content(supplementaryID: ASSupplementaryCellID) -> AnyView
+	func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> AnyView
 	{
-        guard let content = supplementaryViews[supplementaryID.supplementaryKind] else { return AnyView(EmptyView().id(supplementaryID)) }
-        return AnyView(content.id(supplementaryID))
+		guard let content = getContent(forItemID: itemID, isSelected: isSelected) else { return AnyView(EmptyView().id(itemID)) }
+		return AnyView(content.id(itemID))
 	}
 
-    func getContent(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> Container?
+	func content(supplementaryID: ASSupplementaryCellID) -> AnyView?
+	{
+		guard let content = supplementaryViews[supplementaryID.supplementaryKind] else { return nil }
+		return AnyView(content.id(supplementaryID))
+	}
+
+	func getContent(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> Container?
 	{
 		guard let itemIndex = getIndex(of: itemID) else { return nil }
 		let item = data[itemIndex]
@@ -223,10 +223,11 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		guard let item = getDropItem(from: dragItem) else { return nil }
 		return getItemID(for: item, withSectionID: sectionID)
 	}
-    
-    func applyMove(from: Int, to: Int) {
-        dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to)
-    }
+
+	func applyMove(from: Int, to: Int)
+	{
+		dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to)
+	}
 
 	func applyRemove(atOffsets offsets: IndexSet)
 	{
@@ -259,15 +260,16 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		selfSizingConfig?(context)
 	}
-    
-    var allowSingleSelection: Bool {
-        onSelectSingle != nil
-    }
-    
-    func didSingleSelect(index: Int)
-    {
-        onSelectSingle?(index)
-    }
+
+	var allowSingleSelection: Bool
+	{
+		onSelectSingle != nil
+	}
+
+	func didSingleSelect(index: Int)
+	{
+		onSelectSingle?(index)
+	}
 
 	func updateSelection(_ indices: Set<Int>)
 	{

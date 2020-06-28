@@ -55,17 +55,20 @@ struct ASDiffableDataSourceSnapshot<SectionID: Hashable>
 			sections[position.sectionIndex].elements[position.itemIndex].shouldReload = true
 		}
 	}
-    
-    mutating func moveItem(fromIndexPath: IndexPath, toIndexPath: IndexPath)
-    {
-        guard sections.containsIndex(fromIndexPath.section), sections.containsIndex(toIndexPath.section) else { return }
-        if fromIndexPath.section == toIndexPath.section {
-            sections[fromIndexPath.section].elements.move(fromOffsets: [fromIndexPath.item], toOffset: toIndexPath.item)
-        } else {
-            let item = sections[fromIndexPath.section].elements.remove(at: fromIndexPath.item)
-            sections[toIndexPath.section].elements.insert(item, at: toIndexPath.item)
-        }
-    }
+
+	mutating func moveItem(fromIndexPath: IndexPath, toIndexPath: IndexPath)
+	{
+		guard sections.containsIndex(fromIndexPath.section), sections.containsIndex(toIndexPath.section) else { return }
+		if fromIndexPath.section == toIndexPath.section
+		{
+			sections[fromIndexPath.section].elements.move(fromOffsets: [fromIndexPath.item], toOffset: toIndexPath.item)
+		}
+		else
+		{
+			let item = sections[fromIndexPath.section].elements.remove(at: fromIndexPath.item)
+			sections[toIndexPath.section].elements.insert(item, at: toIndexPath.item)
+		}
+	}
 
 	struct ItemPosition
 	{
@@ -110,7 +113,7 @@ struct ASDiffableDataSourceSnapshot<SectionID: Hashable>
 @available(iOS 13.0, *)
 extension ASDiffableDataSourceSnapshot.Section
 {
-    init(id: SectionID, elements: [ASCollectionViewItemUniqueID], shouldReloadElements: Bool = false)
+	init(id: SectionID, elements: [ASCollectionViewItemUniqueID], shouldReloadElements: Bool = false)
 	{
 		self.id = id
 		self.elements = elements.map { ASDiffableDataSourceSnapshot.Item(id: $0, shouldReload: shouldReloadElements) }

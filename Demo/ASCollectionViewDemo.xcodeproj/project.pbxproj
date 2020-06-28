@@ -267,10 +267,10 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B86C6F27234B078800522AEF /* Build configuration list for PBXNativeTarget "ASCollectionViewDemo" */;
 			buildPhases = (
+				B8E6691323C2C8700034A9C1 /* SwiftFormat */,
 				B86C6F0F234B078600522AEF /* Sources */,
 				B86C6F10234B078600522AEF /* Frameworks */,
 				B86C6F11234B078600522AEF /* Resources */,
-				B8E6691323C2C8700034A9C1 /* SwiftFormat */,
 			);
 			buildRules = (
 			);
@@ -351,7 +351,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd BuildTools\nSDKROOT=macosx\n#Temporarily uncomment the following line to update your packages (based on the versions defined in BuildTools/Package.swift)\n#swift package update\n\n#swift run -c release swiftformat \"$SRCROOT/../\"\n";
+			shellScript = "cd BuildTools\nSDKROOT=macosx\n#Temporarily uncomment the following line to update your packages (based on the versions defined in BuildTools/Package.swift)\nswift package update\n\nswift run -c release swiftformat \"$SRCROOT/../\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

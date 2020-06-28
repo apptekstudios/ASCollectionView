@@ -55,7 +55,7 @@ struct WaterfallScreen: View
 						else
 						{
 							Text("\(item.offset)")
-								.font(.title)
+								.font(.headline)
 								.bold()
 								.padding(2)
 								.background(Color(.systemBackground).opacity(0.5))
@@ -89,6 +89,7 @@ struct WaterfallScreen: View
 			}
 
 			ASCollectionView(
+				editMode: isEditing,
 				sections: sections)
 				.layout(self.layout)
 				.customDelegate(WaterfallScreenLayoutDelegate.init)
