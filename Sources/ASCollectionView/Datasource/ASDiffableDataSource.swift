@@ -52,9 +52,20 @@ struct ASDiffableDataSourceSnapshot<SectionID: Hashable>
 	{
 		items.forEach { item in
 			guard let position = itemPositionMap[item] else { return }
-			sections[position.sectionIndex].elements[position.itemIndex].isReloaded = true
+			sections[position.sectionIndex].elements[position.itemIndex].shouldReload = true
 		}
 	}
+    
+    mutating func moveItem(fromIndexPath: IndexPath, toIndexPath: IndexPath)
+    {
+        guard sections.containsIndex(fromIndexPath.section), sections.containsIndex(toIndexPath.section) else { return }
+        if fromIndexPath.section == toIndexPath.section {
+            sections[fromIndexPath.section].elements.move(fromOffsets: [fromIndexPath.item], toOffset: toIndexPath.item)
+        } else {
+            let item = sections[fromIndexPath.section].elements.remove(at: fromIndexPath.item)
+            sections[toIndexPath.section].elements.insert(item, at: toIndexPath.item)
+        }
+    }
 
 	struct ItemPosition
 	{

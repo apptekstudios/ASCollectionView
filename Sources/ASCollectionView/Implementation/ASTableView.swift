@@ -104,12 +104,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		let cellReuseID = UUID().uuidString
 		let supplementaryReuseID = UUID().uuidString
 
-		// MARK: Caching
-
-		private var autoCachingHostingControllers = ASPriorityCache<ASCollectionViewItemUniqueID, ASHostingControllerProtocol>()
-		private var explicitlyCachedHostingControllers: [ASCollectionViewItemUniqueID: ASHostingControllerProtocol] = [:]
-		private var autoCachingSupplementaryHostControllers = ASPriorityCache<ASSupplementaryCellID, ASHostingControllerProtocol>()
-
 		// MARK: Private tracking variables
 
 		private var hasDoneInitialSetup = false
@@ -139,10 +133,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			parent.sections
 				.first(where: { $0.id.hashValue == itemID.sectionIDHash })
 		}
-        
-        var isEditing: Bool {
-            parent.editMode
-        }
 
 		func updateTableViewSettings(_ tableView: UITableView)
 		{
@@ -157,10 +147,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
             assignIfChanged(tableView, \.allowsSelection, newValue: true)
             assignIfChanged(tableView, \.allowsMultipleSelectionDuringEditing, newValue: true)
             assignIfChanged(tableView, \.allowsSelectionDuringEditing, newValue: true)
-            assignIfChanged(tableView, \.isEditing, newValue: isEditing)
+            assignIfChanged(tableView, \.isEditing, newValue: parent.editMode)
             
             
-            if assignIfChanged(tableView, \.allowsMultipleSelection, newValue: isEditing) {
+            if assignIfChanged(tableView, \.allowsMultipleSelection, newValue: parent.editMode) {
+                if !parent.editMode {
+                    tableView.allowsSelection = false; tableView.allowsSelection = true //Remove the old selection
+                }
                 updateSelectionBindings(tableView)
             }
 		}
@@ -195,31 +188,30 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 				cell.separatorInset = section.tableViewSeparatorInsets ?? UIEdgeInsets(top: 0, left: UITableView.automaticDimension, bottom: 0, right: UITableView.automaticDimension)
 
-				// Set itemID
-				cell.itemID = itemID
                 cell.isSelected = self.isIndexPathSelected(indexPath)
                 
-				// Get cachedHC
-				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
-				// Update hostingController
-                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, transaction: nil)
-				if section.shouldCacheCells
-				{
-					self.explicitlyCachedHostingControllers[itemID] = cell.hostingController
-				}
-				else
-				{
-					self.autoCachingHostingControllers[itemID] = cell.hostingController
-				}
-				cell.hostingController?.invalidateCellLayoutCallback = { [weak self, weak cell] animated in
+                cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
+                cell.skipNextRefresh = true // Avoid setting this again when we refresh old cells in a moment
+                
+                cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
+                cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
+                
+				cell.hostingController.invalidateCellLayoutCallback = { [weak self, weak cell] animated in
 					self?.invalidateLayout(animated: animated, cell: cell)
 				}
-				cell.hostingController?.tableViewScrollToCellCallback = { [weak self] position in
+				cell.hostingController.tableViewScrollToCellCallback = { [weak self] position in
 					self?.scrollToRow(indexPath: indexPath, position: position)
 				}
 
 				return cell
 			}
+            
+            dataSource?.onDelete = { [weak self] indexPath in
+                self?.onDeleteAction(indexPath: indexPath, completionHandler: {_ in })
+            }
+            dataSource?.onMove = { [weak self] from, to in
+                self?.onMoveAction(from: from, to: to)
+            }
 		}
 
 		func populateDataSource(animated: Bool = true, transaction: Transaction? = nil)
@@ -248,7 +240,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
                     }
                 }
             }
-            refreshVisibleCells(transaction: transaction)
+            tableViewController.map { updateSelectionBindings($0.tableView) }
+            refreshVisibleCells(transaction: transaction, updateAll: false)
 			tableViewController.map { self.didUpdateContentSize($0.tableView.contentSize) }
 		}
 
@@ -260,11 +253,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			populateDataSource(animated: parent.animateOnDataRefresh && transactionAnimationEnabled, transaction: transaction)
 
 			dataSource?.updateCellSizes(animated: transactionAnimationEnabled)
-
-			updateSelectionBindings(tv)
 		}
 
-		func refreshVisibleCells(transaction: Transaction?)
+        func refreshVisibleCells(transaction: Transaction?, updateAll: Bool = true)
 		{
 			guard let tv = tableViewController?.tableView else { return }
 			for case let cell as Cell in tv.visibleCells
@@ -273,18 +264,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					let itemID = cell.itemID,
 					let section = self.section(forItemID: itemID)
 				else { continue }
-				// Get cachedHC
-				let cachedHC = self.explicitlyCachedHostingControllers[itemID] ?? self.autoCachingHostingControllers[itemID]
-				// Update hostingController
-                cell.hostingController = section.dataSource.getUpdatedHC(forItemID: itemID, cachedHC: cachedHC, isSelected: cell.isSelected, transaction: transaction)
-				if section.shouldCacheCells
-				{
-					explicitlyCachedHostingControllers[itemID] = cell.hostingController
-				}
-				else
-				{
-					autoCachingHostingControllers[itemID] = cell.hostingController
-				}
+                if cell.skipNextRefresh && !updateAll {
+                    cell.skipNextRefresh = false
+                } else {
+                    cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
+                    cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
+                    cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
+                }
 			}
 
 			for case let supplementaryView as ASTableViewSupplementaryView in tv.subviews
@@ -293,12 +279,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					let supplementaryID = supplementaryView.supplementaryID,
 					let section = parent.sections.first(where: { $0.id.hashValue == supplementaryID.sectionIDHash })
 				else { continue }
+                supplementaryView.setContent(supplementaryID: supplementaryID, content: section.dataSource.content(supplementaryID: supplementaryID))
 
-				// Get cachedHC
-				let cachedHC = self.autoCachingSupplementaryHostControllers[supplementaryID]
-				// Update hostingController
-				supplementaryView.hostingController = section.dataSource.getUpdatedHC(forSupplementaryKind: supplementaryID.supplementaryKind, cachedHC: cachedHC, animate: true)
-				autoCachingSupplementaryHostControllers[supplementaryID] = supplementaryView.hostingController
 			}
 		}
 
@@ -370,38 +352,32 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
-			(cell as? Cell)?.willAppear()
 			parent.sections[safe: indexPath.section]?.dataSource.onAppear(indexPath)
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplaying cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
-			(cell as? Cell)?.didDisappear()
 			parent.sections[safe: indexPath.section]?.dataSource.onDisappear(indexPath)
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
 		{
-			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			view.willAppear()
+//			guard let view = (view as? ASTableViewSupplementaryView) else { return }
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplayingHeaderView view: UIView, forSection section: Int)
 		{
-			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			view.didDisappear()
+//			guard let view = (view as? ASTableViewSupplementaryView) else { return }
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int)
 		{
-			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			view.willAppear()
+//			guard let view = (view as? ASTableViewSupplementaryView) else { return }
 		}
 
 		public func tableView(_ tableView: UITableView, didEndDisplayingFooterView view: UIView, forSection section: Int)
 		{
-			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-			view.didDisappear()
+//			guard let view = (view as? ASTableViewSupplementaryView) else { return }
 		}
 
 		public func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath])
@@ -432,17 +408,35 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 			return UISwipeActionsConfiguration(actions: [deleteAction])
 		}
+        
 
 		public func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle
 		{
-			.none
+            if parent.sections[safe: indexPath.section]?.dataSource.supportsDelete(at: indexPath) ?? false {
+                return .delete
+            }
+            return .none
 		}
-        
 
 		private func onDeleteAction(indexPath: IndexPath, completionHandler: (Bool) -> Void)
 		{
 			parent.sections[safe: indexPath.section]?.dataSource.onDelete(indexPath: indexPath, completionHandler: completionHandler)
 		}
+        
+        
+        private func onMoveAction(from: IndexPath, to: IndexPath) {
+            guard let sourceSection = parent.sections[safe: from.section],
+                  let destinationSection = parent.sections[safe: to.section]
+            else { return }
+            if from.section == to.section {
+                sourceSection.dataSource.applyMove(from: from.item, to: to.item)
+            } else {
+                if let item = sourceSection.dataSource.getDragItem(for: from) {
+                    sourceSection.dataSource.applyRemove(atOffsets: [from.item])
+                    destinationSection.dataSource.applyInsert(items: [item], at: to.item)
+                }
+            }
+        }
 
 		// MARK: Cell Selection
         
@@ -450,7 +444,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
 		{
-            if isEditing {
+            if parent.editMode {
                 updateContent(tableView, transaction: nil)
             } else {
                 tableView.deselectRow(at: indexPath, animated: true)
@@ -478,7 +472,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath?
 		{
-            if isEditing {
+            if parent.editMode {
                 if let selectedRows = tableView.indexPathsForSelectedRows, selectedRows.contains(indexPath) {
                     tableView.deselectRow(at: indexPath, animated: false)
                     return nil
@@ -505,7 +499,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
         
         public func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
-            return parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection ?? false
+            if parent.editMode {
+                return parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false
+            } else {
+                return parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection ?? false
+            }
         }
         
 
@@ -618,16 +616,17 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			default: break
 			}
 
-			if let dragItem = coordinator.items.first, let destination = coordinator.destinationIndexPath
-			{
-				if dragItem.sourceIndexPath != nil
-				{
-					coordinator.drop(dragItem.dragItem, toRowAt: destination)
-				}
-			}
 			dataSource?.applySnapshot(dragSnapshot, animated: false)
 			refreshVisibleCells(transaction: nil)
+            if let dragItem = coordinator.items.first, let destination = coordinator.destinationIndexPath
+            {
+                if dragItem.sourceIndexPath != nil
+                {
+                    coordinator.drop(dragItem.dragItem, toRowAt: destination)
+                }
+            }
 		}
+        
 
 		public func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat
 		{
@@ -666,15 +665,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			guard let reusableView = cell as? ASTableViewSupplementaryView
 			else { return }
 
-			guard let section = parent.sections[safe: sectionIndex] else { reusableView.hostingController = nil; return }
+            guard let section = parent.sections[safe: sectionIndex] else { reusableView.setAsEmpty(supplementaryID: nil); return }
 			let supplementaryID = ASSupplementaryCellID(sectionIDHash: section.id.hashValue, supplementaryKind: supplementaryKind)
-			reusableView.supplementaryID = supplementaryID
+			
+            reusableView.setContent(supplementaryID: supplementaryID, content: section.dataSource.content(supplementaryID: supplementaryID))
 
-			// Get cachedHC
-			let cachedHC = self.autoCachingSupplementaryHostControllers[supplementaryID]
-			// Update hostingController
-			reusableView.hostingController = section.dataSource.getUpdatedHC(forSupplementaryKind: supplementaryID.supplementaryKind, cachedHC: cachedHC, animate: false)
-			autoCachingSupplementaryHostControllers[supplementaryID] = reusableView.hostingController
 		}
 
 		// MARK: Context Menu Support

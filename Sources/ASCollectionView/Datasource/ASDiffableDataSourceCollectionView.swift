@@ -2,6 +2,7 @@
 
 import DifferenceKit
 import UIKit
+import SwiftUI
 
 @available(iOS 13.0, *)
 class ASDiffableDataSourceCollectionView<SectionID: Hashable>: ASDiffableDataSource<SectionID>, UICollectionViewDataSource
@@ -76,12 +77,12 @@ class ASDiffableDataSourceCollectionView<SectionID: Hashable>: ASDiffableDataSou
 	private let supplementaryEmptyKind = UUID().uuidString // Used to prevent crash if supplementaries defined in layout but not provided by the section
 	private let supplementaryEmptyReuseID = UUID().uuidString
 
-	func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView
 	{
 		guard let cell = supplementaryViewProvider?(collectionView, kind, indexPath) else
 		{
 			let empty = collectionView.dequeueReusableSupplementaryView(ofKind: supplementaryEmptyKind, withReuseIdentifier: supplementaryEmptyReuseID, for: indexPath)
-			(empty as? ASCollectionViewSupplementaryView)?.hostingController = nil
+			(empty as? ASCollectionViewSupplementaryView)?.setContent(supplementaryID: ASSupplementaryCellID(sectionIDHash: 0, supplementaryKind: supplementaryEmptyKind), content: EmptyView())
 			return empty
 		}
 		return cell

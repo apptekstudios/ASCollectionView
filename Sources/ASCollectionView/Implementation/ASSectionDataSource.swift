@@ -10,9 +10,9 @@ internal protocol ASSectionDataSourceProtocol
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, isSelected: Bool, transaction: Transaction?) -> ASHostingControllerProtocol?
-	func getUpdatedHC(forSupplementaryKind supplementaryKind: String, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
-	var supplementaryViews: [String: AnyView] { get set }
+    func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> AnyView
+    func content(supplementaryID: ASSupplementaryCellID) -> AnyView
+    var supplementaryViews: [String: AnyView] { get set }
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	func onAppear(_ indexPath: IndexPath)
 	func onDisappear(_ indexPath: IndexPath)
@@ -21,7 +21,8 @@ internal protocol ASSectionDataSourceProtocol
 	func willAcceptDropItem(from dragItem: UIDragItem) -> Bool
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	func getItemID<SectionID: Hashable>(for dragItem: UIDragItem, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
-	func applyRemove(atOffsets offsets: IndexSet)
+	func applyMove(from: Int, to: Int)
+    func applyRemove(atOffsets offsets: IndexSet)
 	func applyInsert(items: [UIDragItem], at index: Int)
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
@@ -46,7 +47,17 @@ internal protocol ASSectionDataSourceProtocol
 @available(iOS 13.0, *)
 protocol ASDataSourceConfigurableCell
 {
-	var hostingController: ASHostingControllerProtocol? { get set }
+    func setContent<Content: View>(itemID: ASCollectionViewItemUniqueID, content: Content)
+    var hostingController: ASHostingController<AnyView> { get }
+    var disableSwiftUIDropInteraction: Bool { get set }
+    var disableSwiftUIDragInteraction: Bool { get set }
+}
+
+@available(iOS 13.0, *)
+protocol ASDataSourceConfigurableSupplementary
+{
+    func setContent<Content: View>(supplementaryID: ASSupplementaryCellID, content: Content)
+    func setAsEmpty(supplementaryID: ASSupplementaryCellID?)
 }
 
 @available(iOS 13.0, *)
@@ -91,59 +102,17 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 			isFirstInSection: index == data.startIndex,
 			isLastInSection: index == data.endIndex - 1)
 	}
+    
+    func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> AnyView {
+        guard let content = getContent(forItemID: itemID, isSelected: isSelected) else { return AnyView(EmptyView().id(itemID)) }
+        return AnyView(content.id(itemID))
+    }
 
-	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, isSelected: Bool, transaction: Transaction?) -> ASHostingControllerProtocol?
-	{
-		guard let content = getContent(forItemID: itemID, isSelected: isSelected) else { return nil }
-		let hc: ASHostingController<Container>
-		if let cachedHC = cachedHC as? ASHostingController<Container>
-		{
-			hc = cachedHC
-			if let transaction = transaction
-			{
-                withTransaction(transaction) {
-                    hc.setView(content)
-                }
-			}
-			else
-			{
-				withAnimation(nil) {
-					hc.setView(content)
-				}
-			}
-		}
-		else
-		{
-			hc = ASHostingController(content)
-		}
-		hc.disableSwiftUIDropInteraction = dropEnabled
-		hc.disableSwiftUIDragInteraction = dragEnabled
-		return hc
-	}
 
-	func getUpdatedHC(forSupplementaryKind supplementaryKind: String, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
+    func content(supplementaryID: ASSupplementaryCellID) -> AnyView
 	{
-		guard let content = supplementaryViews[supplementaryKind] else { return nil }
-		let hc: ASHostingController<AnyView>
-		if let cachedHC = cachedHC as? ASHostingController<AnyView>
-		{
-			hc = cachedHC
-			if animate
-			{
-				hc.setView(content)
-			}
-			else
-			{
-				withAnimation(nil) {
-					hc.setView(content)
-				}
-			}
-		}
-		else
-		{
-			hc = ASHostingController(content)
-		}
-		return hc
+        guard let content = supplementaryViews[supplementaryID.supplementaryKind] else { return AnyView(EmptyView().id(supplementaryID)) }
+        return AnyView(content.id(supplementaryID))
 	}
 
     func getContent(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> Container?
@@ -254,6 +223,10 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		guard let item = getDropItem(from: dragItem) else { return nil }
 		return getItemID(for: item, withSectionID: sectionID)
 	}
+    
+    func applyMove(from: Int, to: Int) {
+        dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to)
+    }
 
 	func applyRemove(atOffsets offsets: IndexSet)
 	{

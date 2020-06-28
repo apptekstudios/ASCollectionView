@@ -8,79 +8,54 @@ import UIKit
 class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 {
 	var itemID: ASCollectionViewItemUniqueID?
-	var hostingController: ASHostingControllerProtocol?
-	{
-		get { _hostingController }
-		set { _hostingController = newValue; attachView() }
-	}
+	let hostingController = ASHostingController<AnyView>(AnyView(EmptyView()))
+    var skipNextRefresh: Bool = false
 
-	private var _hostingController: ASHostingControllerProtocol?
-
-	weak var collectionViewController: AS_CollectionViewController?
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        contentView.addSubview(hostingController.viewController.view)
+        hostingController.viewController.view.frame = contentView.bounds
+    }
+    
+    required init?(coder: NSCoder)
+    {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    
+    weak var collectionViewController: AS_CollectionViewController? {
+        didSet {
+            if collectionViewController != oldValue {
+                collectionViewController?.addChild(hostingController.viewController)
+                hostingController.viewController.didMove(toParent: collectionViewController)
+            }
+        }
+    }
 	var selfSizingConfig: ASSelfSizingConfig = .init(selfSizeHorizontally: true, selfSizeVertically: true)
-
-	private var hasAppeared: Bool = false // Needed due to the `self-sizing` cell used by UICV
-	func willAppear()
-	{
-		hasAppeared = true
-		attachView()
-	}
-
-	func didDisappear()
-	{
-		hasAppeared = false
-		detachViews()
-	}
-
-	private func attachView()
-	{
-		guard hasAppeared else { return }
-		guard let hcView = _hostingController?.viewController.view else
-		{
-			detachViews()
-			return
-		}
-		if hcView.superview != contentView
-		{
-            _hostingController.map { collectionViewController?.addChild($0.viewController) }
-			contentView.subviews.forEach { $0.removeFromSuperview() }
-			contentView.addSubview(hcView)
-			hcView.frame = contentView.bounds
-            _hostingController?.viewController.didMove(toParent: collectionViewController)
-		}
-	}
-
-	private func detachViews()
-	{
-        _hostingController?.viewController.willMove(toParent: nil)
-		contentView.subviews.forEach { $0.removeFromSuperview() }
-        _hostingController?.viewController.removeFromParent()
-	}
 
 	override func prepareForReuse()
 	{
 		itemID = nil
 		isSelected = false
 		alpha = 1.0
-		_hostingController = nil
+        skipNextRefresh = false
 	}
+    
+    func setContent<Content: View>(itemID: ASCollectionViewItemUniqueID, content: Content) {
+        self.itemID = itemID
+        hostingController.setView(AnyView(content.id(itemID)))
+    }
 
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
-
-		if _hostingController?.viewController.view.frame != contentView.bounds
-		{
-            _hostingController?.viewController.view.frame = contentView.bounds
-            _hostingController?.viewController.view.setNeedsLayout()
-		}
-        _hostingController?.viewController.view.layoutIfNeeded()
+        
+		hostingController.viewController.view.frame = contentView.bounds
+        hostingController.viewController.view.layoutIfNeeded()
 	}
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
 	{
-		guard let hostingController = _hostingController else { return CGSize(width: 1, height: 1) }
-
 		let selfSizeHorizontal = selfSizingConfig.selfSizeHorizontally ?? (horizontalFittingPriority != .required)
 		let selfSizeVertical = selfSizingConfig.selfSizeVertically ?? (verticalFittingPriority != .required)
 
@@ -106,4 +81,13 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 			width: selfSizingConfig.canExceedCollectionWidth ? nil : collectionViewController.map { $0.collectionView.contentSize.width - 0.001 },
 			height: selfSizingConfig.canExceedCollectionHeight ? nil : collectionViewController.map { $0.collectionView.contentSize.height - 0.001 })
 	}
+    
+    var disableSwiftUIDropInteraction: Bool {
+        get { hostingController.disableSwiftUIDropInteraction }
+        set { hostingController.disableSwiftUIDropInteraction = newValue }
+    }
+    var disableSwiftUIDragInteraction: Bool {
+        get { hostingController.disableSwiftUIDragInteraction }
+        set { hostingController.disableSwiftUIDragInteraction = newValue }
+    }
 }

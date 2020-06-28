@@ -16,8 +16,7 @@ class ASCollectionViewDecoration<Content: Decoration>: ASCollectionViewSupplemen
 	override init(frame: CGRect)
 	{
 		super.init(frame: frame)
-		hostingController = ASHostingController(Content())
-		willAppear()
+		setContent(supplementaryID: ASSupplementaryCellID(sectionIDHash: 0, supplementaryKind: "Decoration"), content: Content())
 	}
 
 	required init?(coder: NSCoder)
