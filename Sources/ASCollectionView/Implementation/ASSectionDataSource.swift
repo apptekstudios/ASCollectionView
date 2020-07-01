@@ -105,7 +105,9 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> AnyView
 	{
-		guard let content = getContent(forItemID: itemID, isSelected: isSelected) else { return AnyView(EmptyView().id(itemID)) }
+		guard let content = getContent(forItemID: itemID, isSelected: isSelected) else {
+            return AnyView(EmptyView().id(itemID))
+        }
 		return AnyView(content.id(itemID))
 	}
 
@@ -226,7 +228,12 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func applyMove(from: Int, to: Int)
 	{
-		dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to)
+        //NOTE: Binding seemingly not updated until next runloop. Any change must be done in one move; hence the var array
+        // dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to) //This is not behaving as expected
+        guard from != to, var array = dragDropConfig.dataBinding?.wrappedValue else { return }
+        let value = array.remove(at: from)
+        array.insert(value, at: to)
+        dragDropConfig.dataBinding?.wrappedValue = array
 	}
 
 	func applyRemove(atOffsets offsets: IndexSet)

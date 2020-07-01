@@ -61,7 +61,8 @@ struct ASDiffableDataSourceSnapshot<SectionID: Hashable>
 		guard sections.containsIndex(fromIndexPath.section), sections.containsIndex(toIndexPath.section) else { return }
 		if fromIndexPath.section == toIndexPath.section
 		{
-			sections[fromIndexPath.section].elements.move(fromOffsets: [fromIndexPath.item], toOffset: toIndexPath.item)
+            let item = sections[fromIndexPath.section].elements.remove(at: fromIndexPath.item)
+            sections[toIndexPath.section].elements.insert(item, at: toIndexPath.item)
 		}
 		else
 		{
