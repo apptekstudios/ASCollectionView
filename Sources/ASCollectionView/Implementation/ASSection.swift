@@ -42,6 +42,7 @@ public struct ASSection<SectionID: Hashable>
 	var shouldCacheCells: Bool = false
 
 	// Only relevant for ASTableView
+	var sectionIndexTitle: String?
 	var disableDefaultTheming: Bool = false
 	var tableViewSeparatorInsets: UIEdgeInsets?
 	var estimatedHeaderHeight: CGFloat?

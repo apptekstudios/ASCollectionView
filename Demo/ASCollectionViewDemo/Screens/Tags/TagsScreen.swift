@@ -67,6 +67,16 @@ struct TagsScreen: View
 
 class AlignedFlowLayout: UICollectionViewFlowLayout
 {
+	override init()
+	{
+		super.init()
+	}
+
+	required init?(coder: NSCoder)
+	{
+		fatalError("init(coder:) has not been implemented")
+	}
+
 	override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool
 	{
 		true
@@ -78,11 +88,12 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 
 		attributes?.forEach
 		{ layoutAttribute in
-			guard layoutAttribute.representedElementCategory == .cell else
+			switch layoutAttribute.representedElementCategory
 			{
-				return
+			case .cell:
+				layoutAttributesForItem(at: layoutAttribute.indexPath).map { layoutAttribute.frame = $0.frame }
+			default: break
 			}
-			layoutAttributesForItem(at: layoutAttribute.indexPath).map { layoutAttribute.frame = $0.frame }
 		}
 
 		return attributes
@@ -107,6 +118,11 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 		return collectionViewWidth - insets.left - insets.right - sectionInset.left - sectionInset.right
 	}
 
+	override var collectionViewContentSize: CGSize
+	{
+		CGSize(width: contentWidth ?? super.collectionViewContentSize.width, height: super.collectionViewContentSize.height)
+	}
+
 	fileprivate func isFrame(for firstItemAttributes: UICollectionViewLayoutAttributes, inSameLineAsFrameFor secondItemAttributes: UICollectionViewLayoutAttributes) -> Bool
 	{
 		guard let lineWidth = contentWidth else
@@ -124,13 +140,9 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 
 	override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes?
 	{
-		guard let attributes = super.layoutAttributesForItem(at: indexPath)?.copy() as? UICollectionViewLayoutAttributes else
+		guard let attributes = super.layoutAttributesForItem(at: indexPath) else
 		{
 			return nil
-		}
-		guard attributes.representedElementCategory == .cell else
-		{
-			return attributes
 		}
 		guard
 			indexPath.item > 0,

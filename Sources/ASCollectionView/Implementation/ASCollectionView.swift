@@ -236,7 +236,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				cell.isSelected = self.isIndexPathSelected(indexPath)
 
 				cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
-				cell.skipNextRefresh = true // Avoid setting this again when we refresh old cells in a moment
+//				cell.skipNextRefresh = true // Avoid setting this again when we refresh old cells in a moment
 
 				cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
 				cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
@@ -340,24 +340,25 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 			}
 		}
-        
-        func refreshCell(_ cell: UICollectionViewCell, forceUpdate: Bool = false) {
-            guard
-                let cell = cell as? Cell,
-                let itemID = cell.itemID,
-                let section = section(forItemID: itemID)
-            else { return }
-            if cell.skipNextRefresh && !forceUpdate
-            {
-                cell.skipNextRefresh = false
-            }
-            else
-            {
-                cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
-                cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
-                cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
-            }
-        }
+
+		func refreshCell(_ cell: UICollectionViewCell, forceUpdate: Bool = false)
+		{
+			guard
+				let cell = cell as? Cell,
+				let itemID = cell.itemID,
+				let section = section(forItemID: itemID)
+			else { return }
+//			if cell.skipNextRefresh, !forceUpdate
+//			{
+//				cell.skipNextRefresh = false
+//			}
+//			else
+//			{
+			cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
+			cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
+			cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
+//			}
+		}
 
 		func onMoveToParent()
 		{
@@ -667,7 +668,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			if parent.editMode
 			{
 				updateSelectionBindings(collectionView)
-                collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
+				collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
 			}
 			else
 			{
@@ -679,7 +680,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
 		{
 			updateSelectionBindings(collectionView)
-            collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
+			collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
 		}
 
 		func updateSelectionBindings(_ collectionView: UICollectionView)
@@ -697,12 +698,12 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
 		{
-            collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
+			collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
 		}
 
 		func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
 		{
-            collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
+			collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
 		}
 
 		func canDrop(at indexPath: IndexPath) -> Bool

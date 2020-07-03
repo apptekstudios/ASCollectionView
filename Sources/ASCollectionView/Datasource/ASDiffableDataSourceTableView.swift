@@ -12,6 +12,7 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 
 	private weak var tableView: UITableView?
 	private let cellProvider: CellProvider
+	private var indexTitles: [(Int, String)] = []
 
 	var onDelete: ((_ indexPath: IndexPath) -> Void)?
 	var onMove: ((_ source: IndexPath, _ destination: IndexPath) -> Void)?
@@ -30,6 +31,17 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 
 	private var firstLoad: Bool = true
 	private var canRefreshSizes: Bool = false
+
+	func setIndexTitles(_ titles: [(Int, String)])
+	{
+		var strings = Set<String>()
+		let uniqued = titles.filter { (index, string) -> Bool in
+			guard !strings.contains(string) else { return false }
+			strings.insert(string)
+			return true
+		}
+		indexTitles = uniqued
+	}
 
 	func applySnapshot(_ newSnapshot: Snapshot, animated: Bool = true, completion: (() -> Void)? = nil)
 	{
@@ -120,5 +132,18 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 		moveSnapshot.moveItem(fromIndexPath: sourceIndexPath, toIndexPath: destinationIndexPath)
 		applySnapshot(moveSnapshot, animated: true, completion: nil)
 		onMove(sourceIndexPath, destinationIndexPath)
+	}
+
+	// MARK: Index titles support
+
+	func sectionIndexTitles(for tableView: UITableView) -> [String]?
+	{
+		indexTitles.isEmpty ? nil : indexTitles.map { $0.1 }
+	}
+
+	func tableView(_ tableView: UITableView, sectionForSectionIndexTitle title: String, at index: Int) -> Int
+	{
+		guard let index = indexTitles[safe: index]?.0, currentSnapshot.sections.indices.contains(index) else { return 0 }
+		return index
 	}
 }

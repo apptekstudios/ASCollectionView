@@ -9,7 +9,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 {
 	var itemID: ASCollectionViewItemUniqueID?
 	let hostingController = ASHostingController<AnyView>(AnyView(EmptyView()))
-	var skipNextRefresh: Bool = false
+//	var skipNextRefresh: Bool = false
 
 	override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?)
 	{
@@ -50,7 +50,7 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		isSelected = false
 		backgroundColor = nil
 		alpha = 1.0
-		skipNextRefresh = false
+//		skipNextRefresh = false
 	}
 
 	func setContent<Content: View>(itemID: ASCollectionViewItemUniqueID, content: Content)
