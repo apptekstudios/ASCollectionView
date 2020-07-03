@@ -269,22 +269,9 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		func refreshVisibleCells(transaction: Transaction?, updateAll: Bool = true)
 		{
 			guard let tv = tableViewController?.tableView else { return }
-			for case let cell as Cell in tv.visibleCells
+			for cell in tv.visibleCells
 			{
-				guard
-					let itemID = cell.itemID,
-					let section = self.section(forItemID: itemID)
-				else { continue }
-				if cell.skipNextRefresh, !updateAll
-				{
-					cell.skipNextRefresh = false
-				}
-				else
-				{
-					cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
-					cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
-					cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
-				}
+                refreshCell(cell)
 			}
 
 			for case let supplementaryView as ASTableViewSupplementaryView in tv.subviews
@@ -296,6 +283,24 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				supplementaryView.setContent(supplementaryID: supplementaryID, content: section.dataSource.content(supplementaryID: supplementaryID))
 			}
 		}
+        
+        func refreshCell(_ cell: UITableViewCell, forceUpdate: Bool = false) {
+            guard
+                let cell = cell as? Cell,
+                let itemID = cell.itemID,
+                let section = section(forItemID: itemID)
+            else { return }
+            if cell.skipNextRefresh && !forceUpdate
+            {
+                cell.skipNextRefresh = false
+            }
+            else
+            {
+                cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
+                cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
+                cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
+            }
+        }
 
 		func invalidateLayout(animated: Bool, cell: ASTableViewCell?)
 		{
@@ -462,7 +467,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		{
 			if parent.editMode
 			{
-				updateContent(tableView, transaction: nil)
+                tableView.cellForRow(at: indexPath).map { refreshCell($0, forceUpdate: true) }
 			}
 			else
 			{
@@ -473,7 +478,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath)
 		{
-			updateContent(tableView, transaction: nil)
+            tableView.cellForRow(at: indexPath).map { refreshCell($0, forceUpdate: true) }
 		}
 
 		func updateSelectionBindings(_ tableView: UITableView)
@@ -534,12 +539,12 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		public func tableView(_ tableView: UITableView, didHighlightRowAt indexPath: IndexPath)
 		{
-			refreshVisibleCells(transaction: nil)
+            tableView.cellForRow(at: indexPath).map { refreshCell($0, forceUpdate: true) }
 		}
 
 		public func tableView(_ tableView: UITableView, didUnhighlightRowAt indexPath: IndexPath)
 		{
-			refreshVisibleCells(transaction: nil)
+            tableView.cellForRow(at: indexPath).map { refreshCell($0, forceUpdate: true) }
 		}
 
 		public func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]

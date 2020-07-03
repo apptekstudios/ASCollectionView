@@ -302,7 +302,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 			}
 
-			collectionViewController.map { updateSelectionBindings($0.collectionView, andRefresh: false) }
+			collectionViewController.map { updateSelectionBindings($0.collectionView) }
 			refreshVisibleCells(transaction: transaction, updateAll: false)
 
 			collectionViewController.map { self.didUpdateContentSize($0.collectionView.contentSize) }
@@ -321,22 +321,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func refreshVisibleCells(transaction: Transaction? = nil, updateAll: Bool = true)
 		{
 			guard let cv = collectionViewController?.collectionView else { return }
-			for case let cell as Cell in cv.visibleCells
+			for cell in cv.visibleCells
 			{
-				guard
-					let itemID = cell.itemID,
-					let section = section(forItemID: itemID)
-				else { continue }
-				if cell.skipNextRefresh, !updateAll
-				{
-					cell.skipNextRefresh = false
-				}
-				else
-				{
-					cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
-					cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
-					cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
-				}
+				refreshCell(cell, forceUpdate: updateAll)
 			}
 
 			supplementaryKinds().forEach
@@ -353,6 +340,24 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 			}
 		}
+        
+        func refreshCell(_ cell: UICollectionViewCell, forceUpdate: Bool = false) {
+            guard
+                let cell = cell as? Cell,
+                let itemID = cell.itemID,
+                let section = section(forItemID: itemID)
+            else { return }
+            if cell.skipNextRefresh && !forceUpdate
+            {
+                cell.skipNextRefresh = false
+            }
+            else
+            {
+                cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
+                cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
+                cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
+            }
+        }
 
 		func onMoveToParent()
 		{
@@ -662,6 +667,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			if parent.editMode
 			{
 				updateSelectionBindings(collectionView)
+                collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
 			}
 			else
 			{
@@ -673,9 +679,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
 		{
 			updateSelectionBindings(collectionView)
+            collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
 		}
 
-		func updateSelectionBindings(_ collectionView: UICollectionView, andRefresh: Bool = true)
+		func updateSelectionBindings(_ collectionView: UICollectionView)
 		{
 			let selected = parent.editMode ? (collectionView.indexPathsForSelectedItems ?? []) : []
 			let selectionBySection = Dictionary(grouping: selected) { $0.section }
@@ -686,20 +693,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			parent.sections.enumerated().forEach { offset, section in
 				section.dataSource.updateSelection(selectionBySection[offset] ?? [])
 			}
-			if andRefresh
-			{
-				refreshVisibleCells()
-			}
 		}
 
 		func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
 		{
-			refreshVisibleCells()
+            collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
 		}
 
 		func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
 		{
-			refreshVisibleCells()
+            collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
 		}
 
 		func canDrop(at indexPath: IndexPath) -> Bool
