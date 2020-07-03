@@ -169,7 +169,8 @@ public extension ASCollectionViewSection
 			dragDropConfig: .disabled)
 	}
 
-	init<Content: View>(id: SectionID, content: () -> Content) {
+	init<Content: View>(id: SectionID, content: () -> Content)
+	{
 		self.init(id: id, container: { $0 }, content: content)
 	}
 }

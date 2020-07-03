@@ -235,7 +235,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 				cell.isSelected = self.isIndexPathSelected(indexPath)
 
-				cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
+				cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
 				cell.skipNextRefresh = true // Avoid setting this again when we refresh old cells in a moment
 
 				cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
@@ -333,7 +333,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 				else
 				{
-					cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
+					cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
 					cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
 					cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
 				}
@@ -692,6 +692,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 		}
 
+		func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
+		{
+			refreshVisibleCells()
+		}
+
+		func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
+		{
+			refreshVisibleCells()
+		}
+
 		func canDrop(at indexPath: IndexPath) -> Bool
 		{
 			guard !indexPath.isEmpty else { return false }
@@ -921,6 +931,8 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
 	func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal
 	func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator)
+	func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
+	func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
 	func didUpdateContentSize(_ size: CGSize)
 	func scrollViewDidScroll(_ scrollView: UIScrollView)
 	func onMoveToParent()

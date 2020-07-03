@@ -10,7 +10,7 @@ internal protocol ASSectionDataSourceProtocol
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> AnyView
+	func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool, isHighlighted: Bool) -> AnyView
 	func content(supplementaryID: ASSupplementaryCellID) -> AnyView?
 	var supplementaryViews: [String: AnyView] { get set }
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
@@ -94,20 +94,22 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash })
 	}
 
-	func cellContext(for index: Int, isSelected: Bool) -> ASCellContext
+	func cellContext(for index: Int, isSelected: Bool, isHighlighted: Bool) -> ASCellContext
 	{
 		ASCellContext(
 			isSelected: isSelected,
+			isHighlighted: isHighlighted,
 			index: index,
 			isFirstInSection: index == data.startIndex,
 			isLastInSection: index == data.endIndex - 1)
 	}
 
-	func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> AnyView
+	func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool, isHighlighted: Bool) -> AnyView
 	{
-		guard let content = getContent(forItemID: itemID, isSelected: isSelected) else {
-            return AnyView(EmptyView().id(itemID))
-        }
+		guard let content = getContent(forItemID: itemID, isSelected: isSelected, isHighlighted: isHighlighted) else
+		{
+			return AnyView(EmptyView().id(itemID))
+		}
 		return AnyView(content.id(itemID))
 	}
 
@@ -117,11 +119,11 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		return AnyView(content.id(supplementaryID))
 	}
 
-	func getContent(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool) -> Container?
+	func getContent(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool, isHighlighted: Bool) -> Container?
 	{
 		guard let itemIndex = getIndex(of: itemID) else { return nil }
 		let item = data[itemIndex]
-		let context = cellContext(for: itemIndex, isSelected: isSelected)
+		let context = cellContext(for: itemIndex, isSelected: isSelected, isHighlighted: isHighlighted)
 		let view = content(item, context)
 		return container(view)
 	}
@@ -228,12 +230,12 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func applyMove(from: Int, to: Int)
 	{
-        //NOTE: Binding seemingly not updated until next runloop. Any change must be done in one move; hence the var array
-        // dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to) //This is not behaving as expected
-        guard from != to, var array = dragDropConfig.dataBinding?.wrappedValue else { return }
-        let value = array.remove(at: from)
-        array.insert(value, at: to)
-        dragDropConfig.dataBinding?.wrappedValue = array
+		// NOTE: Binding seemingly not updated until next runloop. Any change must be done in one move; hence the var array
+		// dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to) //This is not behaving as expected
+		guard from != to, var array = dragDropConfig.dataBinding?.wrappedValue else { return }
+		let value = array.remove(at: from)
+		array.insert(value, at: to)
+		dragDropConfig.dataBinding?.wrappedValue = array
 	}
 
 	func applyRemove(atOffsets offsets: IndexSet)

@@ -7,6 +7,7 @@ import Foundation
 public struct ASCellContext
 {
 	public var isSelected: Bool
+	public var isHighlighted: Bool
 	public var index: Int
 	public var isFirstInSection: Bool
 	public var isLastInSection: Bool

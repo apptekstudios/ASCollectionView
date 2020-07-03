@@ -46,7 +46,8 @@ struct TableViewDragAndDropScreen: View
 								self.groupB.remove(at: index)
 								callback(true)
 							}
-					}) { item, _ in
+					})
+					{ item, _ in
 						Text(item)
 							.padding()
 							.frame(maxWidth: .infinity, alignment: .leading)
@@ -67,7 +68,8 @@ struct TableViewDragAndDropScreen: View
 								self.groupC.remove(at: index)
 								callback(true)
 							}
-					}) { item, _ in
+					})
+					{ item, _ in
 						Text(item)
 							.padding()
 							.frame(maxWidth: .infinity, alignment: .leading)
@@ -85,7 +87,8 @@ struct TableViewDragAndDropScreen: View
 								self.groupD.remove(at: index)
 								callback(true)
 							}
-					}) { item, _ in
+					})
+					{ item, _ in
 						Text(item)
 							.padding()
 							.frame(maxWidth: .infinity, alignment: .leading)

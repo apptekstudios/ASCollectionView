@@ -42,7 +42,8 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView, ASDataSourceC
 		supplementaryID = nil
 	}
 
-	func setContent<Content: View>(supplementaryID: ASSupplementaryCellID, content: Content?) {
+	func setContent<Content: View>(supplementaryID: ASSupplementaryCellID, content: Content?)
+	{
 		guard let content = content else { setAsEmpty(supplementaryID: supplementaryID); return }
 		self.supplementaryID = supplementaryID
 		isEmpty = false

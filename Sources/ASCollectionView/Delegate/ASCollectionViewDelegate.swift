@@ -29,6 +29,16 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 		.scrollableAxes
 	}
 
+	public func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
+	{
+		coordinator?.collectionView(collectionView, didHighlightItemAt: indexPath)
+	}
+
+	public func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
+	{
+		coordinator?.collectionView(collectionView, didUnhighlightItemAt: indexPath)
+	}
+
 	open func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	{
 		coordinator?.collectionView(collectionView, willDisplay: cell, forItemAt: indexPath)

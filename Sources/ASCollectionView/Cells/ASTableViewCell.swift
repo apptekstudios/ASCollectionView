@@ -53,7 +53,8 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		skipNextRefresh = false
 	}
 
-	func setContent<Content: View>(itemID: ASCollectionViewItemUniqueID, content: Content) {
+	func setContent<Content: View>(itemID: ASCollectionViewItemUniqueID, content: Content)
+	{
 		self.itemID = itemID
 		hostingController.setView(AnyView(content.id(itemID)))
 	}

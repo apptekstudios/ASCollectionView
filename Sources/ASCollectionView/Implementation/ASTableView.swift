@@ -38,8 +38,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 	internal var alwaysBounce: Bool = false
 	internal var animateOnDataRefresh: Bool = true
-    
-    internal var dodgeKeyboard: Bool = true
+
+	internal var dodgeKeyboard: Bool = true
 
 	// MARK: Environment variables
 
@@ -68,7 +68,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		context.coordinator.updateTableViewSettings(tableViewController.tableView)
 		context.coordinator.updateContent(tableViewController.tableView, transaction: context.transaction)
 		context.coordinator.configureRefreshControl(for: tableViewController.tableView)
-        context.coordinator.setupKeyboardObservers()
+		context.coordinator.setupKeyboardObservers()
 #if DEBUG
 		debugOnly_checkHasUniqueSections()
 #endif
@@ -145,7 +145,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			assignIfChanged(tableView, \.alwaysBounceVertical, newValue: parent.alwaysBounce)
 			assignIfChanged(tableView, \.showsVerticalScrollIndicator, newValue: parent.scrollIndicatorEnabled)
 			assignIfChanged(tableView, \.showsHorizontalScrollIndicator, newValue: parent.scrollIndicatorEnabled)
-            assignIfChanged(tableView, \.keyboardDismissMode, newValue: .interactive)
+			assignIfChanged(tableView, \.keyboardDismissMode, newValue: .interactive)
 
 			assignIfChanged(tableView, \.allowsSelection, newValue: true)
 			assignIfChanged(tableView, \.allowsMultipleSelectionDuringEditing, newValue: true)
@@ -161,11 +161,11 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				updateSelectionBindings(tableView)
 			}
 		}
-        
-        func updateTableViewContentInsets(_ tableView: UITableView)
-        {
-            assignIfChanged(tableView, \.contentInset, newValue: adaptiveContentInsets)
-        }
+
+		func updateTableViewContentInsets(_ tableView: UITableView)
+		{
+			assignIfChanged(tableView, \.contentInset, newValue: adaptiveContentInsets)
+		}
 
 		func isIndexPathSelected(_ indexPath: IndexPath) -> Bool
 		{
@@ -200,7 +200,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 				cell.isSelected = self.isIndexPathSelected(indexPath)
 
-				cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
+				cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
 				cell.skipNextRefresh = true // Avoid setting this again when we refresh old cells in a moment
 
 				cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
@@ -281,7 +281,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				}
 				else
 				{
-					cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected))
+					cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
 					cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
 					cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
 				}
@@ -532,6 +532,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 		}
 
+		public func tableView(_ tableView: UITableView, didHighlightRowAt indexPath: IndexPath)
+		{
+			refreshVisibleCells(transaction: nil)
+		}
+
+		public func tableView(_ tableView: UITableView, didUnhighlightRowAt indexPath: IndexPath)
+		{
+			refreshVisibleCells(transaction: nil)
+		}
+
 		public func tableView(_ tableView: UITableView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
 		{
 			guard !indexPath.isEmpty else { return [] }
@@ -725,92 +735,92 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				hasAlreadyReachedBottom = false
 			}
 		}
-        
-        //MARK: Keyboard support
-        var areKeyboardObserversSetUp: Bool = false
-        var keyboardFrame: CGRect?
-        {
-            didSet
-            {
-                tableViewController.map {
-                    updateTableViewContentInsets($0.tableView)
-                }
-            }
-        }
-        var extraKeyboardSpacing: CGFloat = 25
-        func setupKeyboardObservers()
-        {
-            if parent.dodgeKeyboard
-            {
-                guard !areKeyboardObserversSetUp else { return }
-                areKeyboardObserversSetUp = true
-                NotificationCenter.default.addObserver(self, selector: #selector(keyBoardWillShow(notification:)), name: UIResponder.keyboardWillShowNotification, object: nil)
-                NotificationCenter.default.addObserver(self, selector: #selector(keyBoardWillHide(notification:)), name: UIResponder.keyboardWillHideNotification, object: nil)
-            }
-            else if areKeyboardObserversSetUp
-            {
-                NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
-                NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
-            }
-        }
-        
-        
-        var keyboardOverlap: CGFloat
-        {
-            guard
-                let tv = tableViewController?.tableView,
-                let tvFrameInWindow = tv.superview?.convert(tv.frame, to: nil),
-                let intersection = keyboardFrame?.intersection(tvFrameInWindow)
-            else { return .zero }
-            return intersection.height
-        }
-        
-        
-        var adaptiveContentInsets: UIEdgeInsets
-        {
-            UIEdgeInsets(
-                top: parent.contentInsets.top,
-                left: parent.contentInsets.left,
-                bottom: parent.contentInsets.bottom + (parent.dodgeKeyboard ? keyboardOverlap : 0),
-                right: parent.contentInsets.right)
-        }
-        
-        func containsFirstResponder() -> Bool
-        {
-            tableViewController?.tableView.findFirstResponder != nil
-        }
-        
-        @objc func keyBoardWillShow(notification: Notification)
-        {
-            guard containsFirstResponder() else
-            {
-                keyboardFrame = nil
-                return
-            }
-            
-            keyboardFrame = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue
-            
-            // Do our own adjustment of contentOffset
-            if let tv = tableViewController?.tableView,
-               let firstResponder = tv.findFirstResponder()
-            {
-                let firstResponderFrame = firstResponder.convert(firstResponder.bounds, to: tv)
-                let newContentOffset = CGPoint(
-                    x: tv.contentOffset.x,
-                    y: tv.adjustedContentInset.top + firstResponderFrame.maxY + keyboardOverlap + extraKeyboardSpacing - tv.frame.height)
-                if newContentOffset.y > tv.contentOffset.y
-                {
-                    tv.contentOffset = newContentOffset
-                }
-            }
-        }
-        
-        @objc func keyBoardWillHide(notification _: Notification)
-        {
-            keyboardFrame = nil
-            tableViewController?.tableView.layoutIfNeeded()
-        }
-    }
+
+		// MARK: Keyboard support
+
+		var areKeyboardObserversSetUp: Bool = false
+		var keyboardFrame: CGRect?
+		{
+			didSet
+			{
+				tableViewController.map {
+					updateTableViewContentInsets($0.tableView)
+				}
+			}
+		}
+
+		var extraKeyboardSpacing: CGFloat = 25
+		func setupKeyboardObservers()
+		{
+			if parent.dodgeKeyboard
+			{
+				guard !areKeyboardObserversSetUp else { return }
+				areKeyboardObserversSetUp = true
+				NotificationCenter.default.addObserver(self, selector: #selector(keyBoardWillShow(notification:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+				NotificationCenter.default.addObserver(self, selector: #selector(keyBoardWillHide(notification:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+			}
+			else if areKeyboardObserversSetUp
+			{
+				NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
+				NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+			}
+		}
+
+		var keyboardOverlap: CGFloat
+		{
+			guard
+				let tv = tableViewController?.tableView,
+				let tvFrameInWindow = tv.superview?.convert(tv.frame, to: nil),
+				let intersection = keyboardFrame?.intersection(tvFrameInWindow)
+			else { return .zero }
+			return intersection.height
+		}
+
+		var adaptiveContentInsets: UIEdgeInsets
+		{
+			UIEdgeInsets(
+				top: parent.contentInsets.top,
+				left: parent.contentInsets.left,
+				bottom: parent.contentInsets.bottom + (parent.dodgeKeyboard ? keyboardOverlap : 0),
+				right: parent.contentInsets.right)
+		}
+
+		func containsFirstResponder() -> Bool
+		{
+			tableViewController?.tableView.findFirstResponder != nil
+		}
+
+		@objc func keyBoardWillShow(notification: Notification)
+		{
+			guard containsFirstResponder() else
+			{
+				keyboardFrame = nil
+				return
+			}
+
+			keyboardFrame = (notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue
+
+			// Do our own adjustment of contentOffset
+			if let tv = tableViewController?.tableView,
+				let firstResponder = tv.findFirstResponder()
+			{
+				let firstResponderFrame = firstResponder.convert(firstResponder.bounds, to: tv)
+				let newContentOffset = CGPoint(
+					x: tv.contentOffset.x,
+					y: tv.adjustedContentInset.top + firstResponderFrame.maxY + keyboardOverlap + extraKeyboardSpacing - tv.frame.height)
+				if newContentOffset.y > tv.contentOffset.y
+				{
+					tv.contentOffset = newContentOffset
+				}
+			}
+		}
+
+		@objc func keyBoardWillHide(notification _: Notification)
+		{
+			keyboardFrame = nil
+			tableViewController?.tableView.layoutIfNeeded()
+		}
+	}
 }
 
 @available(iOS 13.0, *)
