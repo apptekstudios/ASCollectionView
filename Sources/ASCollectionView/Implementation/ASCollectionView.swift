@@ -836,14 +836,17 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		var lastContentSize: CGSize = .zero
 		func didUpdateContentSize(_ size: CGSize)
 		{
-			guard let cv = collectionViewController?.collectionView, cv.contentSize != lastContentSize, cv.contentSize.width != 0, cv.contentSize.height != 0 else { return }
-			let firstSize = lastContentSize == .zero
-			lastContentSize = cv.contentSize
-			parent.contentSizeTracker?.contentSize = size
-
-			DispatchQueue.main.async {
-				self.parent.invalidateParentCellLayout?(!firstSize)
-			}
+            guard let cv = collectionViewController?.collectionView, cv.contentSize.width != .zero, cv.contentSize.height != .zero else { return }
+           
+            if cv.contentSize != lastContentSize {
+                let firstSize = lastContentSize == .zero
+                lastContentSize = cv.contentSize
+                parent.contentSizeTracker?.contentSize = size
+                
+                DispatchQueue.main.async {
+                    self.parent.invalidateParentCellLayout?(!firstSize)
+                }
+            }
 		}
 
 		// MARK: Variables used for the custom prefetching implementation
