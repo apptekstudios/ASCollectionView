@@ -56,6 +56,10 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView, ASDataSourceCon
 		hostingController.setView(AnyView(EmptyView().id(supplementaryID)))
 	}
 
+    public override var safeAreaInsets: UIEdgeInsets {
+        return .zero
+    }
+    
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()

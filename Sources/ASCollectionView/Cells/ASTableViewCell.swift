@@ -58,6 +58,10 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		self.itemID = itemID
 		hostingController.setView(AnyView(content.id(itemID)))
 	}
+    
+    public override var safeAreaInsets: UIEdgeInsets {
+        return .zero
+    }
 
 	override func layoutSubviews()
 	{

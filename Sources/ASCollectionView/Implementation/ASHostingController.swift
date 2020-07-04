@@ -14,7 +14,6 @@ internal struct ASHostingControllerWrapper<Content: View>: View, ASHostingContro
 	var body: some View
 	{
 		content
-			.edgesIgnoringSafeArea(.all)
 			.environment(\.invalidateCellLayout, invalidateCellLayoutCallback)
 			.environment(\.collectionViewScrollToCell, collectionViewScrollToCellCallback)
 			.environment(\.tableViewScrollToCell, tableViewScrollToCellCallback)
