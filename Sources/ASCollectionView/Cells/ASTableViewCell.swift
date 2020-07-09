@@ -17,10 +17,8 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		backgroundColor = nil
 		selectionStyle = .default
 
-		showsReorderControl = true
-
 		let selectedBack = UIView()
-		selectedBack.backgroundColor = UIColor.systemGray.withAlphaComponent(0.2)
+		selectedBack.backgroundColor = UIColor.systemGray.withAlphaComponent(0.1)
 		selectedBackgroundView = selectedBack
 
 		contentView.addSubview(hostingController.viewController.view)
@@ -58,10 +56,11 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		self.itemID = itemID
 		hostingController.setView(AnyView(content.id(itemID)))
 	}
-    
-    public override var safeAreaInsets: UIEdgeInsets {
-        return .zero
-    }
+
+	override public var safeAreaInsets: UIEdgeInsets
+	{
+		.zero
+	}
 
 	override func layoutSubviews()
 	{

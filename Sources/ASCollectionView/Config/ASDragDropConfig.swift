@@ -14,7 +14,7 @@ public struct ASDragDropConfig<Data>
 	var reorderingEnabled: Bool = false
 
 	var dragItemProvider: ((_ item: Data) -> NSItemProvider?)?
-	var shouldMoveItem: ((_ sourceIndexPath: IndexPath, _ destinationIndexPath: IndexPath) -> Bool)?
+	var shouldMoveItem: ((_ sourceIndexPath: Int, _ destinationIndexPath: Int) -> Bool)?
 
 	/// An optional closure that you can use to decide what to do with a dropped item.
 	/// Return nil if you want to ignore the drop.

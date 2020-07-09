@@ -14,8 +14,11 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 	private let cellProvider: CellProvider
 	private var indexTitles: [(Int, String)] = []
 
-	var onDelete: ((_ indexPath: IndexPath) -> Void)?
-	var onMove: ((_ source: IndexPath, _ destination: IndexPath) -> Void)?
+	var canSelect: ((_ indexPath: IndexPath) -> Bool)?
+	var canDelete: ((_ indexPath: IndexPath) -> Bool)?
+	var onDelete: ((_ indexPath: IndexPath) -> Bool)?
+	var canMove: ((_ source: IndexPath) -> Bool)?
+	var onMove: ((_ source: IndexPath, _ destination: IndexPath) -> Bool)?
 
 	public init(tableView: UITableView, cellProvider: @escaping CellProvider)
 	{
@@ -108,30 +111,36 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 
 	func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool
 	{
-		true
+		canSelect?(indexPath) ?? false || canMove?(indexPath) ?? false || canDelete?(indexPath) ?? false
 	}
 
 	func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath)
 	{
 		guard let onDelete = onDelete else { return }
-		var deleteSnapshot = currentSnapshot
-		deleteSnapshot.removeItems(fromSectionIndex: indexPath.section, atOffsets: [indexPath.row])
-		applySnapshot(deleteSnapshot, animated: true, completion: nil)
-		onDelete(indexPath)
+		let didDelete = onDelete(indexPath)
+		if didDelete
+		{
+			var deleteSnapshot = currentSnapshot
+			deleteSnapshot.removeItems(fromSectionIndex: indexPath.section, atOffsets: [indexPath.row])
+			applySnapshot(deleteSnapshot, animated: true, completion: nil)
+		}
 	}
 
 	func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool
 	{
-		onMove != nil
+		canMove?(indexPath) ?? (onMove != nil)
 	}
 
 	func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath)
 	{
 		guard let onMove = onMove else { return }
-		var moveSnapshot = currentSnapshot
-		moveSnapshot.moveItem(fromIndexPath: sourceIndexPath, toIndexPath: destinationIndexPath)
-		applySnapshot(moveSnapshot, animated: true, completion: nil)
-		onMove(sourceIndexPath, destinationIndexPath)
+		let didMove = onMove(sourceIndexPath, destinationIndexPath)
+		if didMove
+		{
+			var moveSnapshot = currentSnapshot
+			moveSnapshot.moveItem(fromIndexPath: sourceIndexPath, toIndexPath: destinationIndexPath)
+			applySnapshot(moveSnapshot, animated: true, completion: nil)
+		}
 	}
 
 	// MARK: Index titles support

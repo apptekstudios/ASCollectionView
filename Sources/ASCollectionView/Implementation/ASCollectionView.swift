@@ -292,20 +292,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				collectionViewController?.collectionViewLayout.invalidateLayout()
 				invalidateLayoutOnNextUpdate = false
 			}
-			dataSource?.applySnapshot(snapshot, animated: animated) {
-				if let scrollPositionToSet = self.parent.scrollPositionSetter?.wrappedValue
-				{
-					self.scrollToPosition(scrollPositionToSet, animated: animated)
-					DispatchQueue.main.async {
-						self.parent.scrollPositionSetter?.wrappedValue = nil
-					}
-				}
-			}
+			dataSource?.applySnapshot(snapshot, animated: animated)
 
 			collectionViewController.map { updateSelectionBindings($0.collectionView) }
 			refreshVisibleCells(transaction: transaction, updateAll: false)
-
-			collectionViewController.map { self.didUpdateContentSize($0.collectionView.contentSize) }
 		}
 
 		func updateContent(_ cv: UICollectionView, transaction: Transaction?)
@@ -502,6 +492,16 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			collectionViewController?.collectionView.scrollToItem(at: indexPath, at: position, animated: true)
 			CATransaction.commit()
 		}
+        
+        func applyScrollPosition(animated: Bool) {
+            if let scrollPositionToSet = self.parent.scrollPositionSetter?.wrappedValue
+            {
+                self.scrollToPosition(scrollPositionToSet, animated: animated)
+                DispatchQueue.main.async {
+                    self.parent.scrollPositionSetter?.wrappedValue = nil
+                }
+            }
+        }
 
 		func scrollToPosition(_ scrollPosition: ASCollectionViewScrollPosition, animated: Bool = false)
 		{
@@ -805,11 +805,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						return destinationSection.dataSource.getItemID(for: item.dragItem, withSectionID: destinationSection.id)
 					}
 				}
-				dragSnapshot.insertItems(itemsToInsertIDs, atSectionIndex: destinationIndexPath.section, atOffset: destinationIndexPath.item)
-				destinationSection.dataSource.applyInsert(items: itemsToInsert.map { $0.dragItem }, at: destinationIndexPath.item)
+				if destinationSection.dataSource.applyInsert(items: itemsToInsert.map { $0.dragItem }, at: destinationIndexPath.item)
+				{
+					dragSnapshot.insertItems(itemsToInsertIDs, atSectionIndex: destinationIndexPath.section, atOffset: destinationIndexPath.item)
+				}
 
 			case .copy:
-				destinationSection.dataSource.applyInsert(items: coordinator.items.map { $0.dragItem }, at: destinationIndexPath.item)
+				_ = destinationSection.dataSource.applyInsert(items: coordinator.items.map { $0.dragItem }, at: destinationIndexPath.item)
 
 			default: break
 			}
@@ -836,17 +838,20 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		var lastContentSize: CGSize = .zero
 		func didUpdateContentSize(_ size: CGSize)
 		{
-            guard let cv = collectionViewController?.collectionView, cv.contentSize.width != .zero, cv.contentSize.height != .zero else { return }
-           
-            if cv.contentSize != lastContentSize {
-                let firstSize = lastContentSize == .zero
-                lastContentSize = cv.contentSize
-                parent.contentSizeTracker?.contentSize = size
-                
-                DispatchQueue.main.async {
-                    self.parent.invalidateParentCellLayout?(!firstSize)
-                }
-            }
+			guard let cv = collectionViewController?.collectionView, cv.contentSize.width != .zero, cv.contentSize.height != .zero else { return }
+
+			if cv.contentSize != lastContentSize
+			{
+				let firstSize = lastContentSize == .zero
+				lastContentSize = cv.contentSize
+				parent.contentSizeTracker?.contentSize = size
+
+				DispatchQueue.main.async {
+					self.parent.invalidateParentCellLayout?(!firstSize)
+				}
+                applyScrollPosition(animated: false)
+			}
+            #warning("TODO: get animation state")
 		}
 
 		// MARK: Variables used for the custom prefetching implementation

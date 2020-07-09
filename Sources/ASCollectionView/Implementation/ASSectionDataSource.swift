@@ -21,11 +21,12 @@ internal protocol ASSectionDataSourceProtocol
 	func willAcceptDropItem(from dragItem: UIDragItem) -> Bool
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	func getItemID<SectionID: Hashable>(for dragItem: UIDragItem, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
-	func applyMove(from: Int, to: Int)
+	func supportsMove(_ indexPath: IndexPath) -> Bool
+	func applyMove(from: Int, to: Int) -> Bool
 	func applyRemove(atOffsets offsets: IndexSet)
-	func applyInsert(items: [UIDragItem], at index: Int)
+	func applyInsert(items: [UIDragItem], at index: Int) -> Bool
 	func supportsDelete(at indexPath: IndexPath) -> Bool
-	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
+	func onDelete(indexPath: IndexPath) -> Bool
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
 
@@ -192,10 +193,11 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		return shouldAllowSwipeToDelete?(indexPath.item) ?? true
 	}
 
-	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
+	func onDelete(indexPath: IndexPath) -> Bool
 	{
-		guard let item = data[safe: indexPath.item] else { return }
-		onSwipeToDelete?(indexPath.item, item, completionHandler)
+		guard let item = data[safe: indexPath.item], let onDelete = onSwipeToDelete else { return false }
+		let didDelete = onDelete(indexPath.item, item)
+		return didDelete
 	}
 
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
@@ -228,14 +230,23 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		return getItemID(for: item, withSectionID: sectionID)
 	}
 
-	func applyMove(from: Int, to: Int)
+	func supportsMove(_ indexPath: IndexPath) -> Bool
+	{
+		dragDropConfig.reorderingEnabled
+	}
+
+	func applyMove(from: Int, to: Int) -> Bool
 	{
 		// NOTE: Binding seemingly not updated until next runloop. Any change must be done in one move; hence the var array
 		// dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to) //This is not behaving as expected
-		guard from != to, var array = dragDropConfig.dataBinding?.wrappedValue else { return }
+		guard from != to,
+			dragDropConfig.shouldMoveItem?(from, to) ?? true,
+			var array = dragDropConfig.dataBinding?.wrappedValue
+		else { return false }
 		let value = array.remove(at: from)
 		array.insert(value, at: to)
 		dragDropConfig.dataBinding?.wrappedValue = array
+		return true
 	}
 
 	func applyRemove(atOffsets offsets: IndexSet)
@@ -243,7 +254,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		dragDropConfig.dataBinding?.wrappedValue.remove(atOffsets: offsets)
 	}
 
-	func applyInsert(items: [UIDragItem], at index: Int)
+	func applyInsert(items: [UIDragItem], at index: Int) -> Bool
 	{
 		let actualItems = items.compactMap(getDropItem(from:))
 		let allDataIDs = Set(dragDropConfig.dataBinding?.wrappedValue.map { $0[keyPath: dataIDKeyPath] } ?? [])
@@ -253,6 +264,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		if noDuplicates.count != actualItems.count { print("ASCOLLECTIONVIEW/ASTABLEVIEW: Attempted to insert an item with the same ID as one already in the section. This may cause unexpected behaviour.") }
 #endif
 		dragDropConfig.dataBinding?.wrappedValue.insert(contentsOf: noDuplicates, at: index)
+		return !noDuplicates.isEmpty
 	}
 
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?

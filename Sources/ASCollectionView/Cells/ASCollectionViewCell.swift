@@ -44,10 +44,11 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		alpha = 1.0
 //		skipNextRefresh = false
 	}
-    
-    public override var safeAreaInsets: UIEdgeInsets {
-        return .zero
-    }
+
+	override public var safeAreaInsets: UIEdgeInsets
+	{
+		.zero
+	}
 
 	func setContent<Content: View>(itemID: ASCollectionViewItemUniqueID, content: Content)
 	{
