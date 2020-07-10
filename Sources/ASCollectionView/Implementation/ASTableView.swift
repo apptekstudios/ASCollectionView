@@ -111,6 +111,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		// MARK: Private tracking variables
 
 		private var hasDoneInitialSetup = false
+		private var shouldAnimateScrollPositionSet = false
 
 		typealias Cell = ASTableViewCell
 
@@ -146,8 +147,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			assignIfChanged(tableView, \.showsVerticalScrollIndicator, newValue: parent.scrollIndicatorEnabled)
 			assignIfChanged(tableView, \.showsHorizontalScrollIndicator, newValue: parent.scrollIndicatorEnabled)
 			assignIfChanged(tableView, \.keyboardDismissMode, newValue: .interactive)
-            
-            updateTableViewContentInsets(tableView)
+
+			updateTableViewContentInsets(tableView)
 
 			assignIfChanged(tableView, \.allowsSelection, newValue: true)
 			assignIfChanged(tableView, \.allowsMultipleSelectionDuringEditing, newValue: true)
@@ -203,7 +204,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				cell.isSelected = self.isIndexPathSelected(indexPath)
 
 				cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
-//				cell.skipNextRefresh = true // Avoid setting this again when we refresh old cells in a moment
 
 				cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
 				cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
@@ -251,6 +251,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			)
 
 			dataSource?.applySnapshot(snapshot, animated: animated)
+			shouldAnimateScrollPositionSet = animated
 
 			tableViewController.map { updateSelectionBindings($0.tableView) }
 			refreshVisibleCells(transaction: transaction, updateAll: false)
@@ -306,27 +307,28 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		{
 			tableViewController?.tableView.scrollToRow(at: indexPath, at: position, animated: true)
 		}
-        
-        func applyScrollPosition(animated: Bool) {
-            if let scrollPositionToSet = self.parent.scrollPositionSetter?.wrappedValue
-            {
-                switch scrollPositionToSet
-                {
-                case let .indexPath(indexPath):
-                    self.tableViewController?.tableView.scrollToRow(at: indexPath, at: .none, animated: animated)
-                case .top:
-                    let contentInsets = self.tableViewController?.tableView.contentInset ?? .zero
-                    self.tableViewController?.tableView.setContentOffset(CGPoint(x: 0, y: contentInsets.top), animated: animated)
-                case .bottom:
-                    let contentSize = self.tableViewController?.tableView.contentSizePlusInsets ?? .zero
-                    let visibleHeight = self.tableViewController?.tableView.frame.height ?? .zero
-                    self.tableViewController?.tableView.setContentOffset(CGPoint(x: 0, y: contentSize.height - visibleHeight), animated: animated)
-                }
-                DispatchQueue.main.async {
-                    self.parent.scrollPositionSetter?.wrappedValue = nil
-                }
-            }
-        }
+
+		func applyScrollPosition(animated: Bool)
+		{
+			if let scrollPositionToSet = parent.scrollPositionSetter?.wrappedValue
+			{
+				switch scrollPositionToSet
+				{
+				case let .indexPath(indexPath):
+					tableViewController?.tableView.scrollToRow(at: indexPath, at: .none, animated: animated)
+				case .top:
+					let contentInsets = tableViewController?.tableView.contentInset ?? .zero
+					tableViewController?.tableView.setContentOffset(CGPoint(x: 0, y: contentInsets.top), animated: animated)
+				case .bottom:
+					let contentSize = tableViewController?.tableView.contentSizePlusInsets ?? .zero
+					let visibleHeight = tableViewController?.tableView.frame.height ?? .zero
+					tableViewController?.tableView.setContentOffset(CGPoint(x: 0, y: contentSize.height - visibleHeight), animated: animated)
+				}
+				DispatchQueue.main.async {
+					self.parent.scrollPositionSetter?.wrappedValue = nil
+				}
+			}
+		}
 
 		func onMoveToParent()
 		{
@@ -355,9 +357,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			DispatchQueue.main.async {
 				self.parent.invalidateParentCellLayout?(!firstSize)
 			}
-            
-            applyScrollPosition(animated: false)
-            #warning("TODO: get animation state")
+
+			applyScrollPosition(animated: shouldAnimateScrollPositionSet)
 		}
 
 		func configureRefreshControl(for tv: UITableView)
@@ -399,24 +400,16 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)
-		{
-//			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-		}
+		{}
 
 		public func tableView(_ tableView: UITableView, didEndDisplayingHeaderView view: UIView, forSection section: Int)
-		{
-//			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-		}
+		{}
 
 		public func tableView(_ tableView: UITableView, willDisplayFooterView view: UIView, forSection section: Int)
-		{
-//			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-		}
+		{}
 
 		public func tableView(_ tableView: UITableView, didEndDisplayingFooterView view: UIView, forSection section: Int)
-		{
-//			guard let view = (view as? ASTableViewSupplementaryView) else { return }
-		}
+		{}
 
 		public func tableView(_ tableView: UITableView, prefetchRowsAt indexPaths: [IndexPath])
 		{

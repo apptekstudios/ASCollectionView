@@ -132,6 +132,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		// MARK: Private tracking variables
 
 		private var hasDoneInitialSetup = false
+		private var shouldAnimateScrollPositionSet = false
 
 		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
 		private var haveRegisteredForSupplementaryOfKind: Set<String> = []
@@ -293,6 +294,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				invalidateLayoutOnNextUpdate = false
 			}
 			dataSource?.applySnapshot(snapshot, animated: animated)
+			shouldAnimateScrollPositionSet = animated
 
 			collectionViewController.map { updateSelectionBindings($0.collectionView) }
 			refreshVisibleCells(transaction: transaction, updateAll: false)
@@ -492,16 +494,17 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			collectionViewController?.collectionView.scrollToItem(at: indexPath, at: position, animated: true)
 			CATransaction.commit()
 		}
-        
-        func applyScrollPosition(animated: Bool) {
-            if let scrollPositionToSet = self.parent.scrollPositionSetter?.wrappedValue
-            {
-                self.scrollToPosition(scrollPositionToSet, animated: animated)
-                DispatchQueue.main.async {
-                    self.parent.scrollPositionSetter?.wrappedValue = nil
-                }
-            }
-        }
+
+		func applyScrollPosition(animated: Bool)
+		{
+			if let scrollPositionToSet = parent.scrollPositionSetter?.wrappedValue
+			{
+				scrollToPosition(scrollPositionToSet, animated: animated)
+				DispatchQueue.main.async {
+					self.parent.scrollPositionSetter?.wrappedValue = nil
+				}
+			}
+		}
 
 		func scrollToPosition(_ scrollPosition: ASCollectionViewScrollPosition, animated: Bool = false)
 		{
@@ -849,9 +852,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				DispatchQueue.main.async {
 					self.parent.invalidateParentCellLayout?(!firstSize)
 				}
-                applyScrollPosition(animated: false)
+				applyScrollPosition(animated: shouldAnimateScrollPositionSet)
 			}
-            #warning("TODO: get animation state")
 		}
 
 		// MARK: Variables used for the custom prefetching implementation

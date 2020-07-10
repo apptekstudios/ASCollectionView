@@ -36,8 +36,9 @@ struct PhotoGridScreen: View
 							.aspectRatio(1, contentMode: .fill)
 							.frame(width: geom.size.width, height: geom.size.height)
 							.clipped()
+							.opacity(self.isEditing ? (state.isSelected ? 1 : 0.7) : 1)
 					}
-					.buttonStyle(PlainButtonStyle())
+					.buttonStyle(NeutralButtonStyle())
 					.disabled(self.isEditing)
 				}
 
@@ -193,5 +194,13 @@ struct GridView_Previews: PreviewProvider
 	static var previews: some View
 	{
 		PhotoGridScreen()
+	}
+}
+
+struct NeutralButtonStyle: ButtonStyle
+{
+	func makeBody(configuration: Configuration) -> some View
+	{
+		configuration.label
 	}
 }

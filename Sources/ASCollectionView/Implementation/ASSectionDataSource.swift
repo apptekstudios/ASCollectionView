@@ -237,8 +237,8 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func applyMove(from: Int, to: Int) -> Bool
 	{
+        // dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to) //This is not behaving as expected
 		// NOTE: Binding seemingly not updated until next runloop. Any change must be done in one move; hence the var array
-		// dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to) //This is not behaving as expected
 		guard from != to,
 			dragDropConfig.shouldMoveItem?(from, to) ?? true,
 			var array = dragDropConfig.dataBinding?.wrappedValue
