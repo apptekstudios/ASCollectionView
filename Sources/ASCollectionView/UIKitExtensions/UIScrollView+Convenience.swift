@@ -15,6 +15,6 @@ extension UIScrollView
 	{
 		CGPoint(
 			x: max(0, contentSizePlusInsets.width - bounds.width),
-			y: max(0, contentSizePlusInsets.height + safeAreaInsets.top - bounds.height))
+			y: max(0, contentSizePlusInsets.height - safeAreaInsets.top - bounds.height))
 	}
 }

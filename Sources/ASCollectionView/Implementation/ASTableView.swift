@@ -320,9 +320,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					let contentInsets = tableViewController?.tableView.contentInset ?? .zero
 					tableViewController?.tableView.setContentOffset(CGPoint(x: 0, y: contentInsets.top), animated: animated)
 				case .bottom:
-					let contentSize = tableViewController?.tableView.contentSizePlusInsets ?? .zero
-					let visibleHeight = tableViewController?.tableView.frame.height ?? .zero
-					tableViewController?.tableView.setContentOffset(CGPoint(x: 0, y: contentSize.height - visibleHeight), animated: animated)
+                    let maxOffset = tableViewController?.tableView.maxContentOffset ?? .zero
+					tableViewController?.tableView.setContentOffset(maxOffset, animated: animated)
 				}
 				DispatchQueue.main.async {
 					self.parent.scrollPositionSetter?.wrappedValue = nil
