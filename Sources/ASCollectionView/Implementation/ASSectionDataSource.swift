@@ -68,7 +68,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	typealias Data = DataCollection.Element
 	var data: DataCollection
 	var dataIDKeyPath: KeyPath<Data, DataID>
-	var container: (Content) -> Container
+	var container: (Content, ASCellContext) -> Container
 	var content: (DataCollection.Element, ASCellContext) -> Content
 
 	var selectedItems: Binding<Set<Int>>?
@@ -127,7 +127,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		let item = data[itemIndex]
 		let context = cellContext(for: itemIndex, isSelected: isSelected, isHighlighted: isHighlighted)
 		let view = content(item, context)
-		return container(view)
+		return container(view, context)
 	}
 
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
