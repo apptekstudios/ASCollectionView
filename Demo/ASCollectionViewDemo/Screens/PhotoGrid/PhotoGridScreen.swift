@@ -182,7 +182,14 @@ extension PhotoGridScreen
 	var dragDropConfig: ASDragDropConfig<Post>
 	{
 		ASDragDropConfig<Post>(dataBinding: $data)
-			.enableReordering(shouldMoveItem: nil)
+			.canDragItem { (indexPath) -> Bool in
+				true
+				// indexPath.item != 0 // eg. prevent dragging/moving the first item
+			}
+			.canMoveItem { (from, to) -> Bool in
+				// You could add a check here to prevent moving between certain sections etc.
+				true
+			}
 			.dragItemProvider { item in
 				NSItemProvider(object: item.url as NSURL)
 			}

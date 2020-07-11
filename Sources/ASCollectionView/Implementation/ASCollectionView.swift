@@ -758,8 +758,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			{
 			case .move:
 				guard destinationSection.dataSource.reorderingEnabled else { return }
+
 				let itemsBySourceSection = Dictionary(grouping: coordinator.items) { item -> Int? in
-					if let sourceIndex = item.sourceIndexPath, !sourceIndex.isEmpty
+					if let sourceIndex = item.sourceIndexPath, !sourceIndex.isEmpty,
+						destinationSection.dataSource.supportsMove(from: sourceIndex, to: destinationIndexPath)
 					{
 						return sourceIndex.section
 					}

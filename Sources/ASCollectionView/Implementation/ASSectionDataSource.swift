@@ -22,7 +22,8 @@ internal protocol ASSectionDataSourceProtocol
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	func getItemID<SectionID: Hashable>(for dragItem: UIDragItem, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func supportsMove(_ indexPath: IndexPath) -> Bool
-	func applyMove(from: Int, to: Int) -> Bool
+	func supportsMove(from sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) -> Bool
+	func applyMove(from: IndexPath, to: IndexPath) -> Bool
 	func applyRemove(atOffsets offsets: IndexSet)
 	func applyInsert(items: [UIDragItem], at index: Int) -> Bool
 	func supportsDelete(at indexPath: IndexPath) -> Bool
@@ -202,7 +203,9 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	{
-		guard dragEnabled else { return nil }
+		guard dragEnabled,
+			dragDropConfig.canDragItem?(indexPath) ?? true
+		else { return nil }
 		guard let item = data[safe: indexPath.item] else { return nil }
 
 		let itemProvider: NSItemProvider = dragDropConfig.dragItemProvider?(item) ?? NSItemProvider()
@@ -232,39 +235,65 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func supportsMove(_ indexPath: IndexPath) -> Bool
 	{
-		dragDropConfig.reorderingEnabled
+		dragDropConfig.reorderingEnabled && (dragDropConfig.canDragItem?(indexPath) ?? true)
 	}
 
-	func applyMove(from: Int, to: Int) -> Bool
+	func supportsMove(from sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) -> Bool
 	{
-        // dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to) //This is not behaving as expected
+		dragDropConfig.reorderingEnabled && (dragDropConfig.canMoveItem?(sourceIndexPath, destinationIndexPath) ?? true)
+	}
+
+	func applyMove(from: IndexPath, to: IndexPath) -> Bool
+	{
+		// dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to) //This is not behaving as expected
 		// NOTE: Binding seemingly not updated until next runloop. Any change must be done in one move; hence the var array
 		guard from != to,
-			dragDropConfig.shouldMoveItem?(from, to) ?? true,
-			var array = dragDropConfig.dataBinding?.wrappedValue
+			dragDropConfig.canMoveItem?(from, to) ?? true
 		else { return false }
-		let value = array.remove(at: from)
-		array.insert(value, at: to)
-		dragDropConfig.dataBinding?.wrappedValue = array
-		return true
+		if let binding = dragDropConfig.dataBinding
+		{
+			var array = binding.wrappedValue
+			let value = array.remove(at: from.item)
+			array.insert(value, at: to.item)
+			binding.wrappedValue = array
+			return true
+		}
+		else
+		{
+			return dragDropConfig.onMoveItem?(from.item, to.item) ?? false
+		}
 	}
 
 	func applyRemove(atOffsets offsets: IndexSet)
 	{
-		dragDropConfig.dataBinding?.wrappedValue.remove(atOffsets: offsets)
+		if let binding = dragDropConfig.dataBinding
+		{
+			binding.wrappedValue.remove(atOffsets: offsets)
+		}
+		else
+		{
+			_ = dragDropConfig.onDeleteOrRemoveItems?(offsets)
+		}
 	}
 
 	func applyInsert(items: [UIDragItem], at index: Int) -> Bool
 	{
 		let actualItems = items.compactMap(getDropItem(from:))
-		let allDataIDs = Set(dragDropConfig.dataBinding?.wrappedValue.map { $0[keyPath: dataIDKeyPath] } ?? [])
-		let noDuplicates = actualItems.filter { !allDataIDs.contains($0[keyPath: dataIDKeyPath]) }
+		if let binding = dragDropConfig.dataBinding
+		{
+			let allDataIDs = Set(binding.wrappedValue.map { $0[keyPath: dataIDKeyPath] })
+			let noDuplicates = actualItems.filter { !allDataIDs.contains($0[keyPath: dataIDKeyPath]) }
 #if DEBUG
-		// Notify during debug build if IDs are not unique (programmer error)
-		if noDuplicates.count != actualItems.count { print("ASCOLLECTIONVIEW/ASTABLEVIEW: Attempted to insert an item with the same ID as one already in the section. This may cause unexpected behaviour.") }
+			// Notify during debug build if IDs are not unique (programmer error)
+			if noDuplicates.count != actualItems.count { print("ASCOLLECTIONVIEW/ASTABLEVIEW: Attempted to insert an item with the same ID as one already in the section. This may cause unexpected behaviour.") }
 #endif
-		dragDropConfig.dataBinding?.wrappedValue.insert(contentsOf: noDuplicates, at: index)
-		return !noDuplicates.isEmpty
+			binding.wrappedValue.insert(contentsOf: noDuplicates, at: index)
+			return !noDuplicates.isEmpty
+		}
+		else
+		{
+			return dragDropConfig.onInsertItems?(index, actualItems) ?? false
+		}
 	}
 
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?

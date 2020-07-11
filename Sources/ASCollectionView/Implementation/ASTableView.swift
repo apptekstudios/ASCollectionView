@@ -468,11 +468,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		private func onMoveAction(from: IndexPath, to: IndexPath) -> Bool
 		{
 			guard let sourceSection = parent.sections[safe: from.section],
-				let destinationSection = parent.sections[safe: to.section]
+				let destinationSection = parent.sections[safe: to.section],
+				parent.sections[safe: from.section]?.dataSource.supportsMove(from: from, to: to) ?? true,
+				parent.sections[safe: to.section]?.dataSource.supportsMove(from: from, to: to) ?? true
 			else { return false }
 			if from.section == to.section
 			{
-				return sourceSection.dataSource.applyMove(from: from.item, to: to.item)
+				return sourceSection.dataSource.applyMove(from: from, to: to)
 			}
 			else
 			{
