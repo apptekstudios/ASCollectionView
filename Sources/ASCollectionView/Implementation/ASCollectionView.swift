@@ -72,7 +72,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		context.coordinator.collectionViewController = collectionViewController
 		context.coordinator.delegate = delegate
 
-		context.coordinator.updateCollectionViewSettings(collectionViewController.collectionView)
 		context.coordinator.setupDataSource(forCollectionView: collectionViewController.collectionView)
 
 		return collectionViewController
