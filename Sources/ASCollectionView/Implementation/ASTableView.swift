@@ -320,7 +320,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 					let contentInsets = tableViewController?.tableView.contentInset ?? .zero
 					tableViewController?.tableView.setContentOffset(CGPoint(x: 0, y: contentInsets.top), animated: animated)
 				case .bottom:
-                    let maxOffset = tableViewController?.tableView.maxContentOffset ?? .zero
+					let maxOffset = tableViewController?.tableView.maxContentOffset ?? .zero
 					tableViewController?.tableView.setContentOffset(maxOffset, animated: animated)
 				}
 				DispatchQueue.main.async {

@@ -86,10 +86,14 @@ public class AS_CollectionViewController: UIViewController
 class AS_UICollectionView: UICollectionView
 {
 	weak var coordinator: ASCollectionViewCoordinator?
-	override func didMoveToWindow() {
-		if window != nil {
+	override func didMoveToWindow()
+	{
+		if window != nil
+		{
 			coordinator?.onMoveToParent()
-		} else {
+		}
+		else
+		{
 			coordinator?.onMoveFromParent()
 		}
 	}

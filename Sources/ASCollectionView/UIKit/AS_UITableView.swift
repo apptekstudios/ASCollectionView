@@ -53,12 +53,17 @@ public class AS_TableViewController: UIViewController
 }
 
 @available(iOS 13.0, *)
-class AS_UITableView: UITableView {
+class AS_UITableView: UITableView
+{
 	weak var coordinator: ASTableViewCoordinator?
-	override func didMoveToWindow() {
-		if window != nil {
+	override func didMoveToWindow()
+	{
+		if window != nil
+		{
 			coordinator?.onMoveToParent()
-		} else {
+		}
+		else
+		{
 			coordinator?.onMoveFromParent()
 		}
 	}
