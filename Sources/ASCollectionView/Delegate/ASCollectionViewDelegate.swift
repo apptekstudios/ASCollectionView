@@ -26,7 +26,7 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 
 	open var collectionViewContentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior
 	{
-		.scrollableAxes
+		.automatic
 	}
 
 	public func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)

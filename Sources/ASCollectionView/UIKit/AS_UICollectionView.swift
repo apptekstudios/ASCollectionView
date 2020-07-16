@@ -32,25 +32,6 @@ public class AS_CollectionViewController: UIViewController
 		fatalError("init(coder:) has not been implemented")
 	}
 
-	override public func viewWillAppear(_ animated: Bool)
-	{
-		super.viewWillAppear(animated)
-		// NOTE: Due to some SwiftUI bugs currently, we've chosen to call this here instead of actual parent call
-		coordinator?.onMoveToParent()
-	}
-
-	override public func viewDidDisappear(_ animated: Bool)
-	{
-		super.viewDidDisappear(animated)
-		// NOTE: Due to some SwiftUI bugs currently, we've chosen to call this here instead of actual parent call
-		coordinator?.onMoveFromParent()
-	}
-
-	override public func viewWillDisappear(_ animated: Bool)
-	{
-		super.viewWillDisappear(animated)
-	}
-
 	override public func loadView()
 	{
 		view = collectionView
@@ -105,8 +86,11 @@ public class AS_CollectionViewController: UIViewController
 class AS_UICollectionView: UICollectionView
 {
 	weak var coordinator: ASCollectionViewCoordinator?
-	override func didMoveToSuperview()
-	{
-		if superview != nil { coordinator?.onMoveToParent() }
+	override func didMoveToWindow() {
+		if window != nil {
+			coordinator?.onMoveToParent()
+		} else {
+			coordinator?.onMoveFromParent()
+		}
 	}
 }
