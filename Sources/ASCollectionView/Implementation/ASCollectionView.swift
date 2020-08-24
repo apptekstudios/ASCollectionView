@@ -25,8 +25,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	internal var contentSizeTracker: ContentSizeTracker?
 
-	internal var onScrollCallback: OnScrollCallback?
-	internal var onReachedBoundaryCallback: OnReachedBoundaryCallback?
+    internal var onScrollCallback: OnScrollCallback?
+    internal var onReachedBoundaryCallback: OnReachedBoundaryCallback?
+
+    internal var backgroundColor: UIColor?
 
 	internal var horizontalScrollIndicatorEnabled: Bool = true
 	internal var verticalScrollIndicatorEnabled: Bool = true
@@ -184,6 +186,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func updateCollectionViewSettings(_ collectionView: UICollectionView)
 		{
+            assignIfChanged(collectionView, \.backgroundColor, newValue: parent.backgroundColor)
 			assignIfChanged(collectionView, \.dragInteractionEnabled, newValue: true)
 			assignIfChanged(collectionView, \.alwaysBounceVertical, newValue: parent.alwaysBounceVertical)
 			assignIfChanged(collectionView, \.alwaysBounceHorizontal, newValue: parent.alwaysBounceHorizontal)
