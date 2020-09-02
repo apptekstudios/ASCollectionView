@@ -28,6 +28,7 @@ internal protocol ASSectionDataSourceProtocol
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
 
+	func getSelectedIndexes() -> Set<Int>?
 	func isSelected(index: Int) -> Bool
 	func updateSelection(_ indices: Set<Int>)
 	func shouldSelect(_ indexPath: IndexPath) -> Bool
@@ -55,7 +56,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var container: (Content) -> Container
 	var content: (DataCollection.Element, ASCellContext) -> Content
 
-	var selectedItems: Binding<Set<Int>>?
+	var selectedIndexes: Binding<Set<Int>>?
 	var shouldAllowSelection: ((_ index: Int) -> Bool)?
 	var shouldAllowDeselection: ((_ index: Int) -> Bool)?
 
@@ -281,28 +282,37 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		selfSizingConfig?(context)
 	}
 
+	func getSelectedIndexes() -> Set<Int>?
+	{
+		selectedIndexes?.wrappedValue
+	}
+
 	func isSelected(index: Int) -> Bool
 	{
-		selectedItems?.wrappedValue.contains(index) ?? false
+		selectedIndexes?.wrappedValue.contains(index) ?? false
 	}
 
 	func updateSelection(_ indices: Set<Int>)
 	{
 		DispatchQueue.main.async {
-			self.selectedItems?.wrappedValue = Set(indices)
+			self.selectedIndexes?.wrappedValue = Set(indices)
 		}
 	}
 
 	func shouldSelect(_ indexPath: IndexPath) -> Bool
 	{
-		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
-		return shouldAllowSelection?(indexPath.item) ?? (selectedItems != nil)
+		guard data.containsIndex(indexPath.item) else { return isSelectable }
+		return shouldAllowSelection?(indexPath.item) ?? isSelectable
 	}
 
 	func shouldDeselect(_ indexPath: IndexPath) -> Bool
 	{
-		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
-		return shouldAllowDeselection?(indexPath.item) ?? (selectedItems != nil)
+		guard data.containsIndex(indexPath.item) else { return isSelectable }
+		return shouldAllowDeselection?(indexPath.item) ?? isSelectable
+	}
+
+	private var isSelectable: Bool {
+		selectedIndexes != nil
 	}
 }
 

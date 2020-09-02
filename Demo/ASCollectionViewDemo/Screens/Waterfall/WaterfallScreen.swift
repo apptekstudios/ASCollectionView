@@ -8,7 +8,7 @@ import UIKit
 struct WaterfallScreen: View
 {
 	@State var data: [[Post]] = (0 ... 10).map { DataSource.postsForWaterfallSection($0, number: 100) }
-	@State var selectedItems: [SectionID: Set<Int>] = [:]
+	@State var selectedIndexes: [SectionID: Set<Int>] = [:]
 	@State var columnMinSize: CGFloat = 150
 
 	@Environment(\.editMode) private var editMode
@@ -25,7 +25,7 @@ struct WaterfallScreen: View
 			ASCollectionViewSection(
 				id: offset,
 				data: sectionData,
-				selectedItems: $selectedItems[offset],
+				selectedIndexes: $selectedIndexes[offset],
 				onCellEvent: onCellEvent)
 			{ item, state in
 				GeometryReader
@@ -91,6 +91,8 @@ struct WaterfallScreen: View
 			ASCollectionView(
 				sections: sections)
 				.layout(self.layout)
+				.allowsSelection(self.isEditing)
+				.allowsMultipleSelection(self.isEditing)
 				.customDelegate(WaterfallScreenLayoutDelegate.init)
 				.contentInsets(.init(top: 0, left: 10, bottom: 10, right: 10))
 				.navigationBarTitle("Waterfall Layout", displayMode: .inline)
@@ -102,7 +104,7 @@ struct WaterfallScreen: View
 						{
 							Button(action: {
 								withAnimation {
-									self.selectedItems.forEach { sectionIndex, selected in
+									self.selectedIndexes.forEach { sectionIndex, selected in
 										self.data[sectionIndex].remove(atOffsets: IndexSet(selected))
 									}
 								}

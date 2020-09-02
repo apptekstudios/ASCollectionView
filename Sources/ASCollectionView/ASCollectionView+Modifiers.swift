@@ -140,6 +140,22 @@ public extension ASCollectionView
 		this.maintainScrollPositionOnOrientationChange = true
 		return this
 	}
+
+	/// Set whether the ASCollectionView should allow selection, default is true
+	func allowsSelection(_ allowsSelection: Bool) -> Self
+	{
+		var this = self
+		this.allowsSelection = allowsSelection
+		return this
+	}
+
+	/// Set whether the ASCollectionView should allow multiple selection, default is false
+	func allowsMultipleSelection(_ allowsMultipleSelection: Bool) -> Self
+	{
+		var this = self
+		this.allowsMultipleSelection = allowsMultipleSelection
+		return this
+	}
 }
 
 // MARK: PUBLIC layout modifier functions
