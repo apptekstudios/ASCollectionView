@@ -48,6 +48,16 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 	{
 		coordinator?.collectionView(collectionView, didEndDisplayingSupplementaryView: view, forElementOfKind: elementKind, at: indexPath)
 	}
+    
+    open func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
+    {
+        coordinator?.collectionView(collectionView, didHighlightItemAt: indexPath)
+    }
+
+    open func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
+    {
+        coordinator?.collectionView(collectionView, didUnhighlightItemAt: indexPath)
+    }
 
 	open func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 	{

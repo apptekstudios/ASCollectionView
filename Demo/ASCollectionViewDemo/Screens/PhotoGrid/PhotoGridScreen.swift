@@ -8,6 +8,7 @@ struct PhotoGridScreen: View
 {
 	@State var data: [Post] = DataSource.postsForGridSection(1, number: 1000)
 	@State var selectedIndexes: Set<Int> = []
+    @State var highlightedIndexes: Set<Int> = []
 
 	@Environment(\.editMode) private var editMode
 	var isEditing: Bool
@@ -23,9 +24,9 @@ struct PhotoGridScreen: View
 			id: 0,
 			data: data,
 			selectedIndexes: $selectedIndexes,
-			onCellEvent: onCellEvent,
-			dragDropConfig: dragDropConfig,
-			contextMenuProvider: contextMenuProvider)
+            highlightedIndexes: $highlightedIndexes,
+			onCellEvent: onCellEvent
+            )
 		{ item, state in
 			ZStack(alignment: .bottomTrailing)
 			{
@@ -40,8 +41,10 @@ struct PhotoGridScreen: View
 					.buttonStyle(PlainButtonStyle())
 					.disabled(self.isEditing)
 				}
+                
+                
 
-				if state.isSelected
+				if state.isHighlighted
 				{
 					ZStack
 					{
@@ -56,6 +59,8 @@ struct PhotoGridScreen: View
 					.frame(width: 20, height: 20)
 					.padding(10)
 				}
+                
+                
 			}
 		}
 	}

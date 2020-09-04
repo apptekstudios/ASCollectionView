@@ -29,8 +29,11 @@ internal protocol ASSectionDataSourceProtocol
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
 
 	func getSelectedIndexes() -> Set<Int>?
-	func isSelected(index: Int) -> Bool
-	func updateSelection(_ indices: Set<Int>)
+    func isSelected(index: Int) -> Bool
+    func isHighlighted(index: Int) -> Bool
+    func updateSelection(_ indices: Set<Int>)
+    func highlightIndex(_ index: Int)
+    func unhighlightIndex(_ index: Int)
 	func shouldSelect(_ indexPath: IndexPath) -> Bool
 	func shouldDeselect(_ indexPath: IndexPath) -> Bool
 
@@ -57,6 +60,8 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var content: (DataCollection.Element, ASCellContext) -> Content
 
 	var selectedIndexes: Binding<Set<Int>>?
+    var highlightedIndexes: Binding<Set<Int>>?
+    
 	var shouldAllowSelection: ((_ index: Int) -> Bool)?
 	var shouldAllowDeselection: ((_ index: Int) -> Bool)?
 
@@ -83,7 +88,8 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	func cellContext(for index: Int) -> ASCellContext
 	{
 		ASCellContext(
-			isSelected: isSelected(index: index),
+            isSelected: isSelected(index: index),
+            isHighlighted: isHighlighted(index: index),
 			index: index,
 			isFirstInSection: index == data.startIndex,
 			isLastInSection: index == data.endIndex - 1)
@@ -291,6 +297,27 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	{
 		selectedIndexes?.wrappedValue.contains(index) ?? false
 	}
+    
+    func isHighlighted(index: Int) -> Bool
+    {
+        highlightedIndexes?.wrappedValue.contains(index) ?? false
+    }
+    
+    func highlightIndex(_ index: Int)
+    {
+        DispatchQueue.main.async {
+            guard let highlightedIndexes = self.highlightedIndexes?.wrappedValue else { return }
+            self.highlightedIndexes?.wrappedValue = highlightedIndexes.union([index])
+        }
+    }
+    
+    func unhighlightIndex(_ index: Int)
+    {
+        DispatchQueue.main.async {
+            guard let highlightedIndexes = self.highlightedIndexes?.wrappedValue else { return }
+            self.highlightedIndexes?.wrappedValue = highlightedIndexes.subtracting([index])
+        }
+    }
 
 	func updateSelection(_ indices: Set<Int>)
 	{

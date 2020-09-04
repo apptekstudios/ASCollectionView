@@ -678,6 +678,25 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			}
 			return indexPath
 		}
+        
+        public func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool {
+            print(#function)
+
+            return true
+        }
+        
+        public func collectionView(_ collectionView:UICollectionView, didHighlightItemAt indexPath: IndexPath)
+        {
+            print(#function)
+            parent.sections[safe: indexPath.section]?.dataSource.highlightIndex(indexPath.item)
+        }
+        
+        public func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
+        {
+            print(#function)
+
+            parent.sections[safe: indexPath.section]?.dataSource.unhighlightIndex(indexPath.item)
+        }
 
 		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 		{
@@ -967,7 +986,9 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
-	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
+    func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
+    func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
 	func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
