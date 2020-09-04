@@ -67,6 +67,14 @@ public extension ASCollectionView
 		return this
 	}
 
+	/// Sets the collection view's background color
+	func backgroundColor(_ color: UIColor?) -> Self
+	{
+		var this = self
+		this.backgroundColor = color
+		return this
+	}
+
 	/// Set whether to show scroll indicators
 	func scrollIndicatorsEnabled(horizontal: Bool = true, vertical: Bool = true) -> Self
 	{
