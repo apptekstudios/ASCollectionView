@@ -8,6 +8,7 @@ import UIKit
 struct WaterfallScreen: View
 {
 	@State var data: [[Post]] = (0 ... 10).map { DataSource.postsForWaterfallSection($0, number: 100) }
+	@State var highlightedIndexes: [SectionID: Set<Int>] = [:]
 	@State var selectedIndexes: [SectionID: Set<Int>] = [:]
 	@State var selectedPost: Post? = nil // Post being viewed in the detail view
 	@State var columnMinSize: CGFloat = 150
@@ -26,6 +27,7 @@ struct WaterfallScreen: View
 			ASCollectionViewSection(
 				id: offset,
 				data: sectionData,
+				highlightedIndexes: $highlightedIndexes[offset],
 				selectedIndexes: $selectedIndexes[offset],
 				onCellEvent: onCellEvent)
 			{ item, state in
@@ -36,7 +38,7 @@ struct WaterfallScreen: View
 						ASRemoteImageView(item.url)
 							.scaledToFill()
 							.frame(width: geom.size.width, height: geom.size.height)
-							.opacity(self.isEditing && state.isSelected ? 0.7 : 1.0)
+							.opacity(self.opacity(isHighlighted: state.isHighlighted, isSelected: state.isSelected))
 
 						if self.isEditing && state.isSelected
 						{
@@ -118,6 +120,22 @@ struct WaterfallScreen: View
 
 						EditButton()
 				})
+		}
+	}
+
+	func opacity(isHighlighted: Bool, isSelected: Bool) -> Double
+	{
+		if !isEditing && isHighlighted
+		{
+			return 0.7
+		}
+		else if isEditing && isSelected
+		{
+			return 0.7
+		}
+		else
+		{
+			return 1
 		}
 	}
 

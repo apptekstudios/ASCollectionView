@@ -28,6 +28,11 @@ internal protocol ASSectionDataSourceProtocol
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
 
+	func isHighlighted(index: Int) -> Bool
+	func highlightIndex(_ index: Int)
+	func unhighlightIndex(_ index: Int)
+	func shouldHighlight(_ indexPath: IndexPath) -> Bool
+
 	func getSelectedIndexes() -> Set<Int>?
 	func isSelected(index: Int) -> Bool
 	func updateSelection(_ indices: Set<Int>)
@@ -56,6 +61,9 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var container: (Content) -> Container
 	var content: (DataCollection.Element, ASCellContext) -> Content
 
+	var highlightedIndexes: Binding<Set<Int>>?
+	var shouldAllowHighlight: ((_ index: Int) -> Bool)?
+
 	var selectedIndexes: Binding<Set<Int>>?
 	var shouldAllowSelection: ((_ index: Int) -> Bool)?
 	var shouldAllowDeselection: ((_ index: Int) -> Bool)?
@@ -83,6 +91,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	func cellContext(for index: Int) -> ASCellContext
 	{
 		ASCellContext(
+			isHighlighted: isHighlighted(index: index),
 			isSelected: isSelected(index: index),
 			index: index,
 			isFirstInSection: index == data.startIndex,
@@ -280,6 +289,38 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
 	{
 		selfSizingConfig?(context)
+	}
+
+	func isHighlighted(index: Int) -> Bool
+	{
+		highlightedIndexes?.wrappedValue.contains(index) ?? false
+	}
+
+	func highlightIndex(_ index: Int)
+	{
+		DispatchQueue.main.async {
+			guard let highlightedIndexes = self.highlightedIndexes?.wrappedValue else { return }
+			self.highlightedIndexes?.wrappedValue = highlightedIndexes.union([index])
+		}
+	}
+
+	func unhighlightIndex(_ index: Int)
+	{
+		DispatchQueue.main.async {
+			guard let highlightedIndexes = self.highlightedIndexes?.wrappedValue else { return }
+			self.highlightedIndexes?.wrappedValue = highlightedIndexes.subtracting([index])
+		}
+	}
+
+	func shouldHighlight(_ indexPath: IndexPath) -> Bool
+	{
+		guard data.containsIndex(indexPath.item) else { return isHighlightable }
+		return shouldAllowHighlight?(indexPath.item) ?? isHighlightable
+	}
+
+	private var isHighlightable: Bool
+	{
+		highlightedIndexes != nil || selectedIndexes != nil
 	}
 
 	func getSelectedIndexes() -> Set<Int>?
