@@ -663,20 +663,22 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		public func collectionView(_ collectionView: UICollectionView, willSelectItemAt indexPath: IndexPath) -> IndexPath?
 		{
-			guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? true else
-			{
-				return nil
-			}
-			return indexPath
+			self.collectionView(collectionView, shouldSelectItemAt: indexPath) ? indexPath : nil
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDeselectItemAt indexPath: IndexPath) -> IndexPath?
 		{
-			guard parent.sections[safe: indexPath.section]?.dataSource.shouldDeselect(indexPath) ?? true else
-			{
-				return nil
-			}
-			return indexPath
+			self.collectionView(collectionView, shouldDeselectItemAt: indexPath) ? indexPath : nil
+		}
+
+		public func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool
+		{
+			parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? true
+		}
+
+		public func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool
+		{
+			parent.sections[safe: indexPath.section]?.dataSource.shouldDeselect(indexPath) ?? true
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
@@ -715,7 +717,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		private func threeWayMerge(base: Set<IndexPath>, dataSource: Set<IndexPath>, collectionView: Set<IndexPath>) -> Set<IndexPath>
 		{
-			base == dataSource ? collectionView : dataSource
+			// In case the data source and collection view are both different from base, default to the collection view
+			base == collectionView ? dataSource : collectionView
 		}
 
 		private func selectionDifferences(oldSelectedIndexPaths: Set<IndexPath>, newSelectedIndexPaths: Set<IndexPath>) -> (toDeselect: Set<IndexPath>, toSelect: Set<IndexPath>)
@@ -967,6 +970,8 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
+	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool
+	func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
