@@ -132,6 +132,13 @@ public extension ASCollectionView
 		this.maintainScrollPositionOnOrientationChange = true
 		return this
 	}
+    
+    /// Set whether the ASCollectionView should dodge the system keyboard
+    func shouldAvoidKeyboard(_ avoidKeyboard: Bool = true) -> Self {
+        var this = self
+        this.dodgeKeyboard = avoidKeyboard
+        return this
+    }
 }
 
 // MARK: PUBLIC layout modifier functions
