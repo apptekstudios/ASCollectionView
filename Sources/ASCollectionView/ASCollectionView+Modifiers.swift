@@ -129,7 +129,7 @@ public extension ASCollectionView
 	func shouldAttemptToMaintainScrollPositionOnOrientationChange(maintainPosition: Bool) -> Self
 	{
 		var this = self
-		this.maintainScrollPositionOnOrientationChange = true
+		this.maintainScrollPositionOnOrientationChange = maintainPosition
 		return this
 	}
     
