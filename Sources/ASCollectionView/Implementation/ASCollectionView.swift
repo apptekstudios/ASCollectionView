@@ -182,7 +182,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			assignIfChanged(collectionView, \.alwaysBounceHorizontal, newValue: parent.alwaysBounceHorizontal)
 			assignIfChanged(collectionView, \.showsVerticalScrollIndicator, newValue: parent.verticalScrollIndicatorEnabled)
 			assignIfChanged(collectionView, \.showsHorizontalScrollIndicator, newValue: parent.horizontalScrollIndicatorEnabled)
-			assignIfChanged(collectionView, \.keyboardDismissMode, newValue: .onDrag)
+			assignIfChanged(collectionView, \.keyboardDismissMode, newValue: .interactive)
 			updateCollectionViewContentInsets(collectionView)
 
 			assignIfChanged(collectionView, \.allowsSelection, newValue: true)
