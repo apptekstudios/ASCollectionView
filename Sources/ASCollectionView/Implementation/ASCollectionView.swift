@@ -179,7 +179,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func updateCollectionViewSettings(_ collectionView: UICollectionView)
 		{
-            assignIfChanged(collectionView, \.backgroundColor, newValue: parent.backgroundColor)
+			assignIfChanged(collectionView, \.backgroundColor, newValue: parent.backgroundColor)
 			assignIfChanged(collectionView, \.dragInteractionEnabled, newValue: true)
 			assignIfChanged(collectionView, \.alwaysBounceVertical, newValue: parent.alwaysBounceVertical)
 			assignIfChanged(collectionView, \.alwaysBounceHorizontal, newValue: parent.alwaysBounceHorizontal)
