@@ -40,6 +40,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	internal var alwaysBounceVertical: Bool = false
 	internal var alwaysBounceHorizontal: Bool = false
 
+	internal var allowsSelection: Bool = true
+	internal var allowsMultipleSelection: Bool = false
+
 	internal var scrollPositionSetter: Binding<ASCollectionViewScrollPosition?>?
 
 	internal var animateOnDataRefresh: Bool = true
@@ -102,7 +105,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	{
 		var sectionIDs: Set<SectionID> = []
 		var conflicts: Set<SectionID> = []
-		sections.forEach {
+		sections.forEach
+		{
 			let (inserted, _) = sectionIDs.insert($0.id)
 			if !inserted
 			{
@@ -138,6 +142,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		private var hasFiredBoundaryNotificationForBoundary: Set<Boundary> = []
 		private var haveRegisteredForSupplementaryOfKind: Set<String> = []
 
+		private var selectedIndexPaths: Set<IndexPath> = []
+
 		typealias Cell = ASCollectionViewCell
 
 		init(_ parent: ASCollectionView)
@@ -163,7 +169,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func supplementaryKinds() -> Set<String>
 		{
-			parent.sections.reduce(into: Set<String>()) { result, section in
+			parent.sections.reduce(into: Set<String>())
+			{ result, section in
 				result.formUnion(section.supplementaryKinds)
 			}
 		}
@@ -179,23 +186,15 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func updateCollectionViewSettings(_ collectionView: UICollectionView)
 		{
-			assignIfChanged(collectionView, \.backgroundColor, newValue: parent.backgroundColor)
 			assignIfChanged(collectionView, \.dragInteractionEnabled, newValue: true)
 			assignIfChanged(collectionView, \.alwaysBounceVertical, newValue: parent.alwaysBounceVertical)
 			assignIfChanged(collectionView, \.alwaysBounceHorizontal, newValue: parent.alwaysBounceHorizontal)
+			assignIfChanged(collectionView, \.allowsSelection, newValue: parent.allowsSelection)
+			assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: parent.allowsMultipleSelection)
 			assignIfChanged(collectionView, \.showsVerticalScrollIndicator, newValue: parent.verticalScrollIndicatorEnabled)
 			assignIfChanged(collectionView, \.showsHorizontalScrollIndicator, newValue: parent.horizontalScrollIndicatorEnabled)
 			assignIfChanged(collectionView, \.keyboardDismissMode, newValue: .interactive)
 			updateCollectionViewContentInsets(collectionView)
-
-			assignIfChanged(collectionView, \.allowsSelection, newValue: true)
-			if assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: parent.editMode)
-			{
-				if !parent.editMode
-				{
-					collectionView.allowsSelection = false; collectionView.allowsSelection = true // Remove the old selection
-				}
-			}
 		}
 
 		func updateCollectionViewContentInsets(_ collectionView: UICollectionView)
@@ -238,8 +237,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 				cell.isSelected = self.isIndexPathSelected(indexPath)
 
-				cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
-//				cell.skipNextRefresh = true // Avoid setting this again when we refresh old cells in a moment
+				cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID))
 
 				cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
 				cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
@@ -257,7 +255,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			dataSource?.supplementaryViewProvider = { [weak self] cv, kind, indexPath in
 				guard let self = self else { return nil }
 
-				guard self.supplementaryKinds().contains(kind) else
+				guard self.supplementaryKinds().contains(kind)
+				else
 				{
 					return nil
 				}
@@ -286,7 +285,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			guard hasDoneInitialSetup else { return }
 			collectionViewController.map { registerSupplementaries(forCollectionView: $0.collectionView) } // New sections might involve new types of supplementary...
 			let snapshot = ASDiffableDataSourceSnapshot(sections:
-				parent.sections.map {
+				parent.sections.map
+				{
 					ASDiffableDataSourceSnapshot.Section(id: $0.id, elements: $0.itemIDs)
 				}
 			)
@@ -298,7 +298,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			dataSource?.applySnapshot(snapshot, animated: animated)
 			shouldAnimateScrollPositionSet = animated
 
-			collectionViewController.map { updateSelectionBindings($0.collectionView) }
 			refreshVisibleCells(transaction: transaction, updateAll: false)
 		}
 
@@ -310,6 +309,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			populateDataSource(
 				animated: parent.animateOnDataRefresh && transactionAnimationEnabled,
 				transaction: transaction)
+
+			updateSelection(cv, transaction: transaction)
 		}
 
 		func refreshVisibleCells(transaction: Transaction? = nil, updateAll: Bool = true)
@@ -348,7 +349,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 //			}
 //			else
 //			{
-			cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID, isSelected: cell.isSelected, isHighlighted: cell.isHighlighted))
+			cell.setContent(itemID: itemID, content: section.dataSource.content(forItemID: itemID))
 			cell.disableSwiftUIDropInteraction = section.dataSource.dropEnabled
 			cell.disableSwiftUIDragInteraction = section.dataSource.dragEnabled
 //			}
@@ -397,7 +398,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			didSet
 			{
-				collectionViewController.map {
+				collectionViewController.map
+				{
 					updateCollectionViewContentInsets($0.collectionView)
 				}
 			}
@@ -431,7 +433,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		@objc func keyBoardWillShow(notification: Notification)
 		{
-			guard containsFirstResponder() else
+			guard containsFirstResponder()
+			else
 			{
 				keyboardFrame = nil
 				return
@@ -462,7 +465,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		func configureRefreshControl(for cv: UICollectionView)
 		{
-			guard parent.onPullToRefresh != nil else
+			guard parent.onPullToRefresh != nil
+			else
 			{
 				if cv.refreshControl != nil
 				{
@@ -502,7 +506,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			if let scrollPositionToSet = parent.scrollPositionSetter?.wrappedValue
 			{
 				scrollToPosition(scrollPositionToSet, animated: animated)
-				DispatchQueue.main.async {
+				DispatchQueue.main.async
+				{
 					self.parent.scrollPositionSetter?.wrappedValue = nil
 				}
 			}
@@ -642,73 +647,106 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		public func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
 		{}
 
+		public func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool
+		{
+			parent.sections[safe: indexPath.section]?.dataSource.shouldHighlight(indexPath) ?? true
+		}
+
+		public func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
+		{
+			parent.sections[safe: indexPath.section]?.dataSource.highlightIndex(indexPath.item)
+		}
+
+		public func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
+		{
+			parent.sections[safe: indexPath.section]?.dataSource.unhighlightIndex(indexPath.item)
+		}
+
 		public func collectionView(_ collectionView: UICollectionView, willSelectItemAt indexPath: IndexPath) -> IndexPath?
 		{
-			if parent.editMode
-			{
-				guard parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? false else
-				{
-					return nil
-				}
-				return indexPath
-			}
-			else if parent.sections[safe: indexPath.section]?.dataSource.allowSingleSelection == true
-			{
-				return indexPath
-			}
-			return nil
+			self.collectionView(collectionView, shouldSelectItemAt: indexPath) ? indexPath : nil
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDeselectItemAt indexPath: IndexPath) -> IndexPath?
 		{
-			guard parent.sections[safe: indexPath.section]?.dataSource.shouldDeselect(indexPath) ?? true else
-			{
-				return nil
-			}
-			return indexPath
+			self.collectionView(collectionView, shouldDeselectItemAt: indexPath) ? indexPath : nil
+		}
+
+		public func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool
+		{
+			parent.sections[safe: indexPath.section]?.dataSource.shouldSelect(indexPath) ?? true
+		}
+
+		public func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool
+		{
+			parent.sections[safe: indexPath.section]?.dataSource.shouldDeselect(indexPath) ?? true
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 		{
-			if parent.editMode
-			{
-				updateSelectionBindings(collectionView)
-				collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
-			}
-			else
-			{
-				parent.sections[safe: indexPath.section]?.dataSource.didSingleSelect(index: indexPath.item)
-				collectionView.deselectItem(at: indexPath, animated: true)
-			}
+			updateSelection(collectionView)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
 		{
-			updateSelectionBindings(collectionView)
-			collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
+			updateSelection(collectionView)
 		}
 
-		func updateSelectionBindings(_ collectionView: UICollectionView)
+		func updateSelection(_ collectionView: UICollectionView, transaction: Transaction? = nil)
 		{
-			let selected = parent.editMode ? (collectionView.indexPathsForSelectedItems ?? []) : []
-			let selectionBySection = Dictionary(grouping: selected) { $0.section }
-				.mapValues
-			{
-				Set($0.map { $0.item })
+			let selectedInDataSource = selectedIndexPathsInDataSource
+			let selectedInCollectionView = Set(collectionView.indexPathsForSelectedItems ?? [])
+			guard selectedInDataSource != selectedInCollectionView else { return }
+
+			let newSelection = threeWayMerge(base: selectedIndexPaths, dataSource: selectedInDataSource, collectionView: selectedInCollectionView)
+			let (toDeselect, toSelect) = selectionDifferences(oldSelectedIndexPaths: selectedInCollectionView, newSelectedIndexPaths: newSelection)
+
+			selectedIndexPaths = newSelection
+			updateSelectionBindings(newSelection)
+			updateSelectionInCollectionView(collectionView, indexPathsToDeselect: toDeselect, indexPathsToSelect: toSelect, transaction: transaction)
+		}
+
+		private var selectedIndexPathsInDataSource: Set<IndexPath>
+		{
+			parent.sections.enumerated().reduce(Set<IndexPath>())
+			{ (selectedIndexPaths, section) -> Set<IndexPath> in
+				guard let indexes = section.element.dataSource.getSelectedIndexes() else { return selectedIndexPaths }
+				let indexPaths = indexes.map { IndexPath(item: $0, section: section.offset) }
+				return selectedIndexPaths.union(indexPaths)
 			}
-			parent.sections.enumerated().forEach { offset, section in
+		}
+
+		private func threeWayMerge(base: Set<IndexPath>, dataSource: Set<IndexPath>, collectionView: Set<IndexPath>) -> Set<IndexPath>
+		{
+			// In case the data source and collection view are both different from base, default to the collection view
+			base == collectionView ? dataSource : collectionView
+		}
+
+		private func selectionDifferences(oldSelectedIndexPaths: Set<IndexPath>, newSelectedIndexPaths: Set<IndexPath>) -> (toDeselect: Set<IndexPath>, toSelect: Set<IndexPath>)
+		{
+			let toDeselect = oldSelectedIndexPaths.subtracting(newSelectedIndexPaths)
+			let toSelect = newSelectedIndexPaths.subtracting(oldSelectedIndexPaths)
+			return (toDeselect: toDeselect, toSelect: toSelect)
+		}
+
+		private func updateSelectionBindings(_ selectedIndexPaths: Set<IndexPath>)
+		{
+			let selectionBySection = Dictionary(grouping: selectedIndexPaths) { $0.section }
+				.mapValues
+				{
+					Set($0.map(\.item))
+				}
+			parent.sections.enumerated().forEach
+			{ offset, section in
 				section.dataSource.updateSelection(selectionBySection[offset] ?? [])
 			}
 		}
 
-		func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
+		private func updateSelectionInCollectionView(_ collectionView: UICollectionView, indexPathsToDeselect: Set<IndexPath>, indexPathsToSelect: Set<IndexPath>, transaction: Transaction? = nil)
 		{
-			collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
-		}
-
-		func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
-		{
-			collectionView.cellForItem(at: indexPath).map { refreshCell($0, forceUpdate: true) }
+			let isAnimated = (transaction?.animation != nil) && !(transaction?.disablesAnimations ?? false)
+			indexPathsToDeselect.forEach { collectionView.deselectItem(at: $0, animated: isAnimated) }
+			indexPathsToSelect.forEach { collectionView.selectItem(at: $0, animated: isAnimated, scrollPosition: []) }
 		}
 
 		func canDrop(at indexPath: IndexPath) -> Bool
@@ -730,7 +768,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			{
 				if let destination = destinationIndexPath
 				{
-					guard canDrop(at: destination) else
+					guard canDrop(at: destination)
+					else
 					{
 						return UICollectionViewDropProposal(operation: .cancel)
 					}
@@ -761,7 +800,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			case .move:
 				guard destinationSection.dataSource.reorderingEnabled else { return }
 
-				let itemsBySourceSection = Dictionary(grouping: coordinator.items) { item -> Int? in
+				let itemsBySourceSection = Dictionary(grouping: coordinator.items)
+				{ item -> Int? in
 					if let sourceIndex = item.sourceIndexPath, !sourceIndex.isEmpty,
 						destinationSection.dataSource.supportsMove(from: sourceIndex, to: destinationIndexPath)
 					{
@@ -773,7 +813,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					}
 				}
 
-				let sourceSections = itemsBySourceSection.keys.sorted { a, b in
+				let sourceSections = itemsBySourceSection.keys.sorted
+				{ a, b in
 					guard let a = a else { return false }
 					guard let b = b else { return true }
 					return a < b
@@ -802,7 +843,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 					itemsToInsert.append(contentsOf: items)
 				}
 
-				let itemsToInsertIDs: [ASCollectionViewItemUniqueID] = itemsToInsert.compactMap { item in
+				let itemsToInsertIDs: [ASCollectionViewItemUniqueID] = itemsToInsert.compactMap
+				{ item in
 					if let sourceIndexPath = item.sourceIndexPath
 					{
 						return oldSnapshot.sections[sourceIndexPath.section].elements[sourceIndexPath.item].differenceIdentifier
@@ -812,13 +854,13 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 						return destinationSection.dataSource.getItemID(for: item.dragItem, withSectionID: destinationSection.id)
 					}
 				}
-				if destinationSection.dataSource.applyInsert(items: itemsToInsert.map { $0.dragItem }, at: destinationIndexPath.item)
+				if destinationSection.dataSource.applyInsert(items: itemsToInsert.map(\.dragItem), at: destinationIndexPath.item)
 				{
 					dragSnapshot.insertItems(itemsToInsertIDs, atSectionIndex: destinationIndexPath.section, atOffset: destinationIndexPath.item)
 				}
 
 			case .copy:
-				_ = destinationSection.dataSource.applyInsert(items: coordinator.items.map { $0.dragItem }, at: destinationIndexPath.item)
+				_ = destinationSection.dataSource.applyInsert(items: coordinator.items.map(\.dragItem), at: destinationIndexPath.item)
 
 			default: break
 			}
@@ -853,7 +895,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				lastContentSize = cv.contentSize
 				parent.contentSizeTracker?.contentSize = size
 
-				DispatchQueue.main.async {
+				DispatchQueue.main.async
+				{
 					self.parent.invalidateParentCellLayout?(!firstSize)
 				}
 				applyScrollPosition(animated: shouldAnimateScrollPositionSet)
@@ -943,14 +986,17 @@ internal protocol ASCollectionViewCoordinator: AnyObject
 	func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
+	func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool
+	func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
+	func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
+	func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool
+	func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool
 	func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
 	func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration?
 	func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]
 	func collectionView(_ collectionView: UICollectionView, dropSessionDidUpdate session: UIDropSession, withDestinationIndexPath destinationIndexPath: IndexPath?) -> UICollectionViewDropProposal
 	func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator)
-	func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
-	func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
 	func didUpdateContentSize(_ size: CGSize)
 	func scrollViewDidScroll(_ scrollView: UIScrollView)
 	func onMoveToParent()
@@ -968,71 +1014,71 @@ extension ASCollectionView.Coordinator
 		prefetchSubscription = queuePrefetch
 			.collect(.byTime(DispatchQueue.main, 0.1)) // .throttle CRASHES on 13.1, fixed from 13.3 but still using .collect for 13.1 compatibility
 			.compactMap
-		{ [weak collectionViewController] _ in
-			collectionViewController?.collectionView.indexPathsForVisibleItems
-		}
-		.receive(on: DispatchQueue.global(qos: .background))
-		.map
-		{ [weak self] visibleIndexPaths -> [Int: [IndexPath]] in
-			guard let self = self else { return [:] }
-			let visibleIndexPathsBySection = Dictionary(grouping: visibleIndexPaths) { $0.section }.compactMapValues
-			{ (indexPaths) -> (section: Int, first: Int, last: Int)? in
-				guard let first = indexPaths.min(), let last = indexPaths.max() else { return nil }
-				return (section: first.section, first: first.item, last: last.item)
+			{ [weak collectionViewController] _ in
+				collectionViewController?.collectionView.indexPathsForVisibleItems
 			}
-			var toPrefetch: [Int: [IndexPath]] = visibleIndexPathsBySection.compactMapValues
-			{ item in
-				guard let sectionIndexPaths = self.parent.sections[safe: item.section]?.dataSource.getIndexPaths(withSectionIndex: item.section) else { return nil }
-				let nextItemsInSection: ArraySlice<IndexPath> = {
-					guard (item.last + 1) < sectionIndexPaths.endIndex else { return [] }
-					return sectionIndexPaths[(item.last + 1) ..< min(item.last + numberToPreload + 1, sectionIndexPaths.endIndex)]
-				}()
-				let previousItemsInSection: ArraySlice<IndexPath> = {
-					guard (item.first - 1) >= sectionIndexPaths.startIndex else { return [] }
-					return sectionIndexPaths[max(sectionIndexPaths.startIndex, item.first - numberToPreload) ..< item.first]
-				}()
-				return Array(nextItemsInSection) + Array(previousItemsInSection)
-			}
-			// CHECK IF THERES AN EARLIER SECTION TO PRELOAD
-			if
-				let firstSection = toPrefetch.keys.min(), // FIND THE EARLIEST VISIBLE SECTION
-				(firstSection - 1) >= self.parent.sections.startIndex, // CHECK THERE IS A SECTION BEFORE THIS
-				let firstIndex = visibleIndexPathsBySection[firstSection]?.first, firstIndex < numberToPreload // CHECK HOW CLOSE TO THIS SECTION WE ARE
-			{
-				let precedingSection = firstSection - 1
-				toPrefetch[precedingSection] = self.parent.sections[precedingSection].dataSource.getIndexPaths(withSectionIndex: precedingSection).suffix(numberToPreload)
-			}
-			// CHECK IF THERES A LATER SECTION TO PRELOAD
-			if
-				let lastSection = toPrefetch.keys.max(), // FIND THE LAST VISIBLE SECTION
-				(lastSection + 1) < self.parent.sections.endIndex, // CHECK THERE IS A SECTION AFTER THIS
-				let lastIndex = visibleIndexPathsBySection[lastSection]?.last,
-				let lastSectionEndIndex = self.parent.sections[lastSection].dataSource.getIndexPaths(withSectionIndex: lastSection).last?.item,
-				(lastSectionEndIndex - lastIndex) < numberToPreload // CHECK HOW CLOSE TO THIS SECTION WE ARE
-			{
-				let nextSection = lastSection + 1
-				toPrefetch[nextSection] = Array(self.parent.sections[nextSection].dataSource.getIndexPaths(withSectionIndex: nextSection).prefix(numberToPreload))
-			}
-			return toPrefetch
-		}
-		.sink
-		{ [weak self] prefetch in
-			prefetch.forEach
-			{ sectionIndex, toPrefetch in
-				if !toPrefetch.isEmpty
-				{
-					self?.parent.sections[safe: sectionIndex]?.dataSource.prefetch(toPrefetch)
+			.receive(on: DispatchQueue.global(qos: .background))
+			.map
+			{ [weak self] visibleIndexPaths -> [Int: [IndexPath]] in
+				guard let self = self else { return [:] }
+				let visibleIndexPathsBySection = Dictionary(grouping: visibleIndexPaths) { $0.section }.compactMapValues
+				{ (indexPaths) -> (section: Int, first: Int, last: Int)? in
+					guard let first = indexPaths.min(), let last = indexPaths.max() else { return nil }
+					return (section: first.section, first: first.item, last: last.item)
 				}
+				var toPrefetch: [Int: [IndexPath]] = visibleIndexPathsBySection.compactMapValues
+				{ item in
+					guard let sectionIndexPaths = self.parent.sections[safe: item.section]?.dataSource.getIndexPaths(withSectionIndex: item.section) else { return nil }
+					let nextItemsInSection: ArraySlice<IndexPath> = {
+						guard (item.last + 1) < sectionIndexPaths.endIndex else { return [] }
+						return sectionIndexPaths[(item.last + 1) ..< min(item.last + numberToPreload + 1, sectionIndexPaths.endIndex)]
+					}()
+					let previousItemsInSection: ArraySlice<IndexPath> = {
+						guard (item.first - 1) >= sectionIndexPaths.startIndex else { return [] }
+						return sectionIndexPaths[max(sectionIndexPaths.startIndex, item.first - numberToPreload) ..< item.first]
+					}()
+					return Array(nextItemsInSection) + Array(previousItemsInSection)
+				}
+				// CHECK IF THERES AN EARLIER SECTION TO PRELOAD
 				if
-					let toCancel = self?.currentlyPrefetching.filter({ $0.section == sectionIndex }).subtracting(toPrefetch),
-					!toCancel.isEmpty
+					let firstSection = toPrefetch.keys.min(), // FIND THE EARLIEST VISIBLE SECTION
+					(firstSection - 1) >= self.parent.sections.startIndex, // CHECK THERE IS A SECTION BEFORE THIS
+					let firstIndex = visibleIndexPathsBySection[firstSection]?.first, firstIndex < numberToPreload // CHECK HOW CLOSE TO THIS SECTION WE ARE
 				{
-					self?.parent.sections[safe: sectionIndex]?.dataSource.cancelPrefetch(Array(toCancel))
+					let precedingSection = firstSection - 1
+					toPrefetch[precedingSection] = self.parent.sections[precedingSection].dataSource.getIndexPaths(withSectionIndex: precedingSection).suffix(numberToPreload)
 				}
+				// CHECK IF THERES A LATER SECTION TO PRELOAD
+				if
+					let lastSection = toPrefetch.keys.max(), // FIND THE LAST VISIBLE SECTION
+					(lastSection + 1) < self.parent.sections.endIndex, // CHECK THERE IS A SECTION AFTER THIS
+					let lastIndex = visibleIndexPathsBySection[lastSection]?.last,
+					let lastSectionEndIndex = self.parent.sections[lastSection].dataSource.getIndexPaths(withSectionIndex: lastSection).last?.item,
+					(lastSectionEndIndex - lastIndex) < numberToPreload // CHECK HOW CLOSE TO THIS SECTION WE ARE
+				{
+					let nextSection = lastSection + 1
+					toPrefetch[nextSection] = Array(self.parent.sections[nextSection].dataSource.getIndexPaths(withSectionIndex: nextSection).prefix(numberToPreload))
+				}
+				return toPrefetch
 			}
+			.sink
+			{ [weak self] prefetch in
+				prefetch.forEach
+				{ sectionIndex, toPrefetch in
+					if !toPrefetch.isEmpty
+					{
+						self?.parent.sections[safe: sectionIndex]?.dataSource.prefetch(toPrefetch)
+					}
+					if
+						let toCancel = self?.currentlyPrefetching.filter({ $0.section == sectionIndex }).subtracting(toPrefetch),
+						!toCancel.isEmpty
+					{
+						self?.parent.sections[safe: sectionIndex]?.dataSource.cancelPrefetch(Array(toCancel))
+					}
+				}
 
-			self?.currentlyPrefetching = Set(prefetch.flatMap { $0.value })
-		}
+				self?.currentlyPrefetching = Set(prefetch.flatMap(\.value))
+			}
 	}
 }
 

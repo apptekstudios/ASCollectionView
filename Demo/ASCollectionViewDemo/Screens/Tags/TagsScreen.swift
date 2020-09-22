@@ -9,7 +9,8 @@ struct TagsScreen: View
 
 	var body: some View
 	{
-		ScrollView(.vertical) {
+		ScrollView(.vertical)
+		{
 			VStack(alignment: .leading, spacing: 20)
 			{
 				Text("This screen has an ASCollectionView embedded into a SwiftUI scrollview")
@@ -41,7 +42,8 @@ struct TagsScreen: View
 							.padding(5)
 							.background(Color(.systemGray))
 							.cornerRadius(5)
-					}.selfSizingConfig { _ in
+					}.selfSizingConfig
+					{ _ in
 						ASSelfSizingConfig(canExceedCollectionWidth: false)
 					}
 				)
@@ -72,6 +74,7 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 		super.init()
 	}
 
+	@available(*, unavailable)
 	required init?(coder: NSCoder)
 	{
 		fatalError("init(coder:) has not been implemented")
@@ -101,7 +104,8 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 
 	private var leftEdge: CGFloat
 	{
-		guard let insets = collectionView?.adjustedContentInset else
+		guard let insets = collectionView?.adjustedContentInset
+		else
 		{
 			return sectionInset.left
 		}
@@ -111,7 +115,8 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 	private var contentWidth: CGFloat?
 	{
 		guard let collectionViewWidth = collectionView?.frame.size.width,
-			let insets = collectionView?.adjustedContentInset else
+			let insets = collectionView?.adjustedContentInset
+		else
 		{
 			return nil
 		}
@@ -125,7 +130,8 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 
 	fileprivate func isFrame(for firstItemAttributes: UICollectionViewLayoutAttributes, inSameLineAsFrameFor secondItemAttributes: UICollectionViewLayoutAttributes) -> Bool
 	{
-		guard let lineWidth = contentWidth else
+		guard let lineWidth = contentWidth
+		else
 		{
 			return false
 		}
@@ -140,7 +146,8 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 
 	override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes?
 	{
-		guard let attributes = super.layoutAttributesForItem(at: indexPath) else
+		guard let attributes = super.layoutAttributesForItem(at: indexPath)
+		else
 		{
 			return nil
 		}

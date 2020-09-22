@@ -66,7 +66,8 @@ internal extension ASCollectionViewSection
 
 	mutating func setSupplementaryView<Content: View>(_ view: Content?, ofKind kind: String)
 	{
-		guard let view = view else
+		guard let view = view
+		else
 		{
 			dataSource.supplementaryViews.removeValue(forKey: kind)
 			return

@@ -10,7 +10,7 @@ internal protocol ASSectionDataSourceProtocol
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool, isHighlighted: Bool) -> AnyView
+	func content(forItemID itemID: ASCollectionViewItemUniqueID) -> AnyView
 	func content(supplementaryID: ASSupplementaryCellID) -> AnyView?
 	var supplementaryViews: [String: AnyView] { get set }
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
@@ -31,12 +31,16 @@ internal protocol ASSectionDataSourceProtocol
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
 
+	func isHighlighted(index: Int) -> Bool
+	func highlightIndex(_ index: Int)
+	func unhighlightIndex(_ index: Int)
+	func shouldHighlight(_ indexPath: IndexPath) -> Bool
+
+	func getSelectedIndexes() -> Set<Int>?
+	func isSelected(index: Int) -> Bool
 	func updateSelection(_ indices: Set<Int>)
 	func shouldSelect(_ indexPath: IndexPath) -> Bool
 	func shouldDeselect(_ indexPath: IndexPath) -> Bool
-
-	var allowSingleSelection: Bool { get }
-	func didSingleSelect(index: Int)
 
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
@@ -71,7 +75,10 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var container: (Content, ASCellContext) -> Container
 	var content: (DataCollection.Element, ASCellContext) -> Content
 
-	var selectedItems: Binding<Set<Int>>?
+	var highlightedIndexes: Binding<Set<Int>>?
+	var shouldAllowHighlight: ((_ index: Int) -> Bool)?
+
+	var selectedIndexes: Binding<Set<Int>>?
 	var shouldAllowSelection: ((_ index: Int) -> Bool)?
 	var shouldAllowDeselection: ((_ index: Int) -> Bool)?
 	var onSelectSingle: ((Int) -> Void)?
@@ -96,19 +103,20 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		data.firstIndex(where: { $0[keyPath: dataIDKeyPath].hashValue == itemID.itemIDHash })
 	}
 
-	func cellContext(for index: Int, isSelected: Bool, isHighlighted: Bool) -> ASCellContext
+	func cellContext(for index: Int) -> ASCellContext
 	{
 		ASCellContext(
-			isSelected: isSelected,
-			isHighlighted: isHighlighted,
+			isHighlighted: isHighlighted(index: index),
+			isSelected: isSelected(index: index),
 			index: index,
 			isFirstInSection: index == data.startIndex,
 			isLastInSection: index == data.endIndex - 1)
 	}
 
-	func content(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool, isHighlighted: Bool) -> AnyView
+	func content(forItemID itemID: ASCollectionViewItemUniqueID) -> AnyView
 	{
-		guard let content = getContent(forItemID: itemID, isSelected: isSelected, isHighlighted: isHighlighted) else
+		guard let content = getContent(forItemID: itemID)
+		else
 		{
 			return AnyView(EmptyView().id(itemID))
 		}
@@ -121,11 +129,11 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		return AnyView(content.id(supplementaryID))
 	}
 
-	func getContent(forItemID itemID: ASCollectionViewItemUniqueID, isSelected: Bool, isHighlighted: Bool) -> Container?
+	func getContent(forItemID itemID: ASCollectionViewItemUniqueID) -> Container?
 	{
 		guard let itemIndex = getIndex(of: itemID) else { return nil }
 		let item = data[itemIndex]
-		let context = cellContext(for: itemIndex, isSelected: isSelected, isHighlighted: isHighlighted)
+		let context = cellContext(for: itemIndex)
 		let view = content(item, context)
 		return container(view, context)
 	}
@@ -311,33 +319,73 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		selfSizingConfig?(context)
 	}
 
-	var allowSingleSelection: Bool
+	func isHighlighted(index: Int) -> Bool
 	{
-		onSelectSingle != nil
+		highlightedIndexes?.wrappedValue.contains(index) ?? false
 	}
 
-	func didSingleSelect(index: Int)
+	func highlightIndex(_ index: Int)
 	{
-		onSelectSingle?(index)
+		DispatchQueue.main.async
+		{
+			guard let highlightedIndexes = self.highlightedIndexes?.wrappedValue else { return }
+			self.highlightedIndexes?.wrappedValue = highlightedIndexes.union([index])
+		}
+	}
+
+	func unhighlightIndex(_ index: Int)
+	{
+		DispatchQueue.main.async
+		{
+			guard let highlightedIndexes = self.highlightedIndexes?.wrappedValue else { return }
+			self.highlightedIndexes?.wrappedValue = highlightedIndexes.subtracting([index])
+		}
+	}
+
+	func shouldHighlight(_ indexPath: IndexPath) -> Bool
+	{
+		guard data.containsIndex(indexPath.item) else { return isHighlightable }
+		return shouldAllowHighlight?(indexPath.item) ?? isHighlightable
+	}
+
+	private var isHighlightable: Bool
+	{
+		highlightedIndexes != nil || selectedIndexes != nil
+	}
+
+	func getSelectedIndexes() -> Set<Int>?
+	{
+		selectedIndexes?.wrappedValue
+	}
+
+	func isSelected(index: Int) -> Bool
+	{
+		selectedIndexes?.wrappedValue.contains(index) ?? false
 	}
 
 	func updateSelection(_ indices: Set<Int>)
 	{
-		DispatchQueue.main.async {
-			self.selectedItems?.wrappedValue = Set(indices)
+		DispatchQueue.main.async
+		{
+			self.selectedIndexes?.wrappedValue = Set(indices)
 		}
 	}
 
 	func shouldSelect(_ indexPath: IndexPath) -> Bool
 	{
-		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
-		return shouldAllowSelection?(indexPath.item) ?? (selectedItems != nil)
+		guard data.containsIndex(indexPath.item) else { return isSelectable }
+		return shouldAllowSelection?(indexPath.item) ?? isSelectable
 	}
 
 	func shouldDeselect(_ indexPath: IndexPath) -> Bool
 	{
-		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
-		return shouldAllowDeselection?(indexPath.item) ?? (selectedItems != nil)
+		guard data.containsIndex(indexPath.item) else { return isSelectable }
+		return shouldAllowDeselection?(indexPath.item) ?? isSelectable
+	}
+
+	private var isSelectable: Bool
+	{
+		selectedIndexes != nil
 	}
 }
 

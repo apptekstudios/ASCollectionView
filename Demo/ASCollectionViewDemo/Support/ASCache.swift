@@ -23,7 +23,8 @@ final class ASCache<Key: Hashable, Value>
 
 	func setValue(_ value: Value?, forKey key: Key)
 	{
-		guard let value = value else
+		guard let value = value
+		else
 		{
 			removeValue(forKey: key)
 			return
@@ -48,12 +49,14 @@ private extension ASCache
 {
 	func entry(forKey key: Key) -> Entry?
 	{
-		guard let entry = wrappedCache.object(forKey: WrappedKey(key)) else
+		guard let entry = wrappedCache.object(forKey: WrappedKey(key))
+		else
 		{
 			return nil
 		}
 
-		guard !entry.hasExpired else
+		guard !entry.hasExpired
+		else
 		{
 			removeValue(forKey: key)
 			return nil
@@ -79,7 +82,8 @@ private extension ASCache
 			_ cache: NSCache<AnyObject, AnyObject>,
 			willEvictObject object: Any)
 		{
-			guard let entry = object as? Entry else
+			guard let entry = object as? Entry
+			else
 			{
 				return
 			}
@@ -101,7 +105,8 @@ private extension ASCache
 
 		override func isEqual(_ object: Any?) -> Bool
 		{
-			guard let value = object as? WrappedKey else
+			guard let value = object as? WrappedKey
+			else
 			{
 				return false
 			}

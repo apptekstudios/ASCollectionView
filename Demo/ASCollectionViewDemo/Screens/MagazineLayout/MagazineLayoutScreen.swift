@@ -39,7 +39,8 @@ struct MagazineLayoutScreen: View
 	{
 		ASCollectionView(sections: self.sections)
 			.layout { MagazineLayout() }
-			.onReachedBoundary { boundary in
+			.onReachedBoundary
+			{ boundary in
 				print("Reached the \(boundary) boundary")
 			}
 			.customDelegate(ASCollectionViewMagazineLayoutDelegate.init)
@@ -70,8 +71,10 @@ struct MagazineLayoutScreen: View
 
 	func contextMenuProvider(index: Int, post: Post) -> UIContextMenuConfiguration?
 	{
-		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { (_) -> UIMenu? in
-			let testAction = UIAction(title: "Test") { _ in
+		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil)
+		{ (_) -> UIMenu? in
+			let testAction = UIAction(title: "Test")
+			{ _ in
 				//
 			}
 			return UIMenu(title: "", image: nil, identifier: nil, options: [], children: [testAction])

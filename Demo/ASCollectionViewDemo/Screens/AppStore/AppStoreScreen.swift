@@ -35,7 +35,7 @@ struct AppStoreScreen: View
 				data: sectionData.apps,
 				onCellEvent: {
 					self.onCellEvent($0, sectionID: sectionID)
-			})
+				})
 			{ item, _ in
 				if sectionID == 0
 				{

@@ -38,7 +38,8 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 	func setIndexTitles(_ titles: [(Int, String)])
 	{
 		var strings = Set<String>()
-		let uniqued = titles.filter { (index, string) -> Bool in
+		let uniqued = titles.filter
+		{ (index, string) -> Bool in
 			guard !strings.contains(string) else { return false }
 			strings.insert(string)
 			return true
@@ -61,11 +62,13 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 		{
 			CATransaction.setDisableActions(true)
 		}
-		CATransaction.setCompletionBlock { [weak self] in
+		CATransaction.setCompletionBlock
+		{ [weak self] in
 			self?.canRefreshSizes = true
 			completion?()
 		}
-		tableView.reload(using: changeset, with: shouldDisableAnimation ? .none : .automatic) { newSections in
+		tableView.reload(using: changeset, with: shouldDisableAnimation ? .none : .automatic)
+		{ newSections in
 			self.currentSnapshot = .init(sections: newSections)
 		}
 		CATransaction.commit()
@@ -102,7 +105,8 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 	func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell
 	{
 		let itemIdentifier = identifier(at: indexPath)
-		guard let cell = cellProvider(tableView, indexPath, itemIdentifier) else
+		guard let cell = cellProvider(tableView, indexPath, itemIdentifier)
+		else
 		{
 			fatalError("ASTableView dataSource returned a nil cell for row at index path: \(indexPath), tableView: \(tableView), itemIdentifier: \(itemIdentifier)")
 		}
@@ -147,7 +151,7 @@ class ASDiffableDataSourceTableView<SectionID: Hashable>: ASDiffableDataSource<S
 
 	func sectionIndexTitles(for tableView: UITableView) -> [String]?
 	{
-		indexTitles.isEmpty ? nil : indexTitles.map { $0.1 }
+		indexTitles.isEmpty ? nil : indexTitles.map(\.1)
 	}
 
 	func tableView(_ tableView: UITableView, sectionForSectionIndexTitle title: String, at index: Int) -> Int

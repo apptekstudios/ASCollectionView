@@ -81,7 +81,7 @@ struct AdjustableGridScreen: View
 			})
 			{
 				Text("Toggle config")
-		})
+			})
 	}
 
 	func onCellEvent(_ event: CellEvent<Post>)

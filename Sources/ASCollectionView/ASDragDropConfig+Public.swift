@@ -22,11 +22,11 @@ public extension ASDragDropConfig
 	/// In the onDelete/onInsert/onMove closures return true if you apply the suggested delete/insert/move, or false if it shouldn't be applied... so that ASCollectionView can correctly animate.
 	/// Use the modifiers to add extra checks (eg .canDragItem, .canMoveItem, .dragItemProvider, .dropItemProvider)
 	init(dragEnabled: Bool = true,
-		 dropEnabled: Bool = true,
-		 reorderingEnabled: Bool = true,
-		 onDeleteOrRemoveItems: ((_ indexSet: IndexSet) -> Bool)? = nil,
-		 onInsertItems: ((_ index: Int, _ items: [Data]) -> Bool)? = nil,
-		 onMoveItem: ((Int, Int) -> Bool)? = nil)
+	     dropEnabled: Bool = true,
+	     reorderingEnabled: Bool = true,
+	     onDeleteOrRemoveItems: ((_ indexSet: IndexSet) -> Bool)? = nil,
+	     onInsertItems: ((_ index: Int, _ items: [Data]) -> Bool)? = nil,
+	     onMoveItem: ((Int, Int) -> Bool)? = nil)
 	{
 		dataBinding = nil
 		self.onDeleteOrRemoveItems = onDeleteOrRemoveItems

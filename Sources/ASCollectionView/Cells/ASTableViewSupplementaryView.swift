@@ -19,6 +19,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView, ASDataSourceCon
 		hostingController.viewController.view.frame = contentView.bounds
 	}
 
+	@available(*, unavailable)
 	required init?(coder: NSCoder)
 	{
 		fatalError("init(coder:) has not been implemented")

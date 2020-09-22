@@ -97,7 +97,8 @@ public extension ASPriorityCache
 		get { nodes[key]?.value }
 		set
 		{
-			guard let newValue = newValue else
+			guard let newValue = newValue
+			else
 			{
 				nodes[key].map(removeNode)
 				return

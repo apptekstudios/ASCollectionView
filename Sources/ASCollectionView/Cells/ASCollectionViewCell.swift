@@ -18,6 +18,7 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		hostingController.viewController.view.frame = contentView.bounds
 	}
 
+	@available(*, unavailable)
 	required init?(coder: NSCoder)
 	{
 		fatalError("init(coder:) has not been implemented")
@@ -69,7 +70,8 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 		let selfSizeHorizontal = selfSizingConfig.selfSizeHorizontally ?? (horizontalFittingPriority != .required)
 		let selfSizeVertical = selfSizingConfig.selfSizeVertically ?? (verticalFittingPriority != .required)
 
-		guard selfSizeVertical || selfSizeHorizontal else
+		guard selfSizeVertical || selfSizeHorizontal
+		else
 		{
 			return targetSize
 		}

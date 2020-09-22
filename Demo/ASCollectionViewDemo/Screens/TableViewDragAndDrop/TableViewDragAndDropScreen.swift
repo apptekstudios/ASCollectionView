@@ -12,28 +12,33 @@ struct TableViewDragAndDropScreen: View
 
 	var body: some View
 	{
-		VStack {
+		VStack
+		{
 			Text("Drag within a tableview to move.\nDrag between tableviews to copy.")
 				.padding()
-			HStack {
-				ASTableView {
+			HStack
+			{
+				ASTableView
+				{
 					ASSection<Int>(
 						id: 0,
 						data: groupA,
 						dataID: \.self,
 						dragDropConfig: ASDragDropConfig(dataBinding: $groupA),
 						onSwipeToDelete: { index, _ -> Bool in
-							withAnimation {
+							withAnimation
+							{
 								_ = self.groupA.remove(at: index)
 							}
 							return true
-					})
+						})
 					{ item, _ in
 						Text(item)
 							.padding()
 							.frame(maxWidth: .infinity, alignment: .leading)
 					}
-					.sectionHeader {
+					.sectionHeader
+					{
 						header("Section A")
 					}
 					ASSection<Int>(
@@ -42,39 +47,44 @@ struct TableViewDragAndDropScreen: View
 						dataID: \.self,
 						dragDropConfig: ASDragDropConfig(dataBinding: $groupB),
 						onSwipeToDelete: { index, _ -> Bool in
-							withAnimation {
+							withAnimation
+							{
 								_ = self.groupB.remove(at: index)
 							}
 							return true
-					})
+						})
 					{ item, _ in
 						Text(item)
 							.padding()
 							.frame(maxWidth: .infinity, alignment: .leading)
 					}
-					.sectionHeader {
+					.sectionHeader
+					{
 						header("Section B")
 					}
 				}
 				Color.blue.frame(width: 10)
-				ASTableView {
+				ASTableView
+				{
 					ASSection<Int>(
 						id: 0,
 						data: groupC,
 						dataID: \.self,
 						dragDropConfig: ASDragDropConfig(dataBinding: $groupC),
 						onSwipeToDelete: { index, _ -> Bool in
-							withAnimation {
+							withAnimation
+							{
 								_ = self.groupC.remove(at: index)
 							}
 							return true
-					})
+						})
 					{ item, _ in
 						Text(item)
 							.padding()
 							.frame(maxWidth: .infinity, alignment: .leading)
 					}
-					.sectionHeader {
+					.sectionHeader
+					{
 						header("Section C")
 					}
 					ASSection<Int>(
@@ -83,17 +93,19 @@ struct TableViewDragAndDropScreen: View
 						dataID: \.self,
 						dragDropConfig: ASDragDropConfig(dataBinding: $groupD),
 						onSwipeToDelete: { index, _ -> Bool in
-							withAnimation {
+							withAnimation
+							{
 								_ = self.groupD.remove(at: index)
 							}
 							return true
-					})
+						})
 					{ item, _ in
 						Text(item)
 							.padding()
 							.frame(maxWidth: .infinity, alignment: .leading)
 					}
-					.sectionHeader {
+					.sectionHeader
+					{
 						header("Section D")
 					}
 				}

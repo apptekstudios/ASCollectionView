@@ -29,21 +29,24 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		}
 	}
 
-	public var columnSpacing: CGFloat = 6 {
+	public var columnSpacing: CGFloat = 6
+	{
 		didSet
 		{
 			invalidateLayout()
 		}
 	}
 
-	public var sectionSpacing: CGFloat = 20 {
+	public var sectionSpacing: CGFloat = 20
+	{
 		didSet
 		{
 			invalidateLayout()
 		}
 	}
 
-	public var itemSpacing: CGFloat = 6 {
+	public var itemSpacing: CGFloat = 6
+	{
 		didSet
 		{
 			invalidateLayout()
@@ -268,7 +271,8 @@ public class ASWaterfallLayout: UICollectionViewLayout, ASCollectionViewLayoutPr
 		let context = super.invalidationContext(forPreferredLayoutAttributes: preferredAttributes, withOriginalAttributes: originalAttributes)
 		guard let collectionView = collectionView else { return context }
 
-		guard preferredAttributes.frame.height != originalAttributes.frame.height else
+		guard preferredAttributes.frame.height != originalAttributes.frame.height
+		else
 		{
 			return context
 		}

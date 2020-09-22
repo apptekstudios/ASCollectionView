@@ -17,7 +17,7 @@ struct Post: Identifiable
 		URL(string: "https://picsum.photos/\(Int(aspectRatio * 500))/500?random=\(abs(randomNumberForImage))")!
 	}
 
-	var usernamePhotoURL: URL = URL(string: "https://picsum.photos/100?random=\(Int.random(in: 0 ... 500))")!
+	var usernamePhotoURL = URL(string: "https://picsum.photos/100?random=\(Int.random(in: 0 ... 500))")!
 	var comments: Int = .random(in: 4 ... 600)
 
 	var id: Int

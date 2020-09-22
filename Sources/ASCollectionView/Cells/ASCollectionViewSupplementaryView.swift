@@ -20,6 +20,7 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView, ASDataSourceC
 		hostingController.viewController.view.frame = bounds
 	}
 
+	@available(*, unavailable)
 	required init?(coder: NSCoder)
 	{
 		fatalError("init(coder:) has not been implemented")
@@ -75,7 +76,8 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView, ASDataSourceC
 		let selfSizeHorizontal = selfSizingConfig.selfSizeHorizontally ?? (horizontalFittingPriority != .required)
 		let selfSizeVertical = selfSizingConfig.selfSizeVertically ?? (verticalFittingPriority != .required)
 
-		guard selfSizeVertical || selfSizeHorizontal else
+		guard selfSizeVertical || selfSizeHorizontal
+		else
 		{
 			return targetSize
 		}

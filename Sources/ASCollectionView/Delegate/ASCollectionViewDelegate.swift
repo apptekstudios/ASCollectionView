@@ -29,16 +29,6 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 		.automatic
 	}
 
-	public func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
-	{
-		coordinator?.collectionView(collectionView, didHighlightItemAt: indexPath)
-	}
-
-	public func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
-	{
-		coordinator?.collectionView(collectionView, didUnhighlightItemAt: indexPath)
-	}
-
 	open func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 	{
 		coordinator?.collectionView(collectionView, willDisplay: cell, forItemAt: indexPath)
@@ -57,6 +47,31 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 	open func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
 	{
 		coordinator?.collectionView(collectionView, didEndDisplayingSupplementaryView: view, forElementOfKind: elementKind, at: indexPath)
+	}
+
+	open func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool
+	{
+		coordinator?.collectionView(collectionView, shouldHighlightItemAt: indexPath) ?? true
+	}
+
+	open func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
+	{
+		coordinator?.collectionView(collectionView, didHighlightItemAt: indexPath)
+	}
+
+	open func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
+	{
+		coordinator?.collectionView(collectionView, didUnhighlightItemAt: indexPath)
+	}
+
+	open func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool
+	{
+		coordinator?.collectionView(collectionView, shouldSelectItemAt: indexPath) ?? true
+	}
+
+	open func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool
+	{
+		coordinator?.collectionView(collectionView, shouldDeselectItemAt: indexPath) ?? true
 	}
 
 	open func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)

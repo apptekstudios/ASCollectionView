@@ -57,7 +57,8 @@ struct ASIndexedDictionary<Key: Hashable, Value>: BidirectionalCollection
 		}
 		set
 		{
-			guard let newValue = newValue else
+			guard let newValue = newValue
+			else
 			{
 				_ = dictionary[key].map { array.remove(at: $0) }
 				return

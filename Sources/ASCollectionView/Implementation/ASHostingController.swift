@@ -117,7 +117,8 @@ internal class ASHostingController<ViewType: View>: ASHostingControllerProtocol
 
 	func sizeThatFits(in size: CGSize, maxSize: ASOptionalSize, selfSizeHorizontal: Bool, selfSizeVertical: Bool) -> CGSize
 	{
-		guard selfSizeHorizontal || selfSizeVertical else
+		guard selfSizeHorizontal || selfSizeVertical
+		else
 		{
 			return size.applyMaxSize(maxSize)
 		}

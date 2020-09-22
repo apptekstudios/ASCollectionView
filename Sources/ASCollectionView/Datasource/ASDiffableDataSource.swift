@@ -24,7 +24,8 @@ struct ASDiffableDataSourceSnapshot<SectionID: Hashable>
 	init(sections: [Section] = [])
 	{
 		self.sections = sections
-		sections.enumerated().forEach { sectionIndex, section in
+		sections.enumerated().forEach
+		{ sectionIndex, section in
 			section.elements.enumerated().forEach { itemIndex, item in itemPositionMap[item.differenceIdentifier] = ItemPosition(itemIndex: itemIndex, sectionIndex: sectionIndex) }
 		}
 	}
@@ -50,7 +51,8 @@ struct ASDiffableDataSourceSnapshot<SectionID: Hashable>
 
 	mutating func reloadItems(items: Set<ASCollectionViewItemUniqueID>)
 	{
-		items.forEach { item in
+		items.forEach
+		{ item in
 			guard let position = itemPositionMap[item] else { return }
 			sections[position.sectionIndex].elements[position.itemIndex].shouldReload = true
 		}

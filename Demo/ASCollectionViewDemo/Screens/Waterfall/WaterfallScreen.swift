@@ -8,7 +8,9 @@ import UIKit
 struct WaterfallScreen: View
 {
 	@State var data: [[Post]] = (0 ... 10).map { DataSource.postsForWaterfallSection($0, number: 100) }
-	@State var selectedItems: [SectionID: Set<Int>] = [:]
+	@State var highlightedIndexes: [SectionID: Set<Int>] = [:]
+	@State var selectedIndexes: [SectionID: Set<Int>] = [:]
+	@State var selectedPost: Post? = nil // Post being viewed in the detail view
 	@State var columnMinSize: CGFloat = 150
 
 	@Environment(\.editMode) private var editMode
@@ -21,11 +23,13 @@ struct WaterfallScreen: View
 
 	var sections: [ASCollectionViewSection<SectionID>]
 	{
-		data.enumerated().map { offset, sectionData in
+		data.enumerated().map
+		{ offset, sectionData in
 			ASCollectionViewSection(
 				id: offset,
 				data: sectionData,
-				selectedItems: $selectedItems[offset],
+				highlightedIndexes: $highlightedIndexes[offset],
+				selectedIndexes: $selectedIndexes[offset],
 				onCellEvent: onCellEvent)
 			{ item, state in
 				GeometryReader
@@ -35,9 +39,9 @@ struct WaterfallScreen: View
 						ASRemoteImageView(item.url)
 							.scaledToFill()
 							.frame(width: geom.size.width, height: geom.size.height)
-							.opacity(state.isSelected ? 0.7 : 1.0)
+							.opacity(self.opacity(isHighlighted: state.isHighlighted, isSelected: state.isSelected))
 
-						if state.isSelected
+						if self.isEditing && state.isSelected
 						{
 							ZStack
 							{
@@ -66,7 +70,8 @@ struct WaterfallScreen: View
 					.frame(width: geom.size.width, height: geom.size.height)
 					.clipped()
 				}
-			}.sectionHeader {
+			}.sectionHeader
+			{
 				Text("Section \(offset)")
 					.padding()
 					.frame(idealWidth: .infinity, maxWidth: .infinity, idealHeight: .infinity, maxHeight: .infinity, alignment: .leading)
@@ -92,8 +97,11 @@ struct WaterfallScreen: View
 				editMode: isEditing,
 				sections: sections)
 				.layout(self.layout)
+				.allowsMultipleSelection(self.isEditing)
 				.customDelegate(WaterfallScreenLayoutDelegate.init)
 				.contentInsets(.init(top: 0, left: 10, bottom: 10, right: 10))
+				.onChange(of: selectedIndexes, perform: onSelectionChange)
+				.postSheet(item: $selectedPost, onDismiss: { self.selectedIndexes = [:] })
 				.navigationBarTitle("Waterfall Layout", displayMode: .inline)
 				.navigationBarItems(
 					trailing:
@@ -102,8 +110,10 @@ struct WaterfallScreen: View
 						if self.isEditing
 						{
 							Button(action: {
-								withAnimation {
-									self.selectedItems.forEach { sectionIndex, selected in
+								withAnimation
+								{
+									self.selectedIndexes.forEach
+									{ sectionIndex, selected in
 										self.data[sectionIndex].remove(atOffsets: IndexSet(selected))
 									}
 								}
@@ -114,7 +124,38 @@ struct WaterfallScreen: View
 						}
 
 						EditButton()
-				})
+					})
+		}
+	}
+
+	func opacity(isHighlighted: Bool, isSelected: Bool) -> Double
+	{
+		if !isEditing && isHighlighted
+		{
+			return 0.7
+		}
+		else if isEditing && isSelected
+		{
+			return 0.7
+		}
+		else
+		{
+			return 1
+		}
+	}
+
+	func onSelectionChange(_ selection: [SectionID: Set<Int>])
+	{
+		guard !isEditing else { return }
+
+		if let (sectionID, selectedIndexes) = selection.first(where: { !$0.value.isEmpty }),
+			let selectedIndex = selectedIndexes.first
+		{
+			selectedPost = data[sectionID][selectedIndex]
+		}
+		else
+		{
+			selectedPost = nil
 		}
 	}
 
@@ -135,6 +176,21 @@ struct WaterfallScreen: View
 			for item in data
 			{
 				ASRemoteImageManager.shared.cancelLoad(for: item.url)
+			}
+		}
+	}
+}
+
+private extension View
+{
+	func postSheet(item: Binding<Post?>, onDismiss: @escaping () -> Void) -> some View
+	{
+		sheet(item: item, onDismiss: onDismiss)
+		{ post in
+			VStack
+			{
+				ASRemoteImageView(post.url)
+					.scaledToFill()
 			}
 		}
 	}

@@ -73,7 +73,7 @@ public extension ASTableView
 		return this
 	}
 
-	/// Set a binding that will scroll the ASCollectionView when set. It will always return nil once the scroll is applied (use onScroll to read scroll position)
+	/// Set a binding that will scroll the ASTableView when set. It will always return nil once the scroll is applied (use onScroll to read scroll position)
 	func scrollPositionSetter(_ binding: Binding<ASTableViewScrollPosition?>) -> Self
 	{
 		var this = self
@@ -81,6 +81,22 @@ public extension ASTableView
 		this.scrollPositionSetter = binding
 		return this
 	}
+    
+    /// Set whether the ASTableView should allow selection, default is true
+    func allowsSelection(_ allowsSelection: Bool) -> Self
+    {
+        var this = self
+        this.allowsSelection = allowsSelection
+        return this
+    }
+    
+    /// Set whether the ASTableView should allow multiple selection, default is false
+    func allowsMultipleSelection(_ allowsMultipleSelection: Bool) -> Self
+    {
+        var this = self
+        this.allowsMultipleSelection = allowsMultipleSelection
+        return this
+    }
 }
 
 // MARK: ASTableView specific header modifiers
