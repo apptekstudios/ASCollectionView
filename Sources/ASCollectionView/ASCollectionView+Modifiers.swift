@@ -141,28 +141,13 @@ public extension ASCollectionView
 		return this
 	}
 
-	/// Set whether the ASCollectionView should allow selection, default is true
-	func allowsSelection(_ allowsSelection: Bool) -> Self
+	/// Set whether the ASCollectionView should automatically scroll an active textview/input to avoid the system keyboard. Default is true
+	func shouldScrollToAvoidKeyboard(_ avoidKeyboard: Bool = true) -> Self
 	{
 		var this = self
-		this.allowsSelection = allowsSelection
+		this.dodgeKeyboard = avoidKeyboard
 		return this
 	}
-
-	/// Set whether the ASCollectionView should allow multiple selection, default is false
-	func allowsMultipleSelection(_ allowsMultipleSelection: Bool) -> Self
-	{
-		var this = self
-		this.allowsMultipleSelection = allowsMultipleSelection
-		return this
-	}
-    
-    /// Set whether the ASCollectionView should automatically scroll an active textview/input to avoid the system keyboard. Default is true
-    func shouldScrollToAvoidKeyboard(_ avoidKeyboard: Bool = true) -> Self {
-        var this = self
-        this.dodgeKeyboard = avoidKeyboard
-        return this
-    }
 }
 
 // MARK: PUBLIC layout modifier functions

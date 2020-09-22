@@ -34,9 +34,6 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 	internal var separatorsEnabled: Bool = true
 
-	internal var allowsSelection: Bool = true
-	internal var allowsMultipleSelection: Bool = false
-
 	internal var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
 
 	internal var alwaysBounce: Bool = false
@@ -152,14 +149,13 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			assignIfChanged(tableView, \.showsVerticalScrollIndicator, newValue: parent.scrollIndicatorEnabled)
 			assignIfChanged(tableView, \.showsHorizontalScrollIndicator, newValue: parent.scrollIndicatorEnabled)
 			assignIfChanged(tableView, \.keyboardDismissMode, newValue: .interactive)
-			assignIfChanged(tableView, \.allowsSelection, newValue: parent.allowsSelection)
-			assignIfChanged(tableView, \.allowsMultipleSelection, newValue: parent.allowsMultipleSelection)
 
 			updateTableViewContentInsets(tableView)
 
 			assignIfChanged(tableView, \.allowsSelection, newValue: true)
-			assignIfChanged(tableView, \.allowsMultipleSelectionDuringEditing, newValue: true)
+			assignIfChanged(tableView, \.allowsMultipleSelection, newValue: true)
 			assignIfChanged(tableView, \.allowsSelectionDuringEditing, newValue: true)
+			assignIfChanged(tableView, \.allowsMultipleSelectionDuringEditing, newValue: true)
 			assignIfChanged(tableView, \.isEditing, newValue: parent.editMode)
 		}
 
@@ -538,6 +534,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		public func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath)
 		{
 			updateSelection(tableView)
+			parent.sections[safe: indexPath.section]?.dataSource.didSelect(indexPath)
 		}
 
 		public func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath)
@@ -563,7 +560,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		{
 			parent.sections.enumerated().reduce(Set<IndexPath>())
 			{ (selectedIndexPaths, section) -> Set<IndexPath> in
-				guard let indexes = section.element.dataSource.getSelectedIndexes() else { return selectedIndexPaths }
+				guard let indexes = section.element.dataSource.selectedIndicesBinding?.wrappedValue else { return selectedIndexPaths }
 				let indexPaths = indexes.map { IndexPath(item: $0, section: section.offset) }
 				return selectedIndexPaths.union(indexPaths)
 			}
@@ -591,7 +588,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				}
 			parent.sections.enumerated().forEach
 			{ offset, section in
-				section.dataSource.updateSelection(selectionBySection[offset] ?? [])
+				section.dataSource.updateSelection(with: selectionBySection[offset] ?? [])
 			}
 		}
 

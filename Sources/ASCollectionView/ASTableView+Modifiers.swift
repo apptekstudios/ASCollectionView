@@ -81,22 +81,6 @@ public extension ASTableView
 		this.scrollPositionSetter = binding
 		return this
 	}
-    
-    /// Set whether the ASTableView should allow selection, default is true
-    func allowsSelection(_ allowsSelection: Bool) -> Self
-    {
-        var this = self
-        this.allowsSelection = allowsSelection
-        return this
-    }
-    
-    /// Set whether the ASTableView should allow multiple selection, default is false
-    func allowsMultipleSelection(_ allowsMultipleSelection: Bool) -> Self
-    {
-        var this = self
-        this.allowsMultipleSelection = allowsMultipleSelection
-        return this
-    }
 }
 
 // MARK: ASTableView specific header modifiers
@@ -122,13 +106,6 @@ public extension ASTableViewSection
 		{
 			return self
 		}
-	}
-
-	func onSelectSingle(_ callback: @escaping ((Int) -> Void)) -> Self
-	{
-		var section = self
-		section.dataSource.onSelectSingle = callback
-		return section
 	}
 }
 

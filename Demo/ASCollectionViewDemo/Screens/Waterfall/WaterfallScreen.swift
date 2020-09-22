@@ -8,7 +8,6 @@ import UIKit
 struct WaterfallScreen: View
 {
 	@State var data: [[Post]] = (0 ... 10).map { DataSource.postsForWaterfallSection($0, number: 100) }
-	@State var highlightedIndexes: [SectionID: Set<Int>] = [:]
 	@State var selectedIndexes: [SectionID: Set<Int>] = [:]
 	@State var selectedPost: Post? = nil // Post being viewed in the detail view
 	@State var columnMinSize: CGFloat = 150
@@ -28,8 +27,10 @@ struct WaterfallScreen: View
 			ASCollectionViewSection(
 				id: offset,
 				data: sectionData,
-				highlightedIndexes: $highlightedIndexes[offset],
-				selectedIndexes: $selectedIndexes[offset],
+				selectionMode: self.isEditing ? .selectMultiple($selectedIndexes[offset]) : .selectSingle
+				{ selectedIndex in
+					selectedPost = sectionData[selectedIndex]
+				},
 				onCellEvent: onCellEvent)
 			{ item, state in
 				GeometryReader
@@ -97,10 +98,8 @@ struct WaterfallScreen: View
 				editMode: isEditing,
 				sections: sections)
 				.layout(self.layout)
-				.allowsMultipleSelection(self.isEditing)
 				.customDelegate(WaterfallScreenLayoutDelegate.init)
 				.contentInsets(.init(top: 0, left: 10, bottom: 10, right: 10))
-				.onChange(of: selectedIndexes, perform: onSelectionChange)
 				.postSheet(item: $selectedPost, onDismiss: { self.selectedIndexes = [:] })
 				.navigationBarTitle("Waterfall Layout", displayMode: .inline)
 				.navigationBarItems(
@@ -141,21 +140,6 @@ struct WaterfallScreen: View
 		else
 		{
 			return 1
-		}
-	}
-
-	func onSelectionChange(_ selection: [SectionID: Set<Int>])
-	{
-		guard !isEditing else { return }
-
-		if let (sectionID, selectedIndexes) = selection.first(where: { !$0.value.isEmpty }),
-			let selectedIndex = selectedIndexes.first
-		{
-			selectedPost = data[sectionID][selectedIndex]
-		}
-		else
-		{
-			selectedPost = nil
 		}
 	}
 

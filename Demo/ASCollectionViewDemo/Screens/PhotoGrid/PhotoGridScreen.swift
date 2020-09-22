@@ -7,7 +7,6 @@ import UIKit
 struct PhotoGridScreen: View
 {
 	@State var data: [Post] = DataSource.postsForGridSection(1, number: 1000)
-	@State var highlightedIndexes: Set<Int> = []
 	@State var selectedIndexes: Set<Int> = []
 
 	@Environment(\.editMode) private var editMode
@@ -23,8 +22,7 @@ struct PhotoGridScreen: View
 		ASCollectionViewSection(
 			id: 0,
 			data: data,
-			highlightedIndexes: $highlightedIndexes,
-			selectedIndexes: $selectedIndexes,
+			selectionMode: isEditing ? .selectMultiple($selectedIndexes) : .none,
 			onCellEvent: onCellEvent)
 		{ item, state in
 			ZStack(alignment: .bottomTrailing)
@@ -54,8 +52,6 @@ struct PhotoGridScreen: View
 			editMode: isEditing,
 			section: section)
 			.layout(self.layout)
-			.allowsSelection(self.isEditing)
-			.allowsMultipleSelection(self.isEditing)
 			.edgesIgnoringSafeArea(.all)
 			.navigationBarTitle("Explore", displayMode: .large)
 			.navigationBarItems(

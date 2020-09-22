@@ -40,9 +40,6 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	internal var alwaysBounceVertical: Bool = false
 	internal var alwaysBounceHorizontal: Bool = false
 
-	internal var allowsSelection: Bool = true
-	internal var allowsMultipleSelection: Bool = false
-
 	internal var scrollPositionSetter: Binding<ASCollectionViewScrollPosition?>?
 
 	internal var animateOnDataRefresh: Bool = true
@@ -189,8 +186,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			assignIfChanged(collectionView, \.dragInteractionEnabled, newValue: true)
 			assignIfChanged(collectionView, \.alwaysBounceVertical, newValue: parent.alwaysBounceVertical)
 			assignIfChanged(collectionView, \.alwaysBounceHorizontal, newValue: parent.alwaysBounceHorizontal)
-			assignIfChanged(collectionView, \.allowsSelection, newValue: parent.allowsSelection)
-			assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: parent.allowsMultipleSelection)
+			assignIfChanged(collectionView, \.allowsSelection, newValue: true)
+			assignIfChanged(collectionView, \.allowsMultipleSelection, newValue: true)
 			assignIfChanged(collectionView, \.showsVerticalScrollIndicator, newValue: parent.verticalScrollIndicatorEnabled)
 			assignIfChanged(collectionView, \.showsHorizontalScrollIndicator, newValue: parent.horizontalScrollIndicatorEnabled)
 			assignIfChanged(collectionView, \.keyboardDismissMode, newValue: .interactive)
@@ -685,6 +682,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
 		{
 			updateSelection(collectionView)
+			parent.sections[safe: indexPath.section]?.dataSource.didSelect(indexPath)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath)
@@ -710,7 +708,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		{
 			parent.sections.enumerated().reduce(Set<IndexPath>())
 			{ (selectedIndexPaths, section) -> Set<IndexPath> in
-				guard let indexes = section.element.dataSource.getSelectedIndexes() else { return selectedIndexPaths }
+				guard let indexes = section.element.dataSource.selectedIndicesBinding?.wrappedValue else { return selectedIndexPaths }
 				let indexPaths = indexes.map { IndexPath(item: $0, section: section.offset) }
 				return selectedIndexPaths.union(indexPaths)
 			}
@@ -738,7 +736,7 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				}
 			parent.sections.enumerated().forEach
 			{ offset, section in
-				section.dataSource.updateSelection(selectionBySection[offset] ?? [])
+				section.dataSource.updateSelection(with: selectionBySection[offset] ?? [])
 			}
 		}
 
