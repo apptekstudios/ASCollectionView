@@ -137,7 +137,7 @@ public extension ASCollectionView
 	func shouldAttemptToMaintainScrollPositionOnOrientationChange(maintainPosition: Bool) -> Self
 	{
 		var this = self
-		this.maintainScrollPositionOnOrientationChange = true
+		this.maintainScrollPositionOnOrientationChange = maintainPosition
 		return this
 	}
 
@@ -156,6 +156,13 @@ public extension ASCollectionView
 		this.allowsMultipleSelection = allowsMultipleSelection
 		return this
 	}
+    
+    /// Set whether the ASCollectionView should automatically scroll an active textview/input to avoid the system keyboard. Default is true
+    func shouldScrollToAvoidKeyboard(_ avoidKeyboard: Bool = true) -> Self {
+        var this = self
+        this.dodgeKeyboard = avoidKeyboard
+        return this
+    }
 }
 
 // MARK: PUBLIC layout modifier functions
