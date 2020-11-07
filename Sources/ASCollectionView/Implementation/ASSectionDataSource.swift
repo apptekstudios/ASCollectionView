@@ -354,10 +354,15 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func highlightIndex(_ index: Int)
 	{
-		DispatchQueue.main.async
-		{
-			self.highlightedIndicesBinding?.wrappedValue = highlightedIndicesBinding?.wrappedValue.union([index]) ?? []
-		}
+        switch selectionMode
+        {
+        case .none, .selectSingle: return
+        case .highlighting, .selectMultiple:
+            DispatchQueue.main.async
+            {
+                self.highlightedIndicesBinding?.wrappedValue = highlightedIndicesBinding?.wrappedValue.union([index]) ?? []
+            }
+        }
 	}
 
 	func unhighlightIndex(_ index: Int)
