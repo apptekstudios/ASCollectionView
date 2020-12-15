@@ -129,9 +129,17 @@ public extension ASCollectionView
 	func shouldAttemptToMaintainScrollPositionOnOrientationChange(maintainPosition: Bool) -> Self
 	{
 		var this = self
-		this.maintainScrollPositionOnOrientationChange = true
+		this.maintainScrollPositionOnOrientationChange = maintainPosition
 		return this
 	}
+    
+    /// Set whether the ASCollectionView should scroll the collection view in order to keep the current input field visible when the system keyboard appears.
+    /// The default value is `true`
+    func shouldAvoidKeyboard(_ avoidKeyboard: Bool = true) -> Self {
+        var this = self
+        this.dodgeKeyboard = avoidKeyboard
+        return this
+    }
 }
 
 // MARK: PUBLIC layout modifier functions
