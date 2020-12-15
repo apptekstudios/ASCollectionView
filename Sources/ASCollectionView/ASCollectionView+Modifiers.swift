@@ -133,7 +133,8 @@ public extension ASCollectionView
 		return this
 	}
     
-    /// Set whether the ASCollectionView should dodge the system keyboard
+    /// Set whether the ASCollectionView should scroll the collection view in order to keep the current input field visible when the system keyboard appears.
+    /// The default value is `true`
     func shouldAvoidKeyboard(_ avoidKeyboard: Bool = true) -> Self {
         var this = self
         this.dodgeKeyboard = avoidKeyboard
