@@ -59,7 +59,6 @@ public class AS_CollectionViewController: UIViewController
 	override public func viewDidLoad()
 	{
 		super.viewDidLoad()
-		view.backgroundColor = .clear
 	}
 
 	override public func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator)

@@ -200,3 +200,13 @@ public extension ASCollectionView
 		SelfSizingWrapper(content: self, shrinkDirection: dimension, isEnabled: isEnabled, expandToFitMode: true)
 	}
 }
+
+@available(iOS 13.0, *)
+public extension ASCollectionView
+{
+    func backgroundColor(_ color: UIColor) -> Self {
+        var this = self
+        this.backgroundColor = color
+        return this
+    }
+}

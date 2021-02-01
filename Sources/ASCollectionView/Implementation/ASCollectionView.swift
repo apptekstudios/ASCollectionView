@@ -18,7 +18,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 	public var layout: Layout = .default
 	public var sections: [Section]
-
+    public var backgroundColor: UIColor = .clear
+    
 	// MARK: Internal variables modified by modifier functions
 
 	internal var delegateInitialiser: (() -> ASCollectionViewDelegate) = ASCollectionViewDelegate.init
@@ -69,7 +70,8 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 
 		let collectionViewController = AS_CollectionViewController(collectionViewLayout: collectionViewLayout)
 		collectionViewController.coordinator = context.coordinator
-
+        collectionViewController.view.backgroundColor = backgroundColor
+        
 		context.coordinator.collectionViewController = collectionViewController
 		context.coordinator.delegate = delegate
 
