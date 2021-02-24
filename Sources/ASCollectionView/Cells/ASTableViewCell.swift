@@ -8,64 +8,39 @@ import UIKit
 class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 {
 	var itemID: ASCollectionViewItemUniqueID?
-	var hostingController: ASHostingControllerProtocol?
-	{
-		get { _hostingController }
-		set { _hostingController = newValue; attachView() }
-	}
-
-	private var _hostingController: ASHostingControllerProtocol?
+	let hostingController = ASHostingController<AnyView>(AnyView(EmptyView()))
+//	var skipNextRefresh: Bool = false
 
 	override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?)
 	{
 		super.init(style: .default, reuseIdentifier: reuseIdentifier)
 		backgroundColor = nil
-		selectionStyle = .none
+		selectionStyle = .default
+
+		let selectedBack = UIView()
+		selectedBack.backgroundColor = UIColor.systemGray.withAlphaComponent(0.1)
+		selectedBackgroundView = selectedBack
+
+		contentView.addSubview(hostingController.viewController.view)
+		hostingController.viewController.view.frame = contentView.bounds
 	}
 
+	@available(*, unavailable)
 	required init?(coder: NSCoder)
 	{
 		fatalError("init(coder:) has not been implemented")
 	}
 
 	weak var tableViewController: AS_TableViewController?
-
-	private var hasAppeared: Bool = false // Needed due to the `self-sizing` cell used by UICV
-	func willAppear()
 	{
-		hasAppeared = true
-		attachView()
-	}
-
-	func didDisappear()
-	{
-		hasAppeared = false
-		detachViews()
-	}
-
-	private func attachView()
-	{
-		guard hasAppeared else { return }
-		guard let hcView = hostingController?.viewController.view else
+		didSet
 		{
-			detachViews()
-			return
+			if tableViewController != oldValue
+			{
+				hostingController.viewController.didMove(toParent: tableViewController)
+				tableViewController?.addChild(hostingController.viewController)
+			}
 		}
-		if hcView.superview != contentView
-		{
-			hostingController.map { tableViewController?.addChild($0.viewController) }
-			contentView.subviews.forEach { $0.removeFromSuperview() }
-			contentView.addSubview(hcView)
-			hcView.frame = contentView.bounds
-			hostingController?.viewController.didMove(toParent: tableViewController)
-		}
-	}
-
-	private func detachViews()
-	{
-		hostingController?.viewController.willMove(toParent: nil)
-		contentView.subviews.forEach { $0.removeFromSuperview() }
-		hostingController?.viewController.removeFromParent()
 	}
 
 	override func prepareForReuse()
@@ -74,24 +49,29 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 		isSelected = false
 		backgroundColor = nil
 		alpha = 1.0
-		_hostingController = nil
+//		skipNextRefresh = false
+	}
+
+	func setContent<Content: View>(itemID: ASCollectionViewItemUniqueID, content: Content)
+	{
+		self.itemID = itemID
+		hostingController.setView(AnyView(content.id(itemID)))
+	}
+
+	override public var safeAreaInsets: UIEdgeInsets
+	{
+		.zero
 	}
 
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
 
-		if hostingController?.viewController.view.frame != contentView.bounds
-		{
-			hostingController?.viewController.view.frame = contentView.bounds
-			hostingController?.viewController.view.setNeedsLayout()
-		}
-		hostingController?.viewController.view.layoutIfNeeded()
+		hostingController.viewController.view.frame = contentView.bounds
 	}
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
 	{
-		guard let hostingController = hostingController else { return CGSize(width: 1, height: 1) }
 		hostingController.viewController.view.setNeedsLayout()
 		hostingController.viewController.view.layoutIfNeeded()
 		let size = hostingController.sizeThatFits(
@@ -100,5 +80,17 @@ class ASTableViewCell: UITableViewCell, ASDataSourceConfigurableCell
 			selfSizeHorizontal: false,
 			selfSizeVertical: true)
 		return size
+	}
+
+	var disableSwiftUIDropInteraction: Bool
+	{
+		get { hostingController.disableSwiftUIDropInteraction }
+		set { hostingController.disableSwiftUIDropInteraction = newValue }
+	}
+
+	var disableSwiftUIDragInteraction: Bool
+	{
+		get { hostingController.disableSwiftUIDragInteraction }
+		set { hostingController.disableSwiftUIDragInteraction = newValue }
 	}
 }

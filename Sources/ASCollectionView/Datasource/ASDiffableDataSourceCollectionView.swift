@@ -1,6 +1,7 @@
 // ASCollectionView. Created by Apptek Studios 2019
 
 import DifferenceKit
+import SwiftUI
 import UIKit
 
 @available(iOS 13.0, *)
@@ -34,7 +35,8 @@ class ASDiffableDataSourceCollectionView<SectionID: Hashable>: ASDiffableDataSou
 		guard let collectionView = collectionView else { return }
 
 		let apply = {
-			collectionView.reload(using: changeset, interrupt: { $0.changeCount > 100 }) { newSections in
+			collectionView.reload(using: changeset, interrupt: { $0.changeCount > 100 })
+			{ newSections in
 				self.currentSnapshot = .init(sections: newSections)
 			}
 		}
@@ -66,7 +68,8 @@ class ASDiffableDataSourceCollectionView<SectionID: Hashable>: ASDiffableDataSou
 	func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell
 	{
 		let itemIdentifier = identifier(at: indexPath)
-		guard let cell = cellProvider(collectionView, indexPath, itemIdentifier) else
+		guard let cell = cellProvider(collectionView, indexPath, itemIdentifier)
+		else
 		{
 			fatalError("ASCollectionView dataSource returned a nil cell for row at index path: \(indexPath), collectionView: \(collectionView), itemIdentifier: \(itemIdentifier)")
 		}
@@ -78,10 +81,11 @@ class ASDiffableDataSourceCollectionView<SectionID: Hashable>: ASDiffableDataSou
 
 	func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView
 	{
-		guard let cell = supplementaryViewProvider?(collectionView, kind, indexPath) else
+		guard let cell = supplementaryViewProvider?(collectionView, kind, indexPath)
+		else
 		{
 			let empty = collectionView.dequeueReusableSupplementaryView(ofKind: supplementaryEmptyKind, withReuseIdentifier: supplementaryEmptyReuseID, for: indexPath)
-			(empty as? ASCollectionViewSupplementaryView)?.hostingController = nil
+			(empty as? ASCollectionViewSupplementaryView)?.setAsEmpty(supplementaryID: ASSupplementaryCellID(sectionIDHash: 0, supplementaryKind: supplementaryEmptyKind))
 			return empty
 		}
 		return cell

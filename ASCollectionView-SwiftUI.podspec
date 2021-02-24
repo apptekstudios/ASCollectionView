@@ -1,7 +1,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'ASCollectionView-SwiftUI'
-  s.version          = '1.7.1'
+  s.version          = '1.8.0'
   s.summary          = 'A SwiftUI collection view with support for custom layouts, preloading, and more. '
 
   s.description      = <<-DESC
@@ -11,7 +11,6 @@ Pod::Spec.new do |s|
     - supports autosizing of cells.
     - supports the new UICollectionViewCompositionalLayout, and any other UICollectionViewLayout
     - supports removing separators for ASTableView.
-    - supports directly using FetchedResults as a data source
                        DESC
 
   s.homepage         = 'https://github.com/apptekstudios/ASCollectionView'

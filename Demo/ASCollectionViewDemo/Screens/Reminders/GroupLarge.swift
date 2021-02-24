@@ -2,9 +2,10 @@
 
 import SwiftUI
 
-struct GroupLarge: View
+struct GroupLarge<Background: View>: View
 {
 	var model: GroupModel
+	var background: Background
 
 	var body: some View
 	{
@@ -33,7 +34,7 @@ struct GroupLarge: View
 				.foregroundColor(Color(.secondaryLabel))
 		}
 		.padding()
-		.background(Color(.secondarySystemGroupedBackground))
+		.background(background)
 		.clipShape(RoundedRectangle(cornerRadius: 12))
 	}
 }
@@ -45,7 +46,7 @@ struct GroupLarge_Previews: PreviewProvider
 		ZStack
 		{
 			Color(.secondarySystemBackground)
-			GroupLarge(model: .demo)
+			GroupLarge(model: .demo, background: Color(.secondarySystemGroupedBackground))
 		}
 	}
 }

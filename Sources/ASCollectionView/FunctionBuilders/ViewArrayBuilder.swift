@@ -13,7 +13,8 @@ public struct ViewArrayBuilder
 		case view(AnyView)
 		case group([Wrapper])
 
-		init<Content: View>(_ view: Content) {
+		init<Content: View>(_ view: Content)
+		{
 			self = .view(AnyView(view))
 		}
 

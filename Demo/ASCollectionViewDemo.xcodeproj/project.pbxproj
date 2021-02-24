@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5708D2572504FCC50014C671 /* OnChange.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5708D2562504FCC50014C671 /* OnChange.swift */; };
 		B8268B522363EF03008C99A3 /* RemindersScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8268B512363EF03008C99A3 /* RemindersScreen.swift */; };
 		B8268B542363EF1B008C99A3 /* GroupLarge.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8268B532363EF1B008C99A3 /* GroupLarge.swift */; };
 		B8268B562363EF25008C99A3 /* GroupSmall.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8268B552363EF25008C99A3 /* GroupSmall.swift */; };
@@ -43,6 +44,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5708D2562504FCC50014C671 /* OnChange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnChange.swift; sourceTree = "<group>"; };
 		B8268B512363EF03008C99A3 /* RemindersScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemindersScreen.swift; sourceTree = "<group>"; };
 		B8268B532363EF1B008C99A3 /* GroupLarge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupLarge.swift; sourceTree = "<group>"; };
 		B8268B552363EF25008C99A3 /* GroupSmall.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupSmall.swift; sourceTree = "<group>"; };
@@ -158,10 +160,11 @@
 		B86C6F30234B0B9D00522AEF /* Support */ = {
 			isa = PBXGroup;
 			children = (
-				B86C6F31234B0B9D00522AEF /* ASRemoteImageView.swift */,
 				B86C6F32234B0B9D00522AEF /* ASCache.swift */,
 				B86C6F33234B0B9D00522AEF /* ASRemoteImageManager.swift */,
+				B86C6F31234B0B9D00522AEF /* ASRemoteImageView.swift */,
 				B86C6F34234B0B9D00522AEF /* LoremSwiftum.swift */,
+				5708D2562504FCC50014C671 /* OnChange.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -267,10 +270,10 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B86C6F27234B078800522AEF /* Build configuration list for PBXNativeTarget "ASCollectionViewDemo" */;
 			buildPhases = (
+				B8E6691323C2C8700034A9C1 /* SwiftFormat */,
 				B86C6F0F234B078600522AEF /* Sources */,
 				B86C6F10234B078600522AEF /* Frameworks */,
 				B86C6F11234B078600522AEF /* Resources */,
-				B8E6691323C2C8700034A9C1 /* SwiftFormat */,
 			);
 			buildRules = (
 			);
@@ -292,7 +295,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 1110;
-				LastUpgradeCheck = 1110;
+				LastUpgradeCheck = 1200;
 				ORGANIZATIONNAME = "Apptek Studios";
 				TargetAttributes = {
 					B86C6F12234B078600522AEF = {
@@ -362,6 +365,7 @@
 			files = (
 				B8C00A972376350B0066348C /* AdjustableGridScreen.swift in Sources */,
 				B8268B542363EF1B008C99A3 /* GroupLarge.swift in Sources */,
+				5708D2572504FCC50014C671 /* OnChange.swift in Sources */,
 				B86C6F44234B0B9D00522AEF /* ASCache.swift in Sources */,
 				B86C6F4B234B0B9D00522AEF /* AppViews.swift in Sources */,
 				B89129FE235DB71900D8BA90 /* TagsScreen.swift in Sources */,
@@ -431,6 +435,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -491,6 +496,7 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;

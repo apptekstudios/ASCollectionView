@@ -71,6 +71,7 @@ public struct ASCollectionLayout<SectionID: Hashable>
 		{
 		case let .custom(layout):
 			registerDecorationViews(layout)
+			configureLayout?(layout)
 			return layout
 		case let .compositional(layoutClosure, interSectionSpacing, scrollDirection):
 			let config = UICollectionViewCompositionalLayoutConfiguration()
@@ -232,7 +233,8 @@ public extension ASCollectionLayoutSection
 		layoutMode: GridLayoutMode = .fixedNumberOfColumns(2),
 		itemSpacing: CGFloat = 5,
 		lineSpacing: CGFloat = 5,
-		itemSize: NSCollectionLayoutDimension = .estimated(150)) -> ASCollectionLayoutSection
+		itemSize: NSCollectionLayoutDimension = .estimated(150),
+		sectionInsets: NSDirectionalEdgeInsets = .init(top: 0, leading: 20, bottom: 0, trailing: 20)) -> ASCollectionLayoutSection
 	{
 		self.init
 		{ (layoutEnvironment, primaryScrollDirection) -> NSCollectionLayoutSection in
@@ -278,7 +280,7 @@ public extension ASCollectionLayoutSection
 
 			let section = NSCollectionLayoutSection(group: group)
 			section.interGroupSpacing = lineSpacing
-			section.contentInsets = .init(top: 0, leading: 20, bottom: 0, trailing: 20)
+			section.contentInsets = sectionInsets
 			section.visibleItemsInvalidationHandler = { _, _, _ in } // If this isn't defined, there is a bug in UICVCompositional Layout that will fail to update sizes of cells
 
 			let headerSupplementary = NSCollectionLayoutBoundarySupplementaryItem(

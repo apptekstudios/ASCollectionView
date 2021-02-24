@@ -7,11 +7,18 @@ import SwiftUI
 public class AS_TableViewController: UIViewController
 {
 	weak var coordinator: ASTableViewCoordinator?
+	{
+		didSet
+		{
+			tableView.coordinator = coordinator
+		}
+	}
 
 	var style: UITableView.Style
 
 	lazy var tableView: AS_UITableView = {
 		let tableView = AS_UITableView(frame: .zero, style: style)
+		tableView.coordinator = coordinator
 		tableView.tableHeaderView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) // Remove unnecessary padding in Style.grouped/insetGrouped
 		tableView.tableFooterView = UIView(frame: CGRect(origin: .zero, size: CGSize(width: CGFloat.leastNormalMagnitude, height: CGFloat.leastNormalMagnitude))) // Remove separators for non-existent cells
 		return tableView
@@ -23,6 +30,7 @@ public class AS_TableViewController: UIViewController
 		super.init(nibName: nil, bundle: nil)
 	}
 
+	@available(*, unavailable)
 	required init?(coder: NSCoder)
 	{
 		fatalError("init(coder:) has not been implemented")
@@ -43,21 +51,21 @@ public class AS_TableViewController: UIViewController
 		super.viewDidLayoutSubviews()
 		coordinator?.didUpdateContentSize(tableView.contentSize)
 	}
-
-	override public func viewWillAppear(_ animated: Bool)
-	{
-		super.viewWillAppear(animated)
-		// NOTE: Due to some SwiftUI bugs currently, we've chosen to call this here instead of actual parent call
-		coordinator?.onMoveToParent()
-	}
-
-	override public func viewDidDisappear(_ animated: Bool)
-	{
-		super.viewDidDisappear(animated)
-		// NOTE: Due to some SwiftUI bugs currently, we've chosen to call this here instead of actual parent call
-		coordinator?.onMoveFromParent()
-	}
 }
 
 @available(iOS 13.0, *)
-class AS_UITableView: UITableView {}
+class AS_UITableView: UITableView
+{
+	weak var coordinator: ASTableViewCoordinator?
+	override func didMoveToWindow()
+	{
+		if window != nil
+		{
+			coordinator?.onMoveToParent()
+		}
+		else
+		{
+			coordinator?.onMoveFromParent()
+		}
+	}
+}

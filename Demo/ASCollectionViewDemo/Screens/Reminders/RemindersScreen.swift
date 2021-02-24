@@ -14,13 +14,13 @@ struct RemindersScreen: View
 	}
 
 	var upperData: [GroupModel] = [GroupModel(icon: "calendar", title: "Today", color: .blue),
-								   GroupModel(icon: "clock.fill", title: "Scheduled", color: .orange),
-								   GroupModel(icon: "tray.fill", title: "All", color: .gray),
-								   GroupModel(icon: "flag.fill", title: "Flagged", color: .red)]
+	                               GroupModel(icon: "clock.fill", title: "Scheduled", color: .orange),
+	                               GroupModel(icon: "tray.fill", title: "All", color: .gray),
+	                               GroupModel(icon: "flag.fill", title: "Flagged", color: .red)]
 	var lowerData: [GroupModel] = [GroupModel(icon: "list.bullet", title: "Todo"),
-								   GroupModel(icon: "cart.fill", title: "Groceries"),
-								   GroupModel(icon: "house.fill", title: "House renovation"),
-								   GroupModel(icon: "book.fill", title: "Reading list")]
+	                               GroupModel(icon: "cart.fill", title: "Groceries"),
+	                               GroupModel(icon: "house.fill", title: "House renovation"),
+	                               GroupModel(icon: "book.fill", title: "Reading list")]
 
 	let addNewModel = GroupModel(icon: "plus", title: "Create new list", contentCount: nil, color: .green)
 
@@ -29,8 +29,8 @@ struct RemindersScreen: View
 		ASCollectionView
 		{
 			ASCollectionViewSection<Section>(id: .upper, data: self.upperData)
-			{ model, _ in
-				GroupLarge(model: model)
+			{ model, cellContext in
+				GroupLarge(model: model, background: Color(.secondarySystemGroupedBackground).brightness(cellContext.isHighlighted ? -0.2 : 0))
 			}
 
 			ASCollectionViewSection<Section>(id: .list, data: self.lowerData)

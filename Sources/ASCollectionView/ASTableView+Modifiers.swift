@@ -72,6 +72,15 @@ public extension ASTableView
 		this.animateOnDataRefresh = animate
 		return this
 	}
+
+	/// Set a binding that will scroll the ASTableView when set. It will always return nil once the scroll is applied (use onScroll to read scroll position)
+	func scrollPositionSetter(_ binding: Binding<ASTableViewScrollPosition?>) -> Self
+	{
+		var this = self
+		_ = binding.wrappedValue // Touch the binding so that SwiftUI will notify us of future updates
+		this.scrollPositionSetter = binding
+		return this
+	}
 }
 
 // MARK: ASTableView specific header modifiers

@@ -7,7 +7,7 @@ import UIKit
 struct PhotoGridScreen: View
 {
 	@State var data: [Post] = DataSource.postsForGridSection(1, number: 1000)
-	@State var selectedItems: Set<Int> = []
+	@State var selectedIndexes: Set<Int> = []
 
 	@Environment(\.editMode) private var editMode
 	var isEditing: Bool
@@ -22,40 +22,26 @@ struct PhotoGridScreen: View
 		ASCollectionViewSection(
 			id: 0,
 			data: data,
-			selectedItems: $selectedItems,
-			onCellEvent: onCellEvent,
-			dragDropConfig: dragDropConfig,
-			contextMenuProvider: contextMenuProvider)
+			selectionMode: isEditing ? .selectMultiple($selectedIndexes) : .none,
+			onCellEvent: onCellEvent)
 		{ item, state in
 			ZStack(alignment: .bottomTrailing)
 			{
 				GeometryReader
 				{ geom in
-					NavigationLink(destination: self.destinationForItem(item)) {
+					NavigationLink(destination: self.destinationForItem(item))
+					{
 						ASRemoteImageView(item.url)
 							.aspectRatio(1, contentMode: .fill)
 							.frame(width: geom.size.width, height: geom.size.height)
 							.clipped()
+							.opacity(self.isEditing ? (state.isSelected ? 1 : 0.7) : 1)
 					}
-					.buttonStyle(PlainButtonStyle())
+					.buttonStyle(NeutralButtonStyle())
 					.disabled(self.isEditing)
 				}
 
-				if state.isSelected
-				{
-					ZStack
-					{
-						Circle()
-							.fill(Color.blue)
-						Circle()
-							.strokeBorder(Color.white, lineWidth: 2)
-						Image(systemName: "checkmark")
-							.font(.system(size: 10, weight: .bold))
-							.foregroundColor(.white)
-					}
-					.frame(width: 20, height: 20)
-					.padding(10)
-				}
+				self.selectionIndicator(isSelected: state.isSelected, isHighlighted: state.isHighlighted)
 			}
 		}
 	}
@@ -63,6 +49,7 @@ struct PhotoGridScreen: View
 	var body: some View
 	{
 		ASCollectionView(
+			editMode: isEditing,
 			section: section)
 			.layout(self.layout)
 			.edgesIgnoringSafeArea(.all)
@@ -74,9 +61,10 @@ struct PhotoGridScreen: View
 					if self.isEditing
 					{
 						Button(action: {
-							withAnimation {
+							withAnimation
+							{
 								// We want the cell removal to be animated, so explicitly specify `withAnimation`
-								self.data.remove(atOffsets: IndexSet(self.selectedItems))
+								self.data.remove(atOffsets: IndexSet(self.selectedIndexes))
 							}
 						})
 						{
@@ -85,7 +73,34 @@ struct PhotoGridScreen: View
 					}
 
 					EditButton()
-			})
+				})
+	}
+
+	private func selectionIndicator(isSelected: Bool, isHighlighted: Bool) -> some View
+	{
+		let scale: CGFloat
+		switch (isSelected, isHighlighted)
+		{
+		case (true, true): scale = 0.75
+		case (true, false): scale = 1
+		case (false, true): scale = 1.15
+		case (false, false): scale = 0
+		}
+
+		return ZStack
+		{
+			Circle()
+				.fill(Color.blue)
+			Circle()
+				.strokeBorder(Color.white, lineWidth: 2)
+			Image(systemName: "checkmark")
+				.font(.system(size: 10, weight: .bold))
+				.foregroundColor(.white)
+		}
+		.frame(width: 20, height: 20)
+		.padding(10)
+		.scaleEffect(scale)
+		.animation(Animation.easeInOut(duration: 0.15))
 	}
 
 	func onCellEvent(_ event: CellEvent<Post>)
@@ -111,11 +126,14 @@ struct PhotoGridScreen: View
 
 	func contextMenuProvider(int: Int, post: Post) -> UIContextMenuConfiguration?
 	{
-		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { (_) -> UIMenu? in
-			let testAction = UIAction(title: "Do nothing") { _ in
+		let configuration = UIContextMenuConfiguration(identifier: nil, previewProvider: nil)
+		{ (_) -> UIMenu? in
+			let testAction = UIAction(title: "Do nothing")
+			{ _ in
 				//
 			}
-			let testAction2 = UIAction(title: "Try dragging the photo") { _ in
+			let testAction2 = UIAction(title: "Try dragging the photo")
+			{ _ in
 				//
 			}
 			return UIMenu(title: "", image: nil, identifier: nil, options: [], children: [testAction, testAction2])
@@ -125,9 +143,11 @@ struct PhotoGridScreen: View
 
 	func destinationForItem(_ item: Post) -> some View
 	{
-		ScrollView {
+		ScrollView
+		{
 			PostView(post: item)
-				.onAppear {
+				.onAppear
+				{
 					ASRemoteImageManager.shared.load(item.url)
 					ASRemoteImageManager.shared.load(item.usernamePhotoURL)
 				}
@@ -180,8 +200,18 @@ extension PhotoGridScreen
 	var dragDropConfig: ASDragDropConfig<Post>
 	{
 		ASDragDropConfig<Post>(dataBinding: $data)
-			.enableReordering(shouldMoveItem: nil)
-			.dragItemProvider { item in
+			.canDragItem
+			{ (indexPath) -> Bool in
+				true
+				// indexPath.item != 0 // eg. prevent dragging/moving the first item
+			}
+			.canMoveItem
+			{ (from, to) -> Bool in
+				// You could add a check here to prevent moving between certain sections etc.
+				true
+			}
+			.dragItemProvider
+			{ item in
 				NSItemProvider(object: item.url as NSURL)
 			}
 	}
@@ -192,5 +222,13 @@ struct GridView_Previews: PreviewProvider
 	static var previews: some View
 	{
 		PhotoGridScreen()
+	}
+}
+
+struct NeutralButtonStyle: ButtonStyle
+{
+	func makeBody(configuration: Configuration) -> some View
+	{
+		configuration.label
 	}
 }

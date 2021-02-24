@@ -26,7 +26,7 @@ public typealias OnCellEvent<Data> = ((_ event: CellEvent<Data>) -> Void)
 public typealias ShouldAllowSwipeToDelete = ((_ index: Int) -> Bool)
 
 @available(iOS 13.0, *)
-public typealias OnSwipeToDelete<Data> = ((_ index: Int, _ item: Data, _ completionHandler: (Bool) -> Void) -> Void)
+public typealias OnSwipeToDelete<Data> = ((_ index: Int, _ item: Data) -> Bool)
 
 @available(iOS 13.0, *)
 public typealias ContextMenuProvider<Data> = ((_ index: Int, _ item: Data) -> UIContextMenuConfiguration?)

@@ -8,13 +8,13 @@ extension UIScrollView
 	{
 		CGSize(
 			width: contentSize.width + adjustedContentInset.left + adjustedContentInset.right,
-			height: contentSize.height + adjustedContentInset.bottom + contentInset.top) // NOTE: the adjusted top inset intentionally left out, as SwiftUI uses a negative contentOffset to display the nav bar (doesn't affect content size)
+			height: contentSize.height + adjustedContentInset.bottom + adjustedContentInset.top)
 	}
 
 	var maxContentOffset: CGPoint
 	{
 		CGPoint(
 			x: max(0, contentSizePlusInsets.width - bounds.width),
-			y: max(0, contentSizePlusInsets.height + safeAreaInsets.top - bounds.height))
+            y: max(-adjustedContentInset.top, contentSizePlusInsets.height - bounds.height))
 	}
 }

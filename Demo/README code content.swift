@@ -15,11 +15,13 @@ struct READMEContent
 
 		var body: some View
 		{
-			ASCollectionView(data: dataExample, dataID: \.self) { item, _ in
+			ASCollectionView(data: dataExample, dataID: \.self)
+			{ item, _ in
 				Color.blue
 					.overlay(Text("\(item)"))
 			}
-			.layout {
+			.layout
+			{
 				.grid(
 					layoutMode: .adaptive(withMinItemSize: 100),
 					itemSpacing: 5,
@@ -40,7 +42,7 @@ struct READMEContent
 		{
 			ASCollectionView
 			{
-				ASCollectionViewSection(
+				ASCollectionViewSection<Int>(
 					id: 0,
 					data: dataExampleA,
 					dataID: \.self)
@@ -50,7 +52,7 @@ struct READMEContent
 							Text("\(item)")
 						)
 				}
-				ASCollectionViewSection(
+				ASCollectionViewSection<Int>(
 					id: 1,
 					data: dataExampleB,
 					dataID: \.self)
@@ -73,7 +75,8 @@ struct READMEContent
 						.padding()
 				}
 			}
-			.layout { sectionID in
+			.layout
+			{ sectionID in
 				switch sectionID
 				{
 				default:
@@ -89,7 +92,8 @@ struct READMEContent
 
 	var sectionHeaderExample: ASCollectionViewSection<Int>
 	{
-		ASCollectionViewSection(id: 0) {
+		ASCollectionViewSection(id: 0)
+		{
 			Text("Cell 1")
 			Text("Cell 2")
 		}
@@ -103,7 +107,8 @@ struct READMEContent
 			Text("Section footer")
 				.background(Color.blue)
 		}
-		.sectionSupplementary(ofKind: "someOtherSupplementaryKindRequestedByYourLayout") {
+		.sectionSupplementary(ofKind: "someOtherSupplementaryKindRequestedByYourLayout")
+		{
 			Text("Section supplementary")
 				.background(Color.green)
 		}

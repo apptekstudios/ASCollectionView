@@ -24,7 +24,8 @@ struct ASDiffableDataSourceSnapshot<SectionID: Hashable>
 	init(sections: [Section] = [])
 	{
 		self.sections = sections
-		sections.enumerated().forEach { sectionIndex, section in
+		sections.enumerated().forEach
+		{ sectionIndex, section in
 			section.elements.enumerated().forEach { itemIndex, item in itemPositionMap[item.differenceIdentifier] = ItemPosition(itemIndex: itemIndex, sectionIndex: sectionIndex) }
 		}
 	}
@@ -50,9 +51,25 @@ struct ASDiffableDataSourceSnapshot<SectionID: Hashable>
 
 	mutating func reloadItems(items: Set<ASCollectionViewItemUniqueID>)
 	{
-		items.forEach { item in
+		items.forEach
+		{ item in
 			guard let position = itemPositionMap[item] else { return }
-			sections[position.sectionIndex].elements[position.itemIndex].isReloaded = true
+			sections[position.sectionIndex].elements[position.itemIndex].shouldReload = true
+		}
+	}
+
+	mutating func moveItem(fromIndexPath: IndexPath, toIndexPath: IndexPath)
+	{
+		guard sections.containsIndex(fromIndexPath.section), sections.containsIndex(toIndexPath.section) else { return }
+		if fromIndexPath.section == toIndexPath.section
+		{
+			let item = sections[fromIndexPath.section].elements.remove(at: fromIndexPath.item)
+			sections[toIndexPath.section].elements.insert(item, at: toIndexPath.item)
+		}
+		else
+		{
+			let item = sections[fromIndexPath.section].elements.remove(at: fromIndexPath.item)
+			sections[toIndexPath.section].elements.insert(item, at: toIndexPath.item)
 		}
 	}
 
@@ -81,22 +98,17 @@ struct ASDiffableDataSourceSnapshot<SectionID: Hashable>
 	struct Item: Differentiable
 	{
 		var differenceIdentifier: ASCollectionViewItemUniqueID
-		var isReloaded: Bool
+		var shouldReload: Bool
 
-		init(id: ASCollectionViewItemUniqueID, isReloaded: Bool)
+		init(id: ASCollectionViewItemUniqueID, shouldReload: Bool = false)
 		{
 			differenceIdentifier = id
-			self.isReloaded = isReloaded
-		}
-
-		init(id: ASCollectionViewItemUniqueID)
-		{
-			self.init(id: id, isReloaded: false)
+			self.shouldReload = shouldReload
 		}
 
 		func isContentEqual(to source: Item) -> Bool
 		{
-			!isReloaded && differenceIdentifier == source.differenceIdentifier
+			!shouldReload && differenceIdentifier == source.differenceIdentifier
 		}
 	}
 }
@@ -104,10 +116,10 @@ struct ASDiffableDataSourceSnapshot<SectionID: Hashable>
 @available(iOS 13.0, *)
 extension ASDiffableDataSourceSnapshot.Section
 {
-	init(id: SectionID, elements: [ASCollectionViewItemUniqueID])
+	init(id: SectionID, elements: [ASCollectionViewItemUniqueID], shouldReloadElements: Bool = false)
 	{
 		self.id = id
-		self.elements = elements.map { ASDiffableDataSourceSnapshot.Item(id: $0) }
+		self.elements = elements.map { ASDiffableDataSourceSnapshot.Item(id: $0, shouldReload: shouldReloadElements) }
 	}
 }
 

@@ -43,9 +43,9 @@ struct PostView: View
 				.renderingMode(.template)
 				.foregroundColor(self.liked ? .red : Color(.label))
 				.onTapGesture
-			{
-				self.liked.toggle()
-			}
+				{
+					self.liked.toggle()
+				}
 			Image(systemName: "bubble.right")
 			Image(systemName: "paperplane")
 			Spacer()
@@ -53,9 +53,9 @@ struct PostView: View
 				.renderingMode(.template)
 				.foregroundColor(self.bookmarked ? .yellow : Color(.label))
 				.onTapGesture
-			{
-				self.bookmarked.toggle()
-			}
+				{
+					self.bookmarked.toggle()
+				}
 		}
 		.font(.system(size: 28))
 		.padding()

@@ -81,7 +81,8 @@ class ASRemoteImageLoader: ObservableObject
 
 	func start()
 	{
-		guard state == nil else
+		guard state == nil
+		else
 		{
 			return
 		}
@@ -95,23 +96,24 @@ class ASRemoteImageLoader: ObservableObject
 			.replaceError(with: nil)
 			.receive(on: DispatchQueue.main)
 			.sink
-		{ image in
-			if let image = image
-			{
-				self.state = .success(image)
+			{ image in
+				if let image = image
+				{
+					self.state = .success(image)
+				}
+				else
+				{
+					self.state = .failed
+				}
 			}
-			else
-			{
-				self.state = .failed
-			}
-		}
 	}
 
 	func cancel()
 	{
 		cancellable?.cancel()
 		cancellable = nil
-		guard case .success = state else
+		guard case .success = state
+		else
 		{
 			DispatchQueue.main.async
 			{

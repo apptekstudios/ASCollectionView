@@ -5,88 +5,73 @@ import SwiftUI
 import UIKit
 
 @available(iOS 13.0, *)
-class ASTableViewSupplementaryView: UITableViewHeaderFooterView, ASDataSourceConfigurableCell
+class ASTableViewSupplementaryView: UITableViewHeaderFooterView, ASDataSourceConfigurableSupplementary
 {
 	var supplementaryID: ASSupplementaryCellID?
-	var hostingController: ASHostingControllerProtocol?
-	{
-		get { _hostingController }
-		set { _hostingController = newValue; attachView() }
-	}
-
-	private var _hostingController: ASHostingControllerProtocol?
+	let hostingController = ASHostingController<AnyView>(AnyView(EmptyView()))
+	var isEmpty: Bool = true
 
 	override init(reuseIdentifier: String?)
 	{
 		super.init(reuseIdentifier: reuseIdentifier)
 		backgroundView = UIView()
+		contentView.addSubview(hostingController.viewController.view)
+		hostingController.viewController.view.frame = contentView.bounds
 	}
 
+	@available(*, unavailable)
 	required init?(coder: NSCoder)
 	{
 		fatalError("init(coder:) has not been implemented")
 	}
 
 	weak var tableViewController: AS_TableViewController?
-
-	private var hasAppeared: Bool = false // Needed due to the `self-sizing` cell used by UICV
-	func willAppear()
 	{
-		hasAppeared = true
-		attachView()
-	}
-
-	func didDisappear()
-	{
-		hasAppeared = false
-		detachViews()
-	}
-
-	private func attachView()
-	{
-		guard let hcView = hostingController?.viewController.view else
+		didSet
 		{
-			detachViews()
-			return
+			if tableViewController != oldValue
+			{
+				hostingController.viewController.didMove(toParent: tableViewController)
+				tableViewController?.addChild(hostingController.viewController)
+			}
 		}
-		if hcView.superview != contentView
-		{
-			hostingController.map { tableViewController?.addChild($0.viewController) }
-			contentView.subviews.forEach { $0.removeFromSuperview() }
-			contentView.addSubview(hcView)
-			hcView.frame = contentView.bounds
-			hostingController?.viewController.didMove(toParent: tableViewController)
-		}
-	}
-
-	private func detachViews()
-	{
-		hostingController?.viewController.willMove(toParent: nil)
-		contentView.subviews.forEach { $0.removeFromSuperview() }
-		hostingController?.viewController.removeFromParent()
 	}
 
 	override func prepareForReuse()
 	{
 		supplementaryID = nil
-		_hostingController = nil
+	}
+
+	func setContent<Content: View>(supplementaryID: ASSupplementaryCellID, content: Content?)
+	{
+		guard let content = content else { setAsEmpty(supplementaryID: supplementaryID); return }
+		self.supplementaryID = supplementaryID
+		isEmpty = false
+		hostingController.setView(AnyView(content.id(supplementaryID)))
+	}
+
+	func setAsEmpty(supplementaryID: ASSupplementaryCellID?)
+	{
+		self.supplementaryID = supplementaryID
+		isEmpty = true
+		hostingController.setView(AnyView(EmptyView().id(supplementaryID)))
+	}
+
+	override public var safeAreaInsets: UIEdgeInsets
+	{
+		.zero
 	}
 
 	override func layoutSubviews()
 	{
 		super.layoutSubviews()
 
-		if hostingController?.viewController.view.frame != contentView.bounds
-		{
-			hostingController?.viewController.view.frame = contentView.bounds
-			hostingController?.viewController.view.setNeedsLayout()
-		}
-		hostingController?.viewController.view.layoutIfNeeded()
+		hostingController.viewController.view.frame = contentView.bounds
 	}
 
 	override func systemLayoutSizeFitting(_ targetSize: CGSize, withHorizontalFittingPriority horizontalFittingPriority: UILayoutPriority, verticalFittingPriority: UILayoutPriority) -> CGSize
 	{
-		guard let hostingController = hostingController else { return CGSize(width: 1, height: 1) }
+		guard !isEmpty else { return CGSize(width: 1, height: 1) }
 		hostingController.viewController.view.setNeedsLayout()
 		hostingController.viewController.view.layoutIfNeeded()
 		let size = hostingController.sizeThatFits(

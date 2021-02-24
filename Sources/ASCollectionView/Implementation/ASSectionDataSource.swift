@@ -10,8 +10,8 @@ internal protocol ASSectionDataSourceProtocol
 	func getIndexPaths(withSectionIndex sectionIndex: Int) -> [IndexPath]
 	func getItemID<SectionID: Hashable>(for index: Int, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func getUniqueItemIDs<SectionID: Hashable>(withSectionID sectionID: SectionID) -> [ASCollectionViewItemUniqueID]
-	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
-	func getUpdatedHC(forSupplementaryKind supplementaryKind: String, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
+	func content(forItemID itemID: ASCollectionViewItemUniqueID) -> AnyView
+	func content(supplementaryID: ASSupplementaryCellID) -> AnyView?
 	var supplementaryViews: [String: AnyView] { get set }
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
 	func onAppear(_ indexPath: IndexPath)
@@ -21,17 +21,27 @@ internal protocol ASSectionDataSourceProtocol
 	func willAcceptDropItem(from dragItem: UIDragItem) -> Bool
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	func getItemID<SectionID: Hashable>(for dragItem: UIDragItem, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
+	func supportsMove(_ indexPath: IndexPath) -> Bool
+	func supportsMove(from sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) -> Bool
+	func applyMove(from: IndexPath, to: IndexPath) -> Bool
 	func applyRemove(atOffsets offsets: IndexSet)
-	func applyInsert(items: [UIDragItem], at index: Int)
+	func applyInsert(items: [UIDragItem], at index: Int) -> Bool
 	func supportsDelete(at indexPath: IndexPath) -> Bool
-	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
+	func onDelete(indexPath: IndexPath) -> Bool
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
 	func getSelfSizingSettings(context: ASSelfSizingContext) -> ASSelfSizingConfig?
 
+	func isHighlighted(index: Int) -> Bool
+	func highlightIndex(_ index: Int)
+	func unhighlightIndex(_ index: Int)
+	func shouldHighlight(_ indexPath: IndexPath) -> Bool
+
+	var selectedIndicesBinding: Binding<Set<Int>>? { get }
 	func isSelected(index: Int) -> Bool
-	func updateSelection(_ indices: Set<Int>)
 	func shouldSelect(_ indexPath: IndexPath) -> Bool
 	func shouldDeselect(_ indexPath: IndexPath) -> Bool
+	func didSelect(_ indexPath: IndexPath)
+	func updateSelection(with indices: Set<Int>)
 
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
@@ -43,7 +53,26 @@ internal protocol ASSectionDataSourceProtocol
 @available(iOS 13.0, *)
 protocol ASDataSourceConfigurableCell
 {
-	var hostingController: ASHostingControllerProtocol? { get set }
+	func setContent<Content: View>(itemID: ASCollectionViewItemUniqueID, content: Content)
+	var hostingController: ASHostingController<AnyView> { get }
+	var disableSwiftUIDropInteraction: Bool { get set }
+	var disableSwiftUIDragInteraction: Bool { get set }
+}
+
+@available(iOS 13.0, *)
+protocol ASDataSourceConfigurableSupplementary
+{
+	func setContent<Content: View>(supplementaryID: ASSupplementaryCellID, content: Content?)
+	func setAsEmpty(supplementaryID: ASSupplementaryCellID?)
+}
+
+@available(iOS 13.0, *)
+public enum ASSectionSelectionMode
+{
+	case none
+	case highlighting(Binding<Set<Int>>)
+	case selectSingle((Int) -> Void)
+	case selectMultiple(Binding<Set<Int>>)
 }
 
 @available(iOS 13.0, *)
@@ -52,10 +81,11 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	typealias Data = DataCollection.Element
 	var data: DataCollection
 	var dataIDKeyPath: KeyPath<Data, DataID>
-	var container: (Content) -> Container
+	var container: (Content, ASCellContext) -> Container
 	var content: (DataCollection.Element, ASCellContext) -> Content
 
-	var selectedItems: Binding<Set<Int>>?
+	var selectionMode: ASSectionSelectionMode = .none
+	var shouldAllowHighlight: ((_ index: Int) -> Bool)?
 	var shouldAllowSelection: ((_ index: Int) -> Bool)?
 	var shouldAllowDeselection: ((_ index: Int) -> Bool)?
 
@@ -82,62 +112,27 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	func cellContext(for index: Int) -> ASCellContext
 	{
 		ASCellContext(
+			isHighlighted: isHighlighted(index: index),
 			isSelected: isSelected(index: index),
 			index: index,
 			isFirstInSection: index == data.startIndex,
 			isLastInSection: index == data.endIndex - 1)
 	}
 
-	func getUpdatedHC(forItemID itemID: ASCollectionViewItemUniqueID, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
+	func content(forItemID itemID: ASCollectionViewItemUniqueID) -> AnyView
 	{
-		guard let content = getContent(forItemID: itemID) else { return nil }
-		let hc: ASHostingController<Container>
-		if let cachedHC = cachedHC as? ASHostingController<Container>
-		{
-			hc = cachedHC
-			if animate
-			{
-				hc.setView(content)
-			}
-			else
-			{
-				withAnimation(nil) {
-					hc.setView(content)
-				}
-			}
-		}
+		guard let content = getContent(forItemID: itemID)
 		else
 		{
-			hc = ASHostingController(content)
+			return AnyView(EmptyView().id(itemID))
 		}
-		hc.disableSwiftUIDropInteraction = dropEnabled
-		hc.disableSwiftUIDragInteraction = dragEnabled
-		return hc
+		return AnyView(content.id(itemID))
 	}
 
-	func getUpdatedHC(forSupplementaryKind supplementaryKind: String, cachedHC: ASHostingControllerProtocol?, animate: Bool) -> ASHostingControllerProtocol?
+	func content(supplementaryID: ASSupplementaryCellID) -> AnyView?
 	{
-		guard let content = supplementaryViews[supplementaryKind] else { return nil }
-		let hc: ASHostingController<AnyView>
-		if let cachedHC = cachedHC as? ASHostingController<AnyView>
-		{
-			hc = cachedHC
-			if animate
-			{
-				hc.setView(content)
-			}
-			else
-			{
-				withAnimation(nil) {
-					hc.setView(content)
-				}
-			}
-		}
-		else
-		{
-			hc = ASHostingController(content)
-		}
-		return hc
+		guard let content = supplementaryViews[supplementaryID.supplementaryKind] else { return nil }
+		return AnyView(content.id(supplementaryID))
 	}
 
 	func getContent(forItemID itemID: ASCollectionViewItemUniqueID) -> Container?
@@ -146,7 +141,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		let item = data[itemIndex]
 		let context = cellContext(for: itemIndex)
 		let view = content(item, context)
-		return container(view)
+		return container(view, context)
 	}
 
 	func getTypeErasedData(for indexPath: IndexPath) -> Any?
@@ -213,15 +208,18 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		return shouldAllowSwipeToDelete?(indexPath.item) ?? true
 	}
 
-	func onDelete(indexPath: IndexPath, completionHandler: (Bool) -> Void)
+	func onDelete(indexPath: IndexPath) -> Bool
 	{
-		guard let item = data[safe: indexPath.item] else { return }
-		onSwipeToDelete?(indexPath.item, item, completionHandler)
+		guard let item = data[safe: indexPath.item], let onDelete = onSwipeToDelete else { return false }
+		let didDelete = onDelete(indexPath.item, item)
+		return didDelete
 	}
 
 	func getDragItem(for indexPath: IndexPath) -> UIDragItem?
 	{
-		guard dragEnabled else { return nil }
+		guard dragEnabled,
+			dragDropConfig.canDragItem?(indexPath) ?? true
+		else { return nil }
 		guard let item = data[safe: indexPath.item] else { return nil }
 
 		let itemProvider: NSItemProvider = dragDropConfig.dragItemProvider?(item) ?? NSItemProvider()
@@ -249,21 +247,67 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		return getItemID(for: item, withSectionID: sectionID)
 	}
 
-	func applyRemove(atOffsets offsets: IndexSet)
+	func supportsMove(_ indexPath: IndexPath) -> Bool
 	{
-		dragDropConfig.dataBinding?.wrappedValue.remove(atOffsets: offsets)
+		dragDropConfig.reorderingEnabled && (dragDropConfig.canDragItem?(indexPath) ?? true)
 	}
 
-	func applyInsert(items: [UIDragItem], at index: Int)
+	func supportsMove(from sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) -> Bool
+	{
+		dragDropConfig.reorderingEnabled && (dragDropConfig.canMoveItem?(sourceIndexPath, destinationIndexPath) ?? true)
+	}
+
+	func applyMove(from: IndexPath, to: IndexPath) -> Bool
+	{
+		// dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to) //This is not behaving as expected
+		// NOTE: Binding seemingly not updated until next runloop. Any change must be done in one move; hence the var array
+		guard from != to,
+			dragDropConfig.canMoveItem?(from, to) ?? true
+		else { return false }
+		if let binding = dragDropConfig.dataBinding
+		{
+			var array = binding.wrappedValue
+			let value = array.remove(at: from.item)
+			array.insert(value, at: to.item)
+			binding.wrappedValue = array
+			return true
+		}
+		else
+		{
+			return dragDropConfig.onMoveItem?(from.item, to.item) ?? false
+		}
+	}
+
+	func applyRemove(atOffsets offsets: IndexSet)
+	{
+		if let binding = dragDropConfig.dataBinding
+		{
+			binding.wrappedValue.remove(atOffsets: offsets)
+		}
+		else
+		{
+			_ = dragDropConfig.onDeleteOrRemoveItems?(offsets)
+		}
+	}
+
+	func applyInsert(items: [UIDragItem], at index: Int) -> Bool
 	{
 		let actualItems = items.compactMap(getDropItem(from:))
-		let allDataIDs = Set(dragDropConfig.dataBinding?.wrappedValue.map { $0[keyPath: dataIDKeyPath] } ?? [])
-		let noDuplicates = actualItems.filter { !allDataIDs.contains($0[keyPath: dataIDKeyPath]) }
+		if let binding = dragDropConfig.dataBinding
+		{
+			let allDataIDs = Set(binding.wrappedValue.map { $0[keyPath: dataIDKeyPath] })
+			let noDuplicates = actualItems.filter { !allDataIDs.contains($0[keyPath: dataIDKeyPath]) }
 #if DEBUG
-		// Notify during debug build if IDs are not unique (programmer error)
-		if noDuplicates.count != actualItems.count { print("ASCOLLECTIONVIEW/ASTABLEVIEW: Attempted to insert an item with the same ID as one already in the section. This may cause unexpected behaviour.") }
+			// Notify during debug build if IDs are not unique (programmer error)
+			if noDuplicates.count != actualItems.count { print("ASCOLLECTIONVIEW/ASTABLEVIEW: Attempted to insert an item with the same ID as one already in the section. This may cause unexpected behaviour.") }
 #endif
-		dragDropConfig.dataBinding?.wrappedValue.insert(contentsOf: noDuplicates, at: index)
+			binding.wrappedValue.insert(contentsOf: noDuplicates, at: index)
+			return !noDuplicates.isEmpty
+		}
+		else
+		{
+			return dragDropConfig.onInsertItems?(index, actualItems) ?? false
+		}
 	}
 
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
@@ -281,28 +325,105 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		selfSizingConfig?(context)
 	}
 
-	func isSelected(index: Int) -> Bool
+	var highlightedIndicesBinding: Binding<Set<Int>>?
 	{
-		selectedItems?.wrappedValue.contains(index) ?? false
+		switch selectionMode
+		{
+		case let .highlighting(highlighted):
+			return highlighted
+		default:
+			return nil
+		}
 	}
 
-	func updateSelection(_ indices: Set<Int>)
+	var selectedIndicesBinding: Binding<Set<Int>>?
 	{
-		DispatchQueue.main.async {
-			self.selectedItems?.wrappedValue = Set(indices)
+		switch selectionMode
+		{
+		case let .selectMultiple(selected):
+			return selected
+		default:
+			return nil
 		}
+	}
+
+	func isHighlighted(index: Int) -> Bool
+	{
+		(highlightedIndicesBinding?.wrappedValue.contains(index) ?? false) || (selectedIndicesBinding?.wrappedValue.contains(index) ?? false)
+	}
+
+	func highlightIndex(_ index: Int)
+	{
+        switch selectionMode
+        {
+        case .none, .selectSingle: return
+        case .highlighting, .selectMultiple:
+            DispatchQueue.main.async
+            {
+                self.highlightedIndicesBinding?.wrappedValue = highlightedIndicesBinding?.wrappedValue.union([index]) ?? []
+            }
+        }
+	}
+
+	func unhighlightIndex(_ index: Int)
+	{
+		DispatchQueue.main.async
+		{
+			self.highlightedIndicesBinding?.wrappedValue = highlightedIndicesBinding?.wrappedValue.subtracting([index]) ?? []
+		}
+	}
+
+	func shouldHighlight(_ indexPath: IndexPath) -> Bool
+	{
+		guard data.containsIndex(indexPath.item) else { return false }
+		switch selectionMode
+		{
+		case .none: return false
+		case .highlighting:
+			return shouldAllowHighlight?(indexPath.item) ?? true
+		case .selectSingle, .selectMultiple:
+			return shouldSelect(indexPath) && (shouldAllowHighlight?(indexPath.item) ?? true)
+		}
+	}
+
+	func isSelected(index: Int) -> Bool
+	{
+		selectedIndicesBinding?.wrappedValue.contains(index) ?? false
 	}
 
 	func shouldSelect(_ indexPath: IndexPath) -> Bool
 	{
-		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
-		return shouldAllowSelection?(indexPath.item) ?? (selectedItems != nil)
+		guard data.containsIndex(indexPath.item) else { return false }
+		switch selectionMode
+		{
+		case .none, .highlighting: return false
+		case .selectSingle, .selectMultiple:
+			return shouldAllowSelection?(indexPath.item) ?? true
+		}
 	}
 
 	func shouldDeselect(_ indexPath: IndexPath) -> Bool
 	{
-		guard data.containsIndex(indexPath.item) else { return (selectedItems != nil) }
-		return shouldAllowDeselection?(indexPath.item) ?? (selectedItems != nil)
+		guard data.containsIndex(indexPath.item) else { return false }
+		return shouldAllowDeselection?(indexPath.item) ?? true
+	}
+
+	func didSelect(_ indexPath: IndexPath)
+	{
+		switch selectionMode
+		{
+		case let .selectSingle(closure):
+			closure(indexPath.item)
+		default: break
+		}
+	}
+
+	func updateSelection(with indices: Set<Int>)
+	{
+		DispatchQueue.main.async
+		{
+			self.selectedIndicesBinding?.wrappedValue = indices
+		}
 	}
 }
 

@@ -9,7 +9,8 @@ struct TagsScreen: View
 
 	var body: some View
 	{
-		ScrollView(.vertical) {
+		ScrollView(.vertical)
+		{
 			VStack(alignment: .leading, spacing: 20)
 			{
 				Text("This screen has an ASCollectionView embedded into a SwiftUI scrollview")
@@ -41,7 +42,8 @@ struct TagsScreen: View
 							.padding(5)
 							.background(Color(.systemGray))
 							.cornerRadius(5)
-					}.selfSizingConfig { _ in
+					}.selfSizingConfig
+					{ _ in
 						ASSelfSizingConfig(canExceedCollectionWidth: false)
 					}
 				)
@@ -67,6 +69,17 @@ struct TagsScreen: View
 
 class AlignedFlowLayout: UICollectionViewFlowLayout
 {
+	override init()
+	{
+		super.init()
+	}
+
+	@available(*, unavailable)
+	required init?(coder: NSCoder)
+	{
+		fatalError("init(coder:) has not been implemented")
+	}
+
 	override func shouldInvalidateLayout(forBoundsChange newBounds: CGRect) -> Bool
 	{
 		true
@@ -78,11 +91,12 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 
 		attributes?.forEach
 		{ layoutAttribute in
-			guard layoutAttribute.representedElementCategory == .cell else
+			switch layoutAttribute.representedElementCategory
 			{
-				return
+			case .cell:
+				layoutAttributesForItem(at: layoutAttribute.indexPath).map { layoutAttribute.frame = $0.frame }
+			default: break
 			}
-			layoutAttributesForItem(at: layoutAttribute.indexPath).map { layoutAttribute.frame = $0.frame }
 		}
 
 		return attributes
@@ -90,7 +104,8 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 
 	private var leftEdge: CGFloat
 	{
-		guard let insets = collectionView?.adjustedContentInset else
+		guard let insets = collectionView?.adjustedContentInset
+		else
 		{
 			return sectionInset.left
 		}
@@ -100,16 +115,23 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 	private var contentWidth: CGFloat?
 	{
 		guard let collectionViewWidth = collectionView?.frame.size.width,
-			let insets = collectionView?.adjustedContentInset else
+			let insets = collectionView?.adjustedContentInset
+		else
 		{
 			return nil
 		}
 		return collectionViewWidth - insets.left - insets.right - sectionInset.left - sectionInset.right
 	}
 
+	override var collectionViewContentSize: CGSize
+	{
+		CGSize(width: contentWidth ?? super.collectionViewContentSize.width, height: super.collectionViewContentSize.height)
+	}
+
 	fileprivate func isFrame(for firstItemAttributes: UICollectionViewLayoutAttributes, inSameLineAsFrameFor secondItemAttributes: UICollectionViewLayoutAttributes) -> Bool
 	{
-		guard let lineWidth = contentWidth else
+		guard let lineWidth = contentWidth
+		else
 		{
 			return false
 		}
@@ -124,13 +146,10 @@ class AlignedFlowLayout: UICollectionViewFlowLayout
 
 	override func layoutAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes?
 	{
-		guard let attributes = super.layoutAttributesForItem(at: indexPath)?.copy() as? UICollectionViewLayoutAttributes else
+		guard let attributes = super.layoutAttributesForItem(at: indexPath)
+		else
 		{
 			return nil
-		}
-		guard attributes.representedElementCategory == .cell else
-		{
-			return attributes
 		}
 		guard
 			indexPath.item > 0,

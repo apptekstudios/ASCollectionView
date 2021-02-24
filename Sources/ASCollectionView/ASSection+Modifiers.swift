@@ -51,6 +51,13 @@ public extension ASCollectionViewSection
 		return section
 	}
 
+	func sectionIndexTitle(_ title: String?) -> Self
+	{
+		var section = self
+		section.sectionIndexTitle = title
+		return section
+	}
+
 	// Use this modifier to make a section's cells be cached even when off-screen. This is useful for cells containing nested collection views
 	func cacheCells() -> Self
 	{

@@ -67,6 +67,14 @@ public extension ASCollectionView
 		return this
 	}
 
+	/// Sets the collection view's background color
+	func backgroundColor(_ color: UIColor?) -> Self
+	{
+		var this = self
+		this.backgroundColor = color
+		return this
+	}
+
 	/// Set whether to show scroll indicators
 	func scrollIndicatorsEnabled(horizontal: Bool = true, vertical: Bool = true) -> Self
 	{
@@ -129,7 +137,15 @@ public extension ASCollectionView
 	func shouldAttemptToMaintainScrollPositionOnOrientationChange(maintainPosition: Bool) -> Self
 	{
 		var this = self
-		this.maintainScrollPositionOnOrientationChange = true
+		this.maintainScrollPositionOnOrientationChange = maintainPosition
+		return this
+	}
+
+	/// Set whether the ASCollectionView should automatically scroll an active textview/input to avoid the system keyboard. Default is true
+	func shouldScrollToAvoidKeyboard(_ avoidKeyboard: Bool = true) -> Self
+	{
+		var this = self
+		this.dodgeKeyboard = avoidKeyboard
 		return this
 	}
 }

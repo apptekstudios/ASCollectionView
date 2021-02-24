@@ -26,7 +26,7 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 
 	open var collectionViewContentInsetAdjustmentBehavior: UIScrollView.ContentInsetAdjustmentBehavior
 	{
-		.scrollableAxes
+		.automatic
 	}
 
 	open func collectionView(_ collectionView: UICollectionView, willDisplay cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
@@ -47,6 +47,31 @@ open class ASCollectionViewDelegate: NSObject, UICollectionViewDelegate, UIColle
 	open func collectionView(_ collectionView: UICollectionView, didEndDisplayingSupplementaryView view: UICollectionReusableView, forElementOfKind elementKind: String, at indexPath: IndexPath)
 	{
 		coordinator?.collectionView(collectionView, didEndDisplayingSupplementaryView: view, forElementOfKind: elementKind, at: indexPath)
+	}
+
+	open func collectionView(_ collectionView: UICollectionView, shouldHighlightItemAt indexPath: IndexPath) -> Bool
+	{
+		coordinator?.collectionView(collectionView, shouldHighlightItemAt: indexPath) ?? true
+	}
+
+	open func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath)
+	{
+		coordinator?.collectionView(collectionView, didHighlightItemAt: indexPath)
+	}
+
+	open func collectionView(_ collectionView: UICollectionView, didUnhighlightItemAt indexPath: IndexPath)
+	{
+		coordinator?.collectionView(collectionView, didUnhighlightItemAt: indexPath)
+	}
+
+	open func collectionView(_ collectionView: UICollectionView, shouldSelectItemAt indexPath: IndexPath) -> Bool
+	{
+		coordinator?.collectionView(collectionView, shouldSelectItemAt: indexPath) ?? true
+	}
+
+	open func collectionView(_ collectionView: UICollectionView, shouldDeselectItemAt indexPath: IndexPath) -> Bool
+	{
+		coordinator?.collectionView(collectionView, shouldDeselectItemAt: indexPath) ?? true
 	}
 
 	open func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath)
@@ -84,6 +109,7 @@ extension ASCollectionViewDelegate: UICollectionViewDragDelegate, UICollectionVi
 		coordinator?.collectionView(collectionView, dropSessionDidUpdate: session, withDestinationIndexPath: destinationIndexPath) ?? UICollectionViewDropProposal(operation: .cancel)
 	}
 
+	// UICollectionView doesn't support dropping multiple items :( [http://www.openradar.me/42068699]
 	open func collectionView(_ collectionView: UICollectionView, performDropWith coordinator: UICollectionViewDropCoordinator)
 	{
 		self.coordinator?.collectionView(collectionView, performDropWith: coordinator)

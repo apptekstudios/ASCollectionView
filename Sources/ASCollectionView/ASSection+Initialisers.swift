@@ -23,8 +23,9 @@ public extension ASSection
 		id: SectionID,
 		data: DataCollection,
 		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
-		container: @escaping ((Content) -> Container),
-		selectedItems: Binding<Set<Int>>? = nil,
+		container: @escaping ((Content, ASCellContext) -> Container),
+		selectionMode: ASSectionSelectionMode = .none,
+		shouldAllowHighlight: ((_ index: Int) -> Bool)? = nil,
 		shouldAllowSelection: ((_ index: Int) -> Bool)? = nil,
 		shouldAllowDeselection: ((_ index: Int) -> Bool)? = nil,
 		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
@@ -41,7 +42,8 @@ public extension ASSection
 			dataIDKeyPath: dataIDKeyPath,
 			container: container,
 			content: contentBuilder,
-			selectedItems: selectedItems,
+			selectionMode: selectionMode,
+			shouldAllowHighlight: shouldAllowHighlight,
 			shouldAllowSelection: shouldAllowSelection,
 			shouldAllowDeselection: shouldAllowDeselection,
 			onCellEvent: onCellEvent,
@@ -55,7 +57,8 @@ public extension ASSection
 		id: SectionID,
 		data: DataCollection,
 		dataID dataIDKeyPath: KeyPath<DataCollection.Element, DataID>,
-		selectedItems: Binding<Set<Int>>? = nil,
+		selectionMode: ASSectionSelectionMode = .none,
+		shouldAllowHighlight: ((_ index: Int) -> Bool)? = nil,
 		shouldAllowSelection: ((_ index: Int) -> Bool)? = nil,
 		shouldAllowDeselection: ((_ index: Int) -> Bool)? = nil,
 		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
@@ -66,7 +69,7 @@ public extension ASSection
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, ASCellContext) -> Content))
 		where DataCollection.Index == Int
 	{
-		self.init(id: id, data: data, dataID: dataIDKeyPath, container: { $0 }, selectedItems: selectedItems, shouldAllowSelection: shouldAllowSelection, shouldAllowDeselection: shouldAllowDeselection, onCellEvent: onCellEvent, dragDropConfig: dragDropConfig, shouldAllowSwipeToDelete: shouldAllowSwipeToDelete, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: dataIDKeyPath, container: { content, _ in content }, selectionMode: selectionMode, shouldAllowHighlight: shouldAllowHighlight, shouldAllowSelection: shouldAllowSelection, shouldAllowDeselection: shouldAllowDeselection, onCellEvent: onCellEvent, dragDropConfig: dragDropConfig, shouldAllowSwipeToDelete: shouldAllowSwipeToDelete, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}
 }
 
@@ -87,8 +90,9 @@ public extension ASCollectionViewSection
 	init<Content: View, Container: View, DataCollection: RandomAccessCollection>(
 		id: SectionID,
 		data: DataCollection,
-		container: @escaping ((Content) -> Container),
-		selectedItems: Binding<Set<Int>>? = nil,
+		container: @escaping ((Content, ASCellContext) -> Container),
+		selectionMode: ASSectionSelectionMode = .none,
+		shouldAllowHighlight: ((_ index: Int) -> Bool)? = nil,
 		shouldAllowSelection: ((_ index: Int) -> Bool)? = nil,
 		shouldAllowDeselection: ((_ index: Int) -> Bool)? = nil,
 		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
@@ -99,13 +103,14 @@ public extension ASCollectionViewSection
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, ASCellContext) -> Content))
 		where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
-		self.init(id: id, data: data, dataID: \.id, container: container, selectedItems: selectedItems, shouldAllowSelection: shouldAllowSelection, shouldAllowDeselection: shouldAllowDeselection, onCellEvent: onCellEvent, dragDropConfig: dragDropConfig, shouldAllowSwipeToDelete: shouldAllowSwipeToDelete, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, dataID: \.id, container: container, selectionMode: selectionMode, shouldAllowHighlight: shouldAllowHighlight, shouldAllowSelection: shouldAllowSelection, shouldAllowDeselection: shouldAllowDeselection, onCellEvent: onCellEvent, dragDropConfig: dragDropConfig, shouldAllowSwipeToDelete: shouldAllowSwipeToDelete, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}
 
 	init<Content: View, DataCollection: RandomAccessCollection>(
 		id: SectionID,
 		data: DataCollection,
-		selectedItems: Binding<Set<Int>>? = nil,
+		selectionMode: ASSectionSelectionMode = .none,
+		shouldAllowHighlight: ((_ index: Int) -> Bool)? = nil,
 		shouldAllowSelection: ((_ index: Int) -> Bool)? = nil,
 		shouldAllowDeselection: ((_ index: Int) -> Bool)? = nil,
 		onCellEvent: OnCellEvent<DataCollection.Element>? = nil,
@@ -116,7 +121,7 @@ public extension ASCollectionViewSection
 		@ViewBuilder contentBuilder: @escaping ((DataCollection.Element, ASCellContext) -> Content))
 		where DataCollection.Index == Int, DataCollection.Element: Identifiable
 	{
-		self.init(id: id, data: data, container: { $0 }, selectedItems: selectedItems, shouldAllowSelection: shouldAllowSelection, shouldAllowDeselection: shouldAllowDeselection, onCellEvent: onCellEvent, dragDropConfig: dragDropConfig, shouldAllowSwipeToDelete: shouldAllowSwipeToDelete, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
+		self.init(id: id, data: data, container: { content, _ in content }, selectionMode: selectionMode, shouldAllowHighlight: shouldAllowHighlight, shouldAllowSelection: shouldAllowSelection, shouldAllowDeselection: shouldAllowDeselection, onCellEvent: onCellEvent, dragDropConfig: dragDropConfig, shouldAllowSwipeToDelete: shouldAllowSwipeToDelete, onSwipeToDelete: onSwipeToDelete, contextMenuProvider: contextMenuProvider, contentBuilder: contentBuilder)
 	}
 }
 
@@ -132,7 +137,7 @@ public extension ASCollectionViewSection
 	 - id: The id for this section
 	 - content: A closure returning a number of SwiftUI views to display in the collection view
 	 */
-	init<Container: View>(id: SectionID, container: @escaping ((AnyView) -> Container), @ViewArrayBuilder content: () -> ViewArrayBuilder.Wrapper)
+	init<Container: View>(id: SectionID, container: @escaping ((AnyView, ASCellContext) -> Container), @ViewArrayBuilder content: () -> ViewArrayBuilder.Wrapper)
 	{
 		self.id = id
 		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView, Container>(
@@ -148,7 +153,7 @@ public extension ASCollectionViewSection
 
 	init(id: SectionID, @ViewArrayBuilder content: () -> ViewArrayBuilder.Wrapper)
 	{
-		self.init(id: id, container: { $0 }, content: content)
+		self.init(id: id, container: { content, _ in content }, content: content)
 	}
 
 	/**
@@ -158,7 +163,7 @@ public extension ASCollectionViewSection
 	 - id: The id for this section
 	 - content: A single SwiftUI views to display in the collection view
 	 */
-	init<Content: View, Container: View>(id: SectionID, container: @escaping ((AnyView) -> Container), content: () -> Content)
+	init<Content: View, Container: View>(id: SectionID, container: @escaping ((AnyView, ASCellContext) -> Container), content: () -> Content)
 	{
 		self.id = id
 		dataSource = ASSectionDataSource<[ASCollectionViewStaticContent], ASCollectionViewStaticContent.ID, AnyView, Container>(
@@ -169,7 +174,8 @@ public extension ASCollectionViewSection
 			dragDropConfig: .disabled)
 	}
 
-	init<Content: View>(id: SectionID, content: () -> Content) {
-		self.init(id: id, container: { $0 }, content: content)
+	init<Content: View>(id: SectionID, content: () -> Content)
+	{
+		self.init(id: id, container: { content, _ in content }, content: content)
 	}
 }
