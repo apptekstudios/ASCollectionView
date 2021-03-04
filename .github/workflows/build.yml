@@ -7,7 +7,7 @@ on:
     branches: [ master ]
     
 env:
-  DEVELOPER_DIR: /Applications/Xcode_11.4.1.app/Contents/Developer
+  DEVELOPER_DIR: /Applications/Xcode_12.4.app/Contents/Developer
 
 jobs:
   build:
@@ -17,6 +17,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build
-      run: set -o pipefail; xcodebuild -project Demo/ASCollectionViewDemo.xcodeproj -scheme ASCollectionViewDemo -destination platform\=iOS\ Simulator,OS\=13.4.1,name\=iPhone\ 11 build | xcpretty
+      run: set -o pipefail; xcodebuild -project Demo/ASCollectionViewDemo.xcodeproj -scheme ASCollectionViewDemo -destination platform\=iOS\ Simulator,OS\=14.3.1,name\=iPhone\ 11 build | xcpretty
     - name: Lint podspec
       run: pod lib lint
