@@ -48,6 +48,22 @@ public extension ASTableView
 		this.contentInsets = insets
 		return this
 	}
+    
+    /// Set a closure that is called when the collectionView will display a cell
+    func onWillDisplay(_ callback: ((UITableViewCell, IndexPath)->Void)?) -> Self
+    {
+        var this = self
+        this.onWillDisplay = callback
+        return this
+    }
+    
+    /// Set a closure that is called when the collectionView did display a cell
+    func onDidDisplay(_ callback: ((UITableViewCell, IndexPath)->Void)?) -> Self
+    {
+        var this = self
+        this.onWillDisplay = callback
+        return this
+    }
 
 	/// Set a closure that is called when the tableView is pulled to refresh
 	func onPullToRefresh(_ callback: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?) -> Self

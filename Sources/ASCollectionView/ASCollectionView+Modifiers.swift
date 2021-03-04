@@ -1,6 +1,6 @@
 // ASCollectionView. Created by Apptek Studios 2019
 
-import Foundation
+import UIKit
 import SwiftUI
 
 // MARK: Modifer: Custom Delegate
@@ -92,6 +92,22 @@ public extension ASCollectionView
 		return this
 	}
 
+    /// Set a closure that is called when the collectionView will display a cell
+    func onWillDisplay(_ callback: ((UICollectionViewCell, IndexPath)->Void)?) -> Self
+    {
+        var this = self
+        this.onWillDisplay = callback
+        return this
+    }
+    
+    /// Set a closure that is called when the collectionView did display a cell
+    func onDidDisplay(_ callback: ((UICollectionViewCell, IndexPath)->Void)?) -> Self
+    {
+        var this = self
+        this.onWillDisplay = callback
+        return this
+    }
+    
 	/// Set a closure that is called when the collectionView is pulled to refresh
 	func onPullToRefresh(_ callback: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?) -> Self
 	{

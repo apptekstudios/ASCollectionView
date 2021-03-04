@@ -35,6 +35,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 	internal var separatorsEnabled: Bool = true
 
 	internal var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
+    
+    internal var onWillDisplay: ((UITableViewCell, IndexPath) -> Void)?
+    
+    internal var onDidDisplay: ((UITableViewCell, IndexPath) -> Void)?
 
 	internal var alwaysBounce: Bool = false
 	internal var animateOnDataRefresh: Bool = true
@@ -390,11 +394,14 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 		public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
 			parent.sections[safe: indexPath.section]?.dataSource.onAppear(indexPath)
-		}
+            parent.onWillDisplay?(cell,indexPath)
+        
+        }
 
 		public func tableView(_ tableView: UITableView, didEndDisplaying cell: UITableViewCell, forRowAt indexPath: IndexPath)
 		{
 			parent.sections[safe: indexPath.section]?.dataSource.onDisappear(indexPath)
+            parent.onDidDisplay?(cell,indexPath)
 		}
 
 		public func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int)

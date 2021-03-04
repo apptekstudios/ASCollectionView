@@ -36,6 +36,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 	internal var contentInsets: UIEdgeInsets = .zero
 
 	internal var onPullToRefresh: ((_ endRefreshing: @escaping (() -> Void)) -> Void)?
+    
+    internal var onWillDisplay: ((UICollectionViewCell, IndexPath) -> Void)?
+    
+    internal var onDidDisplay: ((UICollectionViewCell, IndexPath) -> Void)?
 
 	internal var alwaysBounceVertical: Bool = false
 	internal var alwaysBounceHorizontal: Bool = false
@@ -631,12 +635,14 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			currentlyPrefetching.remove(indexPath)
 			parent.sections[safe: indexPath.section]?.dataSource.onAppear(indexPath)
 			queuePrefetch.send()
+            parent.onWillDisplay?(cell, indexPath)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath)
 		{
 			guard !indexPath.isEmpty else { return }
 			parent.sections[safe: indexPath.section]?.dataSource.onDisappear(indexPath)
+            parent.onDidDisplay?(cell, indexPath)
 		}
 
 		public func collectionView(_ collectionView: UICollectionView, willDisplaySupplementaryView view: UICollectionReusableView, forElementKind elementKind: String, at indexPath: IndexPath)
