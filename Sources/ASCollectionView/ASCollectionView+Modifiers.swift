@@ -104,7 +104,7 @@ public extension ASCollectionView
     func onDidDisplay(_ callback: ((UICollectionViewCell, IndexPath)->Void)?) -> Self
     {
         var this = self
-        this.onWillDisplay = callback
+        this.onDidDisplay = callback
         return this
     }
     

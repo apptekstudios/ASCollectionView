@@ -61,7 +61,7 @@ public extension ASTableView
     func onDidDisplay(_ callback: ((UITableViewCell, IndexPath)->Void)?) -> Self
     {
         var this = self
-        this.onWillDisplay = callback
+        this.onDidDisplay = callback
         return this
     }
 
