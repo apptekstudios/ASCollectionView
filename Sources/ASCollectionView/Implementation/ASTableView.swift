@@ -645,6 +645,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			guard let oldSnapshot = dataSource?.currentSnapshot else { return }
 			var dragSnapshot = oldSnapshot
 
+			parent.sections.forEach { section in
+				section.dataSource.applyPrepare()
+			}
+
 			switch coordinator.proposal.operation
 			{
 			case .move:
@@ -713,6 +717,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 				_ = destinationSection.dataSource.applyInsert(items: coordinator.items.map(\.dragItem), at: destinationIndexPath.item)
 
 			default: break
+			}
+
+			parent.sections.forEach { section in
+				section.dataSource.applyCommit()
 			}
 
 			dataSource?.applySnapshot(dragSnapshot, animated: false)

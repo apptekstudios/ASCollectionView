@@ -23,9 +23,11 @@ internal protocol ASSectionDataSourceProtocol
 	func getItemID<SectionID: Hashable>(for dragItem: UIDragItem, withSectionID sectionID: SectionID) -> ASCollectionViewItemUniqueID?
 	func supportsMove(_ indexPath: IndexPath) -> Bool
 	func supportsMove(from sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) -> Bool
+	func applyPrepare()
 	func applyMove(from: IndexPath, to: IndexPath) -> Bool
 	func applyRemove(atOffsets offsets: IndexSet)
 	func applyInsert(items: [UIDragItem], at index: Int) -> Bool
+	func applyCommit()
 	func supportsDelete(at indexPath: IndexPath) -> Bool
 	func onDelete(indexPath: IndexPath) -> Bool
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
@@ -97,6 +99,12 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	var selfSizingConfig: (SelfSizingConfig)?
 
 	var supplementaryViews: [String: AnyView] = [:]
+
+	/// Temporal boxed storage for not setting `dragDropConfig.dataBinding.wrappedValue`
+	/// multiple times during Drap & Drop.
+	/// For example, by having this storage, reordering 3 items will invoke "3 items -> 3 items" only once,
+	/// not "3 items --(removed)--> 2 items --(inserted)--> 3 items".
+	private let dragDroppingItems: Box<[DataCollection.Element]?> = Box(nil)
 
 	var dragEnabled: Bool { dragDropConfig.dragEnabled }
 	var dropEnabled: Bool { dragDropConfig.dropEnabled }
@@ -257,6 +265,11 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 		dragDropConfig.reorderingEnabled && (dragDropConfig.canMoveItem?(sourceIndexPath, destinationIndexPath) ?? true)
 	}
 
+	func applyPrepare()
+	{
+		dragDroppingItems.value = dragDropConfig.dataBinding?.wrappedValue
+	}
+
 	func applyMove(from: IndexPath, to: IndexPath) -> Bool
 	{
 		// dragDropConfig.dataBinding?.wrappedValue.move(fromOffsets: [from], toOffset: to) //This is not behaving as expected
@@ -280,9 +293,10 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	func applyRemove(atOffsets offsets: IndexSet)
 	{
-		if let binding = dragDropConfig.dataBinding
+		if var items = dragDroppingItems.value
 		{
-			binding.wrappedValue.remove(atOffsets: offsets)
+			items.remove(atOffsets: offsets)
+			dragDroppingItems.value = items
 		}
 		else
 		{
@@ -293,21 +307,27 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 	func applyInsert(items: [UIDragItem], at index: Int) -> Bool
 	{
 		let actualItems = items.compactMap(getDropItem(from:))
-		if let binding = dragDropConfig.dataBinding
+		if var items = dragDroppingItems.value
 		{
-			let allDataIDs = Set(binding.wrappedValue.map { $0[keyPath: dataIDKeyPath] })
+			let allDataIDs = Set(items.map { $0[keyPath: dataIDKeyPath] })
 			let noDuplicates = actualItems.filter { !allDataIDs.contains($0[keyPath: dataIDKeyPath]) }
 #if DEBUG
 			// Notify during debug build if IDs are not unique (programmer error)
 			if noDuplicates.count != actualItems.count { print("ASCOLLECTIONVIEW/ASTABLEVIEW: Attempted to insert an item with the same ID as one already in the section. This may cause unexpected behaviour.") }
 #endif
-			binding.wrappedValue.insert(contentsOf: noDuplicates, at: index)
+			items.insert(contentsOf: noDuplicates, at: index)
+			dragDroppingItems.value = items
 			return !noDuplicates.isEmpty
 		}
 		else
 		{
 			return dragDropConfig.onInsertItems?(index, actualItems) ?? false
 		}
+	}
+
+	func applyCommit()
+	{
+		dragDropConfig.dataBinding?.wrappedValue = dragDroppingItems.value ?? []
 	}
 
 	func getContextMenu(for indexPath: IndexPath) -> UIContextMenuConfiguration?
@@ -435,5 +455,16 @@ internal extension ASSectionDataSource
 	mutating func setSelfSizingConfig(config: @escaping SelfSizingConfig)
 	{
 		selfSizingConfig = config
+	}
+}
+
+// MARK: - Box
+
+private class Box<T>
+{
+	var value: T
+
+	init(_ value: T) {
+		self.value = value
 	}
 }

@@ -794,6 +794,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 			guard let oldSnapshot = dataSource?.currentSnapshot else { return }
 			var dragSnapshot = oldSnapshot
 
+			parent.sections.forEach { section in
+				section.dataSource.applyPrepare()
+			}
+
 			switch coordinator.proposal.operation
 			{
 			case .move:
@@ -862,6 +866,10 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 				_ = destinationSection.dataSource.applyInsert(items: coordinator.items.map(\.dragItem), at: destinationIndexPath.item)
 
 			default: break
+			}
+
+			parent.sections.forEach { section in
+				section.dataSource.applyCommit()
 			}
 
 			if let dragItem = coordinator.items.first, let destination = coordinator.destinationIndexPath
