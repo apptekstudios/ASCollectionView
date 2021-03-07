@@ -751,7 +751,9 @@ public struct ASCollectionView<SectionID: Hashable>: UIViewControllerRepresentab
 		func canDrop(at indexPath: IndexPath) -> Bool
 		{
 			guard !indexPath.isEmpty else { return false }
-			return parent.sections[safe: indexPath.section]?.dataSource.dropEnabled ?? false
+
+			return (parent.sections[safe: indexPath.section]?.dataSource.dropEnabled ?? false)
+				&& (parent.sections[safe: indexPath.section]?.dataSource.canDropItem?(indexPath) ?? true)
 		}
 
 		func collectionView(_ collectionView: UICollectionView, itemsForBeginning session: UIDragSession, at indexPath: IndexPath) -> [UIDragItem]

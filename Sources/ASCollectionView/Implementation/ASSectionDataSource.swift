@@ -45,6 +45,7 @@ internal protocol ASSectionDataSourceProtocol
 
 	var dragEnabled: Bool { get }
 	var dropEnabled: Bool { get }
+	var canDropItem: ((IndexPath) -> Bool)? { get }
 	var reorderingEnabled: Bool { get }
 
 	mutating func setSelfSizingConfig(config: @escaping SelfSizingConfig)
@@ -100,6 +101,7 @@ internal struct ASSectionDataSource<DataCollection: RandomAccessCollection, Data
 
 	var dragEnabled: Bool { dragDropConfig.dragEnabled }
 	var dropEnabled: Bool { dragDropConfig.dropEnabled }
+	var canDropItem: ((IndexPath) -> Bool)? { dragDropConfig.canDropItem }
 	var reorderingEnabled: Bool { dragDropConfig.reorderingEnabled }
 
 	var endIndex: Int { data.endIndex }
