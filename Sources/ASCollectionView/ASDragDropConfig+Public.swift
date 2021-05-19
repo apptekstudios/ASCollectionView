@@ -58,6 +58,14 @@ public extension ASDragDropConfig
 		return this
 	}
 
+	/// Called to check whether an item can be dropped
+	func canDropItem(_ closure: @escaping ((IndexPath) -> Bool)) -> Self
+	{
+		var this = self
+		this.canDropItem = closure
+		return this
+	}
+
 	/// An optional closure that you can use to decide what to do with a dropped item.
 	/// Return nil if you want to ignore the drop.
 	/// Return an item (of the same type as your section data) if you want to insert a row.

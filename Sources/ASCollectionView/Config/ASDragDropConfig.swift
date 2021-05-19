@@ -29,6 +29,9 @@ public struct ASDragDropConfig<Data>
 	/// Called to check whether an item can be moved to the specified indexPath
 	var canMoveItem: ((_ sourceIndexPath: IndexPath, _ destinationIndexPath: IndexPath) -> Bool)?
 
+	/// Called to check whether an item can be dropped
+	var canDropItem: ((_ indexPath: IndexPath) -> Bool)?
+
 	var dragItemProvider: ((_ item: Data) -> NSItemProvider?)?
 
 	var dropItemProvider: ((_ sourceItem: Data?, _ dragItem: UIDragItem) -> Data?)?
