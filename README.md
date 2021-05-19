@@ -45,22 +45,26 @@ Alternatively, if you're unable to use SPM for some reason, you can import it us
 import ASCollectionView
 import SwiftUI
 
-struct SingleSectionExampleView: View {
-	@State var dataExample = (0 ..< 30).map { $0 }
-	
-	var body: some View
-	{
-		ASCollectionView(data: dataExample, dataID: \.self) { item, _ in
-			Color.blue
-				.overlay(Text("\(item)"))
-		}
-		.layout {
-			.grid(layoutMode: .adaptive(withMinItemSize: 100),
-				  itemSpacing: 5,
-				  lineSpacing: 5,
-				  itemSize: .absolute(50))
-		}
-	}
+struct SingleSectionExampleView: View
+{
+    @State var dataExample = (0 ..< 30).map { $0 }
+    
+    var body: some View
+    {
+        ASCollectionView(data: dataExample, dataID: \.self)
+        { item, _ in
+            Color.blue
+                .overlay(Text("\(item)"))
+        }
+        .layout
+        {
+            .grid(
+                layoutMode: .adaptive(withMinItemSize: 100),
+                itemSpacing: 5,
+                lineSpacing: 5,
+                itemSize: .absolute(50))
+        }
+    }
 }
 ```
 
@@ -71,64 +75,69 @@ Below is an example of how to include a collection view with two sections (each 
 import SwiftUI
 import ASCollectionView
 
-struct ExampleView: View {
+struct ExampleView: View
+{
     @State var dataExampleA = (0 ..< 21).map { $0 }
     @State var dataExampleB = (0 ..< 15).map { "ITEM \($0)" }
     
     var body: some View
     {
         ASCollectionView
-		{
-			ASCollectionViewSection(
-				id: 0,
-				data: dataExampleA,
-				dataID: \.self)
-			{ item, _ in
-				Color.blue
-					.overlay(
-						Text("\(item)")
-					)
-			}
-			ASCollectionViewSection(
-				id: 1,
-				data: dataExampleB,
-				dataID: \.self)
-			{ item, _ in
-				Color.green
-					.overlay(
-						Text("Complex layout - \(item)")
-					)
-			}
-			.sectionHeader
-			{
-				Text("Section header")
-					.padding()
-					.frame(maxWidth: .infinity, alignment: .leading) //Fill width and align text to the left
-					.background(Color.yellow)
-			}
-			.sectionFooter
-			{
-				Text("This is a section footer!")
-					.padding()
-			}
-		}
-		.layout { sectionID in
-			switch sectionID {
-				case 0:
-				// Here we use one of the provided convenience layouts
-				return .grid(layoutMode: .adaptive(withMinItemSize: 100),
-							 itemSpacing: 5,
-							 lineSpacing: 5,
-							 itemSize: .absolute(50))
-				default:
-				return ASCollectionLayoutSection { environment in
-					// ...
-					// You could return any custom NSCollectionLayoutSection here. For an example see this file: /readmeAssets/SampleUsage.swift
-					// ...
-				}
-			}
-		}
-	}
+        {
+            ASCollectionViewSection(
+                id: 0,
+                data: dataExampleA,
+                dataID: \.self)
+            { item, _ in
+                Color.blue
+                    .overlay(
+                        Text("\(item)")
+                    )
+            }
+            ASCollectionViewSection(
+                id: 1,
+                data: dataExampleB,
+                dataID: \.self)
+            { item, _ in
+                Color.green
+                    .overlay(
+                        Text("Complex layout - \(item)")
+                    )
+            }
+            .sectionHeader
+            {
+                Text("Section header")
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading) // Fill width and align text to the left
+                    .background(Color.yellow)
+            }
+            .sectionFooter
+            {
+                Text("This is a section footer!")
+                    .padding()
+            }
+        }
+        .layout
+        { sectionID in
+            switch sectionID
+            {
+            case 0:
+                // Here we use one of the provided convenience layouts
+                return .grid(
+                    layoutMode: .adaptive(withMinItemSize: 100),
+                    itemSpacing: 5,
+                    lineSpacing: 5,
+                    itemSize: .absolute(50))
+            default:
+                return ASCollectionLayoutSection
+                { environment in
+                    // ...
+                    // You could return any custom NSCollectionLayoutSection here. For an example see this file: /readmeAssets/SampleUsage.swift
+                    // ...
+                }
+            }
+        }
+    }
 }
 ```
 
@@ -139,20 +148,21 @@ ASCollectionView has support for supplementary views. To add a supplementary vie
 
 ```swift
 ASCollectionViewSection(...) { ... }
-	.sectionHeader
-	{
-		Text("Section header")
-		.background(Color.yellow)
-	}
-	.sectionFooter
-	{
-		Text("Section footer")
-		.background(Color.blue)
-	}
-        .sectionSupplementary(ofKind: "someOtherSupplementaryKindRequestedByYourLayout") {
-                Text("Section supplementary")
-		.background(Color.green)
-        }
+    .sectionHeader
+    {
+        Text("Section header")
+            .background(Color.yellow)
+    }
+    .sectionFooter
+    {
+        Text("Section footer")
+            .background(Color.blue)
+    }
+    .sectionSupplementary(ofKind: "someOtherSupplementaryKindRequestedByYourLayout")
+    {
+        Text("Section supplementary")
+            .background(Color.green)
+    }
 ```
 
 
@@ -166,12 +176,12 @@ Declaring a swift view conforming to `Decoration`:
 ```swift
 struct GroupBackground: View, Decoration
 {
-	let cornerRadius: CGFloat = 12
-	var body: some View
-	{
-		RoundedRectangle(cornerRadius: cornerRadius)
-			.fill(Color(.secondarySystemGroupedBackground))
-	}
+    let cornerRadius: CGFloat = 12
+    var body: some View
+    {
+        RoundedRectangle(cornerRadius: cornerRadius)
+            .fill(Color(.secondarySystemGroupedBackground))
+    }
 }
 ```
 
@@ -179,15 +189,16 @@ Registering the decoration type with the layout (ASCollectionLayout):
 ```swift
 var layout: ASCollectionLayout<Section>
 {
-	ASCollectionLayout<Section>
-	{ 
-            // ... Here is an example of including a decoration in a compositional layout.
-            let sectionBackgroundDecoration = NSCollectionLayoutDecorationItem.background(elementKind: "groupBackground")
-            sectionBackgroundDecoration.contentInsets = section.contentInsets
-            section.decorationItems = [sectionBackgroundDecoration]
-            // ...
+    ASCollectionLayout<Section>
+    {
+        // ... Here is an example of including a decoration in a compositional layout.
+        let sectionBackgroundDecoration = NSCollectionLayoutDecorationItem.background(elementKind: "groupBackground")
+        sectionBackgroundDecoration.contentInsets = section.contentInsets
+        section.decorationItems = [sectionBackgroundDecoration]
+        // ...
+    }
+    .decorationView(GroupBackground.self, forDecorationViewOfKind: "groupBackground") // REGISTER the decoration view type
 }
-.decorationView(GroupBackground.self, forDecorationViewOfKind: "groupBackground") //REGISTER the decoration view type
 ```
 
 
@@ -199,39 +210,45 @@ var layout: ASCollectionLayout<Section>
 Define layout for all sections:
 ```swift
 ASCollectionView(...) { ... }
-.layout {
-    ASCollectionLayoutSection { layoutEnvironment in
-    	//Construct and return a NSCollectionLayoutSection here
+    .layout
+    {
+        ASCollectionLayoutSection
+        { layoutEnvironment in
+            // Construct and return a NSCollectionLayoutSection here
+        }
     }
-}
 ```
 
 Define layout per section:
 ```swift
 ASCollectionView(...) { ... }
-.layout { sectionID in
-    switch sectionID {
-    case .userSection:
-        return ASCollectionLayoutSection { layoutEnvironment in
-            //Construct and return a NSCollectionLayoutSection here
+    .layout
+    { sectionID in
+        switch sectionID
+        {
+        case .userSection:
+            return ASCollectionLayoutSection
+            { layoutEnvironment in
+                // Construct and return a NSCollectionLayoutSection here
+            }
         }
-    }
     case .postSection:
-        return ASCollectionLayoutSection { layoutEnvironment in
-            //Construct and return a NSCollectionLayoutSection here
+        return ASCollectionLayoutSection
+        { layoutEnvironment in
+            // Construct and return a NSCollectionLayoutSection here
         }
     }
-}
 ```
 
 Use a custom UICollectionViewLayout:
 ```swift
 ASCollectionView(...) { ... }
-.layout {
-    let someCustomLayout = CustomUICollectionViewLayout()
-    someCustomLayout.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
-    return someCustomLayout
-}
+    .layout
+    {
+        let someCustomLayout = CustomUICollectionViewLayout()
+        someCustomLayout.estimatedItemSize = UICollectionViewFlowLayout.automaticSize
+        return someCustomLayout
+    }
 ```
 
 ### Other tips
