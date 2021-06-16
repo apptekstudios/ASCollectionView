@@ -45,6 +45,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 	internal var dodgeKeyboard: Bool = true
 
+	internal var shouldHandleKeyboardAppereance: Bool = true
+
 	// MARK: Environment variables
 
 	@Environment(\.invalidateCellLayout) var invalidateParentCellLayout // Call this if using content size binding (nested inside another ASCollectionView)
@@ -823,6 +825,10 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 			}
 		}
 
+		var shouldHandleKeyboardAppereance: Bool {
+			parent.shouldHandleKeyboardAppereance
+		}
+
 		var extraKeyboardSpacing: CGFloat = 25
 		func setupKeyboardObservers()
 		{
@@ -866,6 +872,7 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		@objc func keyBoardWillShow(notification: Notification)
 		{
+			guard shouldHandleKeyboardAppereance else { return }
 			guard containsFirstResponder()
 			else
 			{
@@ -892,6 +899,8 @@ public struct ASTableView<SectionID: Hashable>: UIViewControllerRepresentable, C
 
 		@objc func keyBoardWillHide(notification _: Notification)
 		{
+			guard shouldHandleKeyboardAppereance else { return }
+
 			keyboardFrame = nil
 			tableViewController?.tableView.layoutIfNeeded()
 		}

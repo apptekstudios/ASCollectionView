@@ -97,6 +97,14 @@ public extension ASTableView
 		this.scrollPositionSetter = binding
 		return this
 	}
+
+	/// Set whether the TableView should handle keyboard appearance and disappearance
+	func shouldHandleKeyboardAppearance(_ isEnabled: Bool) -> Self
+	{
+		var this = self
+		this.shouldHandleKeyboardAppereance = isEnabled
+		return this
+	}
 }
 
 // MARK: ASTableView specific header modifiers
