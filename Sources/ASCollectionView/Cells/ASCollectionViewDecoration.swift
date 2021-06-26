@@ -18,9 +18,4 @@ class ASCollectionViewDecoration<Content: Decoration>: ASCollectionViewSupplemen
 		super.init(frame: frame)
 		setContent(supplementaryID: ASSupplementaryCellID(sectionIDHash: 0, supplementaryKind: "Decoration"), content: Content())
 	}
-
-	override func prepareForReuse()
-	{
-		// Don't call super, we don't want any changes
-	}
 }

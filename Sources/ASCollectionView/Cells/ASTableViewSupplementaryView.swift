@@ -39,6 +39,7 @@ class ASTableViewSupplementaryView: UITableViewHeaderFooterView, ASDataSourceCon
 
 	override func prepareForReuse()
 	{
+		super.prepareForReuse()
 		supplementaryID = nil
 	}
 
