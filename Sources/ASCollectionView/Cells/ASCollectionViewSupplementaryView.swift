@@ -40,6 +40,7 @@ class ASCollectionViewSupplementaryView: UICollectionReusableView, ASDataSourceC
 
 	override func prepareForReuse()
 	{
+		super.prepareForReuse()
 		supplementaryID = nil
 	}
 

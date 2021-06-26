@@ -40,6 +40,7 @@ class ASCollectionViewCell: UICollectionViewCell, ASDataSourceConfigurableCell
 
 	override func prepareForReuse()
 	{
+		super.prepareForReuse()
 		itemID = nil
 		isSelected = false
 		alpha = 1.0
